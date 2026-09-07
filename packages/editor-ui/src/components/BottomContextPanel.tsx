@@ -3,6 +3,7 @@ import { useEditorStore } from '@ahengine/editor-core'
 import { HierarchyPanel } from './HierarchyPanel.js'
 import { AnimationWorkspace } from './AnimationWorkspace.js'
 import { AnimatorWorkspace } from './AnimatorWorkspace.js'
+import { ParticleWorkspace } from './ParticleWorkspace.js'
 import { AssetBrowser } from './AssetBrowser.js'
 import { MaterialListPanel, ParticleListPanel, IncompletePanelShell } from './WorkspacePanels.js'
 import { PrefabWorkspace } from './PrefabWorkspace.js'
@@ -96,13 +97,8 @@ export const workspaceConfigs: WorkspaceConfig[] = [
     bottom: [
       {
         id: 'curves',
-        label: 'Curves',
-        content: (
-          <IncompletePanelShell
-            domain="Particle curves"
-            hint="Curve/timeline editing arrives with the Particle phase. Effect parameters (emission, color/size over life) are already part of the saved data contract."
-          />
-        ),
+        label: 'Effect',
+        content: <ParticleWorkspace />,
       },
     ],
   },

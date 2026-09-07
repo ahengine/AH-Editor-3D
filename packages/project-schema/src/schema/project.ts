@@ -5,7 +5,7 @@ import { MaterialDefinitionSchema } from './material.js'
 import { PrefabDefinitionSchema } from './prefab.js'
 import { AnimationClipDataSchema } from './animation-clip.js'
 import { AnimatorControllerV2Schema as AnimatorControllerSchema } from './animator-v2.js'
-import { ParticleEffectAssetSchema } from './particle.js'
+import { ParticleEffectDataSchema } from './particle-effect.js'
 
 /** Project domain — the full authoring document. Single scene in V1. */
 
@@ -28,7 +28,7 @@ export interface ProjectData {
   prefabs: import('./prefab.js').PrefabDefinition[]
   animations: import('./animation-clip.js').AnimationClipData[]
   animatorControllers: import('./animator.js').AnimatorController[]
-  particleEffects: import('./particle.js').ParticleEffectAsset[]
+  particleEffects: import('./particle-effect.js').ParticleEffectData[]
 }
 
 export const ProjectDataSchema = z.object({
@@ -47,5 +47,5 @@ export const ProjectDataSchema = z.object({
   // v1 backfill: projects authored before these arrays existed parse as [].
   animations: z.array(AnimationClipDataSchema).default([]),
   animatorControllers: z.array(AnimatorControllerSchema),
-  particleEffects: z.array(ParticleEffectAssetSchema).default([]),
+  particleEffects: z.array(ParticleEffectDataSchema).default([]),
 })

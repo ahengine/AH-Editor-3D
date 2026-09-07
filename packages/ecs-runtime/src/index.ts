@@ -13,3 +13,4 @@ export { UrlAssetResolver, PassthroughResolver, modelAnimations, rememberModelAn
 export * from './materials.js'
 export * from './animation.js'
 export * from './loader.js'
+export * from './particle-system.js'

@@ -7,7 +7,6 @@ import type {
   MaterialAsset,
   AnimationClipAsset,
   AnimatorControllerV2 as AnimatorController,
-  ParticleEffectAsset,
 } from '../schema/index.js'
 
 /**
@@ -91,7 +90,7 @@ export function migrateAnimator(data: AnimatorController): AnimatorController {
 }
 
 /** Standalone particle effect file (`.koota-particle.json`). */
-export function migrateParticle(data: ParticleEffectAsset): ParticleEffectAsset {
+export function migrateParticle(data: import('../schema/particle-effect.js').ParticleEffectData): import('../schema/particle-effect.js').ParticleEffectData {
   return runMigrations('Particle', data, particleMigrations, CURRENT_SCHEMA_VERSION)
 }
 
@@ -106,7 +105,7 @@ export function migrateProject(data: ProjectData): ProjectData {
     animatorControllers: (project.animatorControllers ?? []).map((controller) =>
       migrateAnimator(controller)
     ),
-    particleEffects: (project.particleEffects ?? []).map((effect) => migrateParticle(effect)),
+    particleEffects: project.particleEffects ?? [],
   }
   return migrated
 }

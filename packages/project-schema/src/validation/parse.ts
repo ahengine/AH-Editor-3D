@@ -7,7 +7,7 @@ import {
   ProjectDataSchema,
   SceneDataSchema,
   AnimationClipAssetSchema,
-  ParticleEffectAssetSchema,
+  ParticleEffectDataSchema,
 } from '../schema/index.js'
 import type {
   AnimatorControllerV2 as AnimatorController,
@@ -17,7 +17,7 @@ import type {
   ProjectData,
   SceneData,
   AnimationClipAsset,
-  ParticleEffectAsset,
+  ParticleEffectData,
 } from '../schema/index.js'
 import {
   migrateAnimation,
@@ -75,6 +75,6 @@ export function parseAnimationClip(data: unknown): AnimationClipAsset {
   return run(AnimationClipAssetSchema, data, 'animation-clip', migrateAnimation)
 }
 
-export function parseParticleEffect(data: unknown): ParticleEffectAsset {
-  return run(ParticleEffectAssetSchema, data, 'particle-effect', migrateParticle)
+export function parseParticleEffect(data: unknown): ParticleEffectData {
+  return run(ParticleEffectDataSchema, data, 'particle-effect', migrateParticle)
 }

@@ -4,7 +4,6 @@ import type { AnimationClipData as AnimationClipData,
   AnimatorController,
   AssetRecord,
   MaterialDefinition,
-  ParticleEffectAsset,
   PrefabDefinition,
   SceneSettings,
 } from '@ahengine/project-schema'
@@ -47,7 +46,7 @@ export interface EditorStore {
   prefabs: PrefabDefinition[]
   controllers: AnimatorController[]
   animations: import('@ahengine/project-schema').AnimationClipData[]
-  particleEffects: ParticleEffectAsset[]
+  particleEffects: import('@ahengine/project-schema').ParticleEffectData[]
 
   selection: string[]
   hovered: string | null
@@ -94,7 +93,7 @@ export interface EditorStore {
   setPrefabs(prefabs: PrefabDefinition[]): void
   setControllers(controllers: AnimatorController[]): void
   setAnimations(animations: AnimationClipData[]): void
-  setParticleEffects(effects: ParticleEffectAsset[]): void
+  setParticleEffects(effects: import('@ahengine/project-schema').ParticleEffectData[]): void
   setDirty(dirty: boolean): void
   setSaveState(state: 'saved' | 'saving' | 'unsaved'): void
   select(uuids: string[]): void

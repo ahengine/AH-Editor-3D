@@ -106,7 +106,7 @@ export function ParticleListPanel() {
               <Sparkles size={14} />
             </span>
             <span className="ah-list-name">{effect.name}</span>
-            <span className="ah-list-meta">{effect.shape}</span>
+            <span className="ah-list-meta">{effect.shape?.shape ?? effect.emission?.rate ? 'configured' : '—'}</span>
           </div>
         ))}
       </div>
