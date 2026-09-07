@@ -378,13 +378,20 @@ function validProject(): ProjectData {
         schemaVersion: 1,
         id: 'prefab-cube',
         name: 'Cube Prefab',
-        rootEntityId: prefabCubeId,
+        rootLocalEntityId: 'cube',
         entities: [
-          entity(prefabCubeId, 'Cube', null, {
-            'core.transform': { position: [0, 0.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
-            'render.mesh': { shape: 'box', size: 1, segments: 1 },
-          }),
+          {
+            localId: 'cube',
+            parentLocalId: null,
+            name: 'Cube',
+            enabled: true,
+            components: {
+              'core.transform': { position: [0, 0.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1] },
+              'render.mesh': { shape: 'box', size: 1, segments: 1 },
+            },
+          },
         ],
+        nestedInstances: [],
       },
     ],
     animations: [

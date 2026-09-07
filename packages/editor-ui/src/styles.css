@@ -1255,3 +1255,27 @@
   display: flex;
   flex-direction: column;
 }
+
+/* ---------------------------------------------------------------- */
+/* Prefab workspace                                                   */
+/* ---------------------------------------------------------------- */
+
+.ah-prefab-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: var(--panel-gap);
+  min-width: 0;
+}
+.ah-breadcrumb {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-secondary);
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--panel-bg);
+}

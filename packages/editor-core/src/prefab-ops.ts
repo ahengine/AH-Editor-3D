@@ -100,7 +100,7 @@ export function applyInstanceOverridesToPrefab(uuid: string): void {
   const updated: PrefabDefinition = {
     ...prefab,
     entities: prefab.entities.map((entity) => {
-      const patch = overrides[entity.id]
+      const patch = overrides[entity.localId]
       if (!patch) return entity
       return {
         ...entity,

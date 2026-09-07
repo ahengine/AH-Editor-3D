@@ -29,9 +29,49 @@ export function migrateScene(data: SceneData): SceneData {
   return runMigrations('Scene', data, sceneMigrations, CURRENT_SCHEMA_VERSION)
 }
 
-/** Standalone prefab file (`.koota-prefab.json`). */
+/** Standalone prefab file (`.koota-prefab.json`). Normalizes legacy shape, then migrates. */
 export function migratePrefab(data: PrefabDefinition): PrefabDefinition {
+  // Legacy prefabs (SerializedEntity[] with UUIDs) may still carry schemaVersion=1.
+  // Detect by shape and normalize before the standard migration chain.
+  const raw = data as unknown as Record<string, unknown>
+  const entities = raw.entities as Array<Record<string, unknown>> | undefined
+  const isLegacy = (entities?.length ?? 0) > 0 && entities![0].id !== undefined && entities![0].localId === undefined
+  if (isLegacy) {
+    return normalizeLegacyPrefab(data as unknown as Parameters<typeof normalizeLegacyPrefab>[0]) as PrefabDefinition
+  }
   return runMigrations('Prefab', data, prefabMigrations, CURRENT_SCHEMA_VERSION)
+}
+
+function normalizeLegacyPrefab(data: {
+  id: string; name: string; rootEntityId: string
+  entities: Array<{ id: string; parentId: string | null; name: string; enabled?: boolean; components?: Record<string, Record<string, unknown>> }>
+}): PrefabDefinition {
+  const idToLocal = new Map<string, string>()
+  const used = new Set<string>()
+  const uniqueLocal = (name: string) => {
+    let candidate = name.toLowerCase().replace(/\s+/g, '-') || 'entity'
+    let i = 1
+    while (used.has(candidate)) candidate = `${name.toLowerCase().replace(/\s+/g, '-')}-${i++}`
+    used.add(candidate)
+    return candidate
+  }
+  const entities = data.entities.map((e) => {
+    const localId = uniqueLocal(e.name ?? 'entity')
+    idToLocal.set(e.id, localId)
+    return { localId, parentLocalId: null as string | null, name: e.name ?? 'Entity', enabled: e.enabled ?? true, components: e.components ?? {} }
+  })
+  data.entities.forEach((legacy, i) => {
+    entities[i].parentLocalId = legacy.parentId ? idToLocal.get(legacy.parentId) ?? null : null
+  })
+  return {
+    format: 'koota-3d-prefab' as const,
+    schemaVersion: 1,
+    id: data.id,
+    name: data.name,
+    rootLocalEntityId: idToLocal.get(data.rootEntityId) ?? entities[0]?.localId ?? 'root',
+    entities,
+    nestedInstances: [],
+  }
 }
 
 /** Standalone material file (`.koota-material.json`). */

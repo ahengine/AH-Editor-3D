@@ -1,4 +1,4 @@
-import type { ProjectData, SceneData, SerializedEntity, PrefabDefinition } from '../schema/index.js'
+import type { ProjectData, SceneData, SerializedEntity, PrefabDefinition, PrefabEntity } from '../schema/index.js'
 import { isValidUUID } from '../schema/common.js'
 import { ValidationIssue, ValidationError } from './errors.js'
 
@@ -87,12 +87,31 @@ export function validateSceneIntegrity(
 }
 
 function validatePrefabInternal(prefab: PrefabDefinition, issues: ValidationIssue[]): void {
-  validateSceneEntities(prefab.entities, `prefab "${prefab.name}"`, undefined, issues)
-  if (!prefab.entities.some((entity) => entity.id === prefab.rootEntityId)) {
+  const localIds = new Set<string>()
+  for (const entity of prefab.entities) {
+    localIds.add(entity.localId)
+    if (entity.parentLocalId !== null && !localIds.has(entity.parentLocalId) &&
+        !prefab.entities.some(e => e.localId === entity.parentLocalId)) {
+      issues.push({
+        path: `prefab "${prefab.name}" → ${entity.name || entity.localId}.parentLocalId`,
+        message: `References unknown local entity "${entity.parentLocalId}"`,
+      })
+    }
+  }
+  if (!localIds.has(prefab.rootLocalEntityId)) {
     issues.push({
-      path: `prefab "${prefab.name}".rootEntityId`,
-      message: `References unknown entity UUID ${prefab.rootEntityId}`,
+      path: `prefab "${prefab.name}".rootLocalEntityId`,
+      message: `References unknown local entity "${prefab.rootLocalEntityId}"`,
     })
+  }
+  // Nested instances reference valid local parents
+  for (const nested of prefab.nestedInstances ?? []) {
+    if (nested.parentLocalId !== null && !localIds.has(nested.parentLocalId)) {
+      issues.push({
+        path: `prefab "${prefab.name}" → nested.${nested.instanceId}.parentLocalId`,
+        message: `References unknown local entity "${nested.parentLocalId}"`,
+      })
+    }
   }
 }
 

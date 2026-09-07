@@ -3,7 +3,8 @@ import { useEditorStore } from '@ahengine/editor-core'
 import { HierarchyPanel } from './HierarchyPanel.js'
 import { TimelinePanel } from './TimelinePanel.js'
 import { AssetBrowser } from './AssetBrowser.js'
-import { PrefabListPanel, MaterialListPanel, ParticleListPanel, IncompletePanelShell } from './WorkspacePanels.js'
+import { MaterialListPanel, ParticleListPanel, IncompletePanelShell } from './WorkspacePanels.js'
+import { PrefabWorkspace } from './PrefabWorkspace.js'
 import { MaterialGraphWorkspace } from './MaterialGraphEditor.js'
 
 /**
@@ -48,7 +49,7 @@ export const workspaceConfigs: WorkspaceConfig[] = [
   {
     id: 'prefab',
     label: 'Prefab',
-    left: <PrefabListPanel />,
+    left: <PrefabWorkspace />,
     inspectorTab: 'inspector',
     bottom: [
       {
@@ -57,7 +58,7 @@ export const workspaceConfigs: WorkspaceConfig[] = [
         content: (
           <IncompletePanelShell
             domain="Prefab structure"
-            hint="Nested-prefab authoring and instance-override inspection arrive in the Prefab phase. Instances already load/save through the data contract."
+            hint="Instance-override inspection and visual diff arrive next. The data model (localIds, nestedInstances, overrides, cycle protection) is fully functional and tested."
           />
         ),
       },
