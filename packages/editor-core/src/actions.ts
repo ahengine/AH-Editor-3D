@@ -4,6 +4,7 @@ import {
   EntityMeta,
   addComponent,
   applyPatch,
+  collectSubtree,
   findEntityByUuid,
   getComponentDef,
   instantiatePrefab,
@@ -105,9 +106,25 @@ export function createCamera(): void {
 }
 
 export function deleteSelection(): void {
-  const { selection } = useEditorStore.getState()
-  if (selection.length === 0) return
-  runCommand(new DeleteEntitiesCommand('Delete entities', [...selection]))
+  const state = useEditorStore.getState()
+  if (state.selection.length === 0) return
+  // Confirmation only when clearly meaningful: a large authored subtree.
+  // Everything else deletes instantly and remains undoable.
+  const doomed = new Set<string>()
+  for (const uuid of state.selection) {
+    const entity = findEntityByUuid(state.world, uuid)
+    if (!entity) continue
+    for (const member of collectSubtree(state.world, entity)) {
+      doomed.add(member.get(EntityMeta)?.uuid ?? '')
+    }
+  }
+  if (doomed.size >= 5) {
+    const ok = window.confirm(
+      `Delete ${doomed.size} entities (the selected subtree${state.selection.length > 1 ? 's' : ''} and all children)?`
+    )
+    if (!ok) return
+  }
+  runCommand(new DeleteEntitiesCommand('Delete entities', [...state.selection]))
 }
 
 export function duplicateSelection(): void {

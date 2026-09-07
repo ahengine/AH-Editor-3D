@@ -55,6 +55,7 @@ export interface EditorStore {
   snapEnabled: boolean
   snapTranslate: number
   snapRotateDeg: number
+  snapScale: number
 
   bottomPanelOpen: boolean
   editingMaterialId: string | null
@@ -148,6 +149,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   snapEnabled: false,
   snapTranslate: 0.5,
   snapRotateDeg: 15,
+  snapScale: 0.1,
 
   bottomPanelOpen: true,
   editingMaterialId: null,

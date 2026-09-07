@@ -28,7 +28,7 @@ import {
   openSavedProject,
   saveProject,
 } from '@ahengine/editor-core'
-import { createCamera, createLight, createPrimitive } from '@ahengine/editor-core'
+import { createCamera, createEntity, createLight, createPrimitive } from '@ahengine/editor-core'
 import { SegmentedControl, IconButton } from '../ui/primitives.js'
 import { workspaceConfigs } from './BottomContextPanel.js'
 import { MenuList, type MenuItemSpec } from '../hooks.js'
@@ -66,6 +66,7 @@ export function TopBar() {
       { label: 'Redo', shortcut: 'Ctrl+Shift+Z', disabled: redoDepth === 0, onClick: redo },
     ],
     Create: [
+      { label: 'Empty Entity', onClick: () => createEntity({ name: 'Entity', components: { 'core.transform': {} } }) },
       { sectionLabel: '3D Objects', label: 'Cube', icon: <Box {...icon13} />, onClick: () => createPrimitive('box') },
       { label: 'Sphere', icon: <Globe {...icon13} />, onClick: () => createPrimitive('sphere') },
       { label: 'Plane', icon: <Disc {...icon13} />, onClick: () => createPrimitive('plane') },

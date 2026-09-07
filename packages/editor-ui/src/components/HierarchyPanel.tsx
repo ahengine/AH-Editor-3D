@@ -10,6 +10,7 @@ import {
   Box,
   Package,
   PackageOpen,
+  Power,
 } from 'lucide-react'
 import {
   ChildOf,
@@ -31,6 +32,7 @@ import {
   createPrimitive,
   deleteSelection,
   duplicateSelection,
+  editComponentField,
   renameEntity,
   reparent,
   setEnabled,
@@ -239,12 +241,21 @@ function SceneTree() {
                     </span>
                   )}
                   <span className="ah-tree-actions">
+                    {rendererVisibilityTarget(info) && (
+                      <button
+                        className="ah-icon-btn small"
+                        title={rendererVisible(info) ? 'Hide renderer' : 'Show renderer'}
+                        onClick={(e) => { e.stopPropagation(); toggleRendererVisibility(info) }}
+                      >
+                        {rendererVisible(info) ? <Eye size={13} /> : <EyeOff size={13} />}
+                      </button>
+                    )}
                     <button
-                      className="ah-icon-btn small"
-                      title={info.enabled ? 'Disable' : 'Enable'}
+                      className={`ah-icon-btn small ${info.enabled ? '' : 'off'}`}
+                      title={hasLight(info) ? (info.enabled ? 'Light on — click to turn off' : 'Light off — click to turn on') : info.enabled ? 'Disable entity' : 'Enable entity'}
                       onClick={(e) => { e.stopPropagation(); setEnabled(info.uuid, !info.enabled) }}
                     >
-                      {info.enabled ? <Eye size={13} /> : <EyeOff size={13} />}
+                      {hasLight(info) ? <Lightbulb size={13} /> : <Power size={13} />}
                     </button>
                   </span>
                 </>
@@ -307,6 +318,31 @@ function EntityIcon({ info }: { info: RowInfo }) {
       )}
     </span>
   )
+}
+
+/* Enable/disable (EntityMeta.enabled) is authored activation; renderer
+ * visibility (PrimitiveMesh/ModelRenderer.visible) is a separate authored
+ * flag. Eye = renderer visibility, Power/Lightbulb = activation. */
+function hasLight(info: RowInfo): boolean {
+  return info.entity.has(Light)
+}
+
+function rendererVisibilityTarget(info: RowInfo): 'render.mesh' | 'render.model' | null {
+  if (info.entity.has(PrimitiveMesh)) return 'render.mesh'
+  if (info.entity.has(ModelRenderer)) return 'render.model'
+  return null
+}
+
+function rendererVisible(info: RowInfo): boolean {
+  if (info.entity.has(PrimitiveMesh)) return info.entity.get(PrimitiveMesh)!.visible !== false
+  if (info.entity.has(ModelRenderer)) return info.entity.get(ModelRenderer)!.visible !== false
+  return true
+}
+
+function toggleRendererVisibility(info: RowInfo): void {
+  const target = rendererVisibilityTarget(info)
+  if (!target) return
+  editComponentField(info.uuid, target, { visible: !rendererVisible(info) })
 }
 
 /** Compact environment summary pinned to the hierarchy bottom. */

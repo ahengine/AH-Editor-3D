@@ -25,6 +25,11 @@ import type { World as KootaWorld } from 'koota'
 
 export interface EditorCommand {
   readonly label: string
+  /**
+   * When set, rapidly consecutive commands with the same key merge into one
+   * undo entry (numeric nudges, slider bursts). First `before` is kept.
+   */
+  readonly coalesceKey?: string
   execute(): void
   undo(): void
 }
@@ -32,11 +37,35 @@ export interface EditorCommand {
 class CommandStack {
   private undoStack: EditorCommand[] = []
   private redoStack: EditorCommand[] = []
+  private lastPushAt = 0
+  private static COALESCE_WINDOW_MS = 1000
 
   push(command: EditorCommand): void {
+    const now = Date.now()
+    const top = this.undoStack[this.undoStack.length - 1]
+    if (
+      command.coalesceKey &&
+      top?.coalesceKey === command.coalesceKey &&
+      now - this.lastPushAt < CommandStack.COALESCE_WINDOW_MS &&
+      top instanceof SetComponentFieldCommand &&
+      command instanceof SetComponentFieldCommand
+    ) {
+      // Merge: keep the FIRST before, adopt the LATEST after.
+      this.undoStack[this.undoStack.length - 1] = new SetComponentFieldCommand(
+        top.label,
+        top.uuid,
+        top.componentId,
+        top.before,
+        command.after
+      )
+      this.lastPushAt = now
+      this.redoStack = []
+      return
+    }
     this.undoStack.push(command)
     if (this.undoStack.length > 256) this.undoStack.shift()
     this.redoStack = []
+    this.lastPushAt = now
     this.syncDepths()
   }
 
@@ -228,13 +257,16 @@ export class RemoveComponentCommand implements EditorCommand {
 
 /** Generic component property change with field-level before/after. */
 export class SetComponentFieldCommand implements EditorCommand {
+  readonly coalesceKey: string
   constructor(
     readonly label: string,
-    private readonly uuid: string,
-    private readonly componentId: string,
-    private readonly before: Record<string, unknown>,
-    private readonly after: Record<string, unknown>
-  ) {}
+    readonly uuid: string,
+    readonly componentId: string,
+    readonly before: Record<string, unknown>,
+    readonly after: Record<string, unknown>
+  ) {
+    this.coalesceKey = `${uuid}:${componentId}`
+  }
 
   execute(): void {
     const entity = findEntityByUuid(world(), this.uuid)

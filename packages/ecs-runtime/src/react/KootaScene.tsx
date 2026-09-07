@@ -300,7 +300,10 @@ function syncPrimitive(entity: Entity, visual: EntityVisual, runtime: KootaScene
   const key = `mesh:${data.shape}|${data.size}|${data.segments}`
   if (visual.meshKey === key) {
     const mesh = visual.object.getObjectByName('mesh') as THREE.Mesh
-    if (mesh) mesh.material = entityMaterial(entity, runtime)
+    if (mesh) {
+      mesh.material = entityMaterial(entity, runtime)
+      mesh.visible = data.visible !== false
+    }
     return
   }
   removeChild(visual, 'mesh')
@@ -308,6 +311,7 @@ function syncPrimitive(entity: Entity, visual: EntityVisual, runtime: KootaScene
   mesh.name = 'mesh'
   mesh.castShadow = true
   mesh.receiveShadow = true
+  mesh.visible = data.visible !== false
   visual.object.add(mesh)
   visual.meshKey = key
 }

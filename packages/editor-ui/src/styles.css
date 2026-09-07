@@ -1062,3 +1062,14 @@
   font-size: var(--fs-secondary);
   padding: var(--sp-5);
 }
+
+.ah-vtool.active-snap {
+  color: #bcd4ff;
+}
+.ah-icon-btn.off {
+  color: var(--text-tertiary);
+  opacity: 0.55;
+}
+.ah-icon-btn.off:hover {
+  opacity: 0.9;
+}

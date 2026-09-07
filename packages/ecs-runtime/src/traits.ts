@@ -37,6 +37,8 @@ export const PrimitiveMesh = trait({
   shape: 'box' as PrimitiveShape,
   size: 1,
   segments: 16,
+  /** Authored renderer visibility — distinct from EntityMeta.enabled activation. */
+  visible: true,
 })
 
 export const ModelRenderer = trait({

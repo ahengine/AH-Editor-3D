@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Entity } from 'koota'
-import { ChevronDown, ChevronRight, Eye, EyeOff, Package, Play, Plus, Settings2, Trash2, Copy, RotateCcw, ClipboardPaste } from 'lucide-react'
+import { ChevronDown, ChevronRight, ClipboardPaste, Copy, Eye, EyeOff, Lightbulb, Package, Play, Plus, RotateCcw, Settings2, Trash2 } from 'lucide-react'
 import {
   EntityMeta,
   Light as LightTrait,
@@ -101,6 +101,7 @@ function InspectorBody() {
                   entity={entity}
                   uuid={uuid}
                   componentId={def.id}
+                  entityEnabled={meta.enabled}
                   onContextMenu={(event) =>
                     contextMenu.open(event, [
                       { label: 'Reset to Default', icon: <RotateCcw size={13} />, onClick: () => resetComponent(uuid, def.id) },
@@ -193,10 +194,36 @@ function primitiveTriangleCount(entity: Entity): number {
 /* Transform matrix                                                    */
 /* ------------------------------------------------------------------ */
 
+/** Transform clipboard — editor-only, never serialized. */
+let transformClipboard: { position: typeof Transform.prototype.schema.position } | null = null
+
+function transformResetData() {
+  return { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 } }
+}
+
 function TransformSection({ entity, uuid }: { entity: Entity; uuid: string }) {
   const transform = entity.get(Transform)!
+  const def = getComponentDef('core.transform')!
+  const serializeCurrent = () =>
+    def.serialize(entity.get(Transform) as unknown as Record<string, unknown>)
   return (
-    <InspectorSection title="Transform">
+    <InspectorSection
+      title="Transform"
+      actions={
+        <>
+          <IconButton small icon={<Copy size={12} />} label="Copy transform" onClick={() => {
+            transformClipboard = JSON.parse(JSON.stringify(serializeCurrent())) as typeof transformClipboard
+          }} />
+          <IconButton small icon={<ClipboardPaste size={12} />} label="Paste transform" disabled={!transformClipboard} onClick={() => {
+            if (!transformClipboard) return
+            editComponentField(uuid, 'core.transform', transformClipboard as unknown as Record<string, unknown>)
+          }} />
+          <IconButton small icon={<RotateCcw size={12} />} label="Reset transform" onClick={() => {
+            editComponentField(uuid, 'core.transform', def.serialize(transformResetData() as unknown as Record<string, unknown>))
+          }} />
+        </>
+      }
+    >
       <div className="ah-matrix">
         <span className="ah-matrix-label" />
         {(['X', 'Y', 'Z'] as const).map((axis) => (
@@ -224,7 +251,7 @@ function TransformSection({ entity, uuid }: { entity: Entity; uuid: string }) {
               })
             }
             onLiveNudge={(value) =>
-              setComponentFieldLive(uuid, 'core.transform', {
+              editComponentField(uuid, 'core.transform', {
                 position: { ...transform.position, [axis]: value },
               })
             }
@@ -245,7 +272,7 @@ function TransformSection({ entity, uuid }: { entity: Entity; uuid: string }) {
               })
             }
             onLiveNudge={(value) =>
-              setComponentFieldLive(uuid, 'core.transform', {
+              editComponentField(uuid, 'core.transform', {
                 rotation: { ...transform.rotation, [axis]: value },
               })
             }
@@ -266,7 +293,7 @@ function TransformSection({ entity, uuid }: { entity: Entity; uuid: string }) {
               })
             }
             onLiveNudge={(value) =>
-              setComponentFieldLive(uuid, 'core.transform', {
+              editComponentField(uuid, 'core.transform', {
                 scale: { ...transform.scale, [axis]: value },
               })
             }
@@ -554,11 +581,13 @@ function RegistrySection({
   entity,
   uuid,
   componentId,
+  entityEnabled,
   onContextMenu,
 }: {
   entity: Entity
   uuid: string
   componentId: string
+  entityEnabled?: boolean
   onContextMenu: (event: React.MouseEvent) => void
 }) {
   const def = getComponentDef(componentId)!
@@ -580,6 +609,22 @@ function RegistrySection({
       }
     >
       <div onContextMenu={onContextMenu}>
+        {componentId === 'render.light' && (
+          <div className="ah-field" style={{ minHeight: 32 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-primary)' }}>
+              <Lightbulb size={13} style={{ color: entityEnabled ? 'var(--accent)' : 'var(--text-tertiary)' }} />
+              On
+            </label>
+            <label className="ah-check" style={{ justifyContent: 'flex-start' }}>
+              <input
+                type="checkbox"
+                checked={entityEnabled !== false}
+                onChange={(event) => uuid && setEnabled(uuid, event.target.checked)}
+              />
+              {entityEnabled !== false ? 'illuminating' : 'off — settings preserved'}
+            </label>
+          </div>
+        )}
         {def.fields.map((field) => {
           if (field.hidden) return null
           const value = record[field.key]

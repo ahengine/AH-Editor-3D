@@ -155,6 +155,11 @@ function useGlobalShortcuts(enabled: boolean): void {
         duplicateSelection()
         return
       }
+      if (event.key === 'Escape') {
+        // Cancel the current interaction: drop selection (menus/dialogs close themselves).
+        if (store.selection.length > 0) store.select([])
+        return
+      }
       switch (event.key.toLowerCase()) {
         case 'q':
           store.setTool('select')

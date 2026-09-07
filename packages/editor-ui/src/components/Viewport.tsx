@@ -39,7 +39,7 @@ import {
 import { createEntity, instantiatePrefabAction } from '@ahengine/editor-core'
 import { commandStack } from '@ahengine/editor-core'
 import { getComponentDef, applyPatch } from '@ahengine/ecs-runtime'
-import { IconButton } from '../ui/primitives.js'
+import { IconButton, Popover } from '../ui/primitives.js'
 import { MenuList } from '../hooks.js'
 
 /**
@@ -264,15 +264,17 @@ function EditorRig({
   }, [camera, gl, scene, world])
 
   /* Tool / space / snapping */
+  const snapTranslate = useEditorStore((s) => s.snapTranslate)
+  const snapRotateDeg = useEditorStore((s) => s.snapRotateDeg)
+  const snapScale = useEditorStore((s) => s.snapScale)
   useEffect(() => {
     const gizmo = gizmoRef.current
     if (!gizmo) return
     gizmo.setMode(tool === 'select' ? 'translate' : tool) // 'select' keeps the gizmo detached (see useFrame)
     gizmo.setSpace(space === 'world' ? 'world' : 'local')
-    const store = useEditorStore.getState()
-    gizmo.translationSnap = snapEnabled ? store.snapTranslate : null
-    gizmo.rotationSnap = snapEnabled ? THREE.MathUtils.degToRad(store.snapRotateDeg) : null
-    gizmo.scaleSnap = snapEnabled ? 0.1 : null
+    gizmo.translationSnap = snapEnabled ? snapTranslate : null
+    gizmo.rotationSnap = snapEnabled ? THREE.MathUtils.degToRad(snapRotateDeg) : null
+    gizmo.scaleSnap = snapEnabled ? snapScale : null
   }, [tool, space, snapEnabled, selection])
 
   /* Picking */
@@ -427,6 +429,7 @@ function EditorRig({
   return (
     <>
       {gridVisible && <gridHelper args={[80, 80, '#46536a', '#2a3341']} position={[0, -0.001, 0]} />}
+      {gridVisible && <axesHelper args={[1.2]} position={[0, 0.002, 0]} />}
     </>
   )
 }
@@ -490,7 +493,19 @@ function ViewportToolbar() {
         <IconButton icon={<Rotate3d size={15} />} label="Rotate (E)" active={tool === 'rotate'} onClick={() => store().setTool('rotate')} />
         <IconButton icon={<Scale3d size={15} />} label="Scale (R)" active={tool === 'scale'} onClick={() => store().setTool('scale')} />
         <span className="ah-vtool-sep" />
-        <IconButton icon={<Magnet size={15} />} label="Snapping" active={snapEnabled} onClick={() => store().setSnap(!snapEnabled)} />
+        <Popover
+          trigger={({ onClick, open }) => (
+            <button className={`ah-vtool ${snapEnabled ? 'active-snap' : ''}`} onClick={onClick} title="Snap settings">
+              <Magnet size={15} />
+              {snapEnabled ? `${store().snapTranslate}` : 'Off'}
+              <ChevronDown size={12} style={{ opacity: 0.6 }} />
+              {open ? null : null}
+            </button>
+          )}
+        >
+          {(close) => <SnapSettings onClose={close} />}
+        </Popover>
+        <IconButton icon={<Magnet size={15} />} label="Toggle snapping" active={snapEnabled} onClick={() => store().setSnap(!snapEnabled)} />
       </div>
 
       <div className={`ah-menu ${spaceMenu ? 'open' : ''}`}>
@@ -712,4 +727,51 @@ function onDropAsset(event: React.DragEvent): void {
       return
     }
   }
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Snap settings — editor preferences, never scene data                */
+/* ------------------------------------------------------------------ */
+
+function SnapSettings({ onClose }: { onClose: () => void }) {
+  const snapEnabled = useEditorStore((s) => s.snapEnabled)
+  const snapTranslate = useEditorStore((s) => s.snapTranslate)
+  const snapRotateDeg = useEditorStore((s) => s.snapRotateDeg)
+  const snapScale = useEditorStore((s) => s.snapScale)
+  const store = useEditorStore.getState
+  const row = (label: string, value: number, step: number, set: (v: number) => void, unit: string) => (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', fontSize: 'var(--fs-secondary)', color: 'var(--text-secondary)' }}>
+      <span style={{ width: 82 }}>{label}</span>
+      <input
+        className="ah-input"
+        style={{ width: 62, height: 24, textAlign: 'right' }}
+        type="number"
+        step={step}
+        min={0}
+        value={value}
+        onChange={(event) => {
+          const next = parseFloat(event.target.value)
+          if (!Number.isNaN(next) && next >= 0) set(next)
+        }}
+      />
+      <span style={{ color: 'var(--text-tertiary)', width: 18 }}>{unit}</span>
+    </label>
+  )
+  return (
+    <>
+      <div className="ah-menu-label">Snap settings {snapEnabled ? '' : '(off)'}</div>
+      {row('Translation', snapTranslate, 0.1, (v) => setPref('snapTranslate', v), 'm')}
+      {row('Rotation', snapRotateDeg, 5, (v) => setPref('snapRotateDeg', v), '°')}
+      {row('Scale', snapScale, 0.05, (v) => setPref('snapScale', v), '')}
+      <div className="ah-menu-sep" />
+      <button className="ah-menu-item" onClick={() => { store().setSnap(!snapEnabled); onClose() }}>
+        {snapEnabled ? 'Disable snapping' : 'Enable snapping'}
+      </button>
+    </>
+  )
+}
+
+function setPref(key: 'snapTranslate' | 'snapRotateDeg' | 'snapScale', value: number): void {
+  useEditorStore.setState({ [key]: value } as never)
 }

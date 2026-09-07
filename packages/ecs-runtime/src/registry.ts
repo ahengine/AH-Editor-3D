@@ -233,20 +233,23 @@ const primitiveMesh = define({
     },
     { key: 'size', label: 'Size', type: 'number', min: 0.01, step: 0.1 },
     { key: 'segments', label: 'Segments', type: 'integer', min: 3, max: 64 },
+    { key: 'visible', label: 'Visible', type: 'boolean' },
   ],
   schema: z.object({
     shape: z.enum(['box', 'sphere', 'plane', 'cylinder', 'cone', 'torus']).optional(),
     size: z.number().positive().optional(),
     segments: z.number().int().min(1).max(64).optional(),
+    visible: z.boolean().optional(),
   }),
-  defaults: () => ({ shape: 'box' as PrimitiveShape, size: 1, segments: 16 }),
-  serialize: (record) => pick(record, ['shape', 'size', 'segments']),
+  defaults: () => ({ shape: 'box' as PrimitiveShape, size: 1, segments: 16, visible: true }),
+  serialize: (record) => pick(record, ['shape', 'size', 'segments', 'visible']),
   deserialize: (data) => {
     const d = (data ?? {}) as Record<string, unknown>
     return {
       shape: (String(d.shape ?? 'box') as PrimitiveShape),
       size: Number(d.size ?? 1) || 1,
       segments: Math.round(Number(d.segments ?? 16)) || 16,
+      visible: d.visible !== false,
     }
   },
 })
