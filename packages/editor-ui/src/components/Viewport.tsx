@@ -19,6 +19,7 @@ import {
   Sun,
 } from 'lucide-react'
 import {
+  Light,
   EntityMeta,
   ThreeObject,
   Transform,
@@ -430,6 +431,7 @@ function EditorRig({
     <>
       {gridVisible && <gridHelper args={[80, 80, '#46536a', '#2a3341']} position={[0, -0.001, 0]} />}
       {gridVisible && <axesHelper args={[1.2]} position={[0, 0.002, 0]} />}
+      <LightGizmos />
     </>
   )
 }
@@ -774,4 +776,93 @@ function SnapSettings({ onClose }: { onClose: () => void }) {
 
 function setPref(key: 'snapTranslate' | 'snapRotateDeg' | 'snapScale', value: number): void {
   useEditorStore.setState({ [key]: value } as never)
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Light gizmos — editor-only visual helpers, never serialized         */
+/* ------------------------------------------------------------------ */
+
+function LightGizmos() {
+  const world = useEditorStore((s) => s.world)
+  const worldVersion = useEditorStore((s) => s.worldVersion)
+  const gizmoRefs = useRef<Map<string, THREE.Group>>(new Map())
+
+  useFrame(({ scene }) => {
+    void worldVersion
+    // Remove stale gizmos
+    for (const [uuid, group] of gizmoRefs.current) {
+      const entity = [...world.query(EntityMeta)].find((e) => e.get(EntityMeta)?.uuid === uuid)
+      if (!entity || !entity.has(Light)) {
+        scene.remove(group)
+        gizmoRefs.current.delete(uuid)
+      }
+    }
+    // Add/update gizmos for light entities
+    for (const entity of world.query(Light, ThreeObject)) {
+      const uuid = entity.get(EntityMeta)?.uuid
+      const lightData = entity.get(Light)
+      const object = entity.get(ThreeObject)?.object
+      if (!uuid || !lightData || !object) continue
+
+      let gizmo = gizmoRefs.current.get(uuid)
+      if (!gizmo) {
+        gizmo = new THREE.Group()
+        gizmo.name = 'light-gizmo'
+        scene.add(gizmo)
+        gizmoRefs.current.set(uuid, gizmo)
+      }
+
+      // Position gizmo at light's world position
+      object.updateWorldMatrix(true, false)
+      gizmo.position.setFromMatrixPosition(object.matrixWorld)
+
+      // Update gizmo content based on type
+      updateGizmoContent(gizmo, lightData)
+    }
+  })
+
+  return null
+}
+
+function updateGizmoContent(gizmo: THREE.Group, lightData: { type: string; distance: number; angle: number }) {
+  const color = 0xf3c940
+  const existing = gizmo.children[0]
+  const key = `${lightData.type}:${lightData.distance}:${lightData.angle}`
+
+  if (existing?.userData?.gizmoKey === key) return
+
+  // Clear and rebuild
+  gizmo.clear()
+
+  if (lightData.type === 'directional') {
+    // Direction indicator: arrow pointing along local -Z
+    const dir = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 0, -1),
+      new THREE.Vector3(0, 0, 0),
+      2,
+      color,
+      0.3,
+      0.15
+    )
+    gizmo.add(dir)
+  } else if (lightData.type === 'point') {
+    // Range indicator: wireframe sphere
+    const radius = lightData.distance > 0 ? lightData.distance : 1
+    const geo = new THREE.SphereGeometry(radius, 12, 8)
+    const mat = new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.15 })
+    const mesh = new THREE.Mesh(geo, mat)
+    gizmo.add(mesh)
+  } else if (lightData.type === 'spot') {
+    // Cone indicator
+    const distance = lightData.distance > 0 ? lightData.distance : 3
+    const geo = new THREE.ConeGeometry(Math.tan(lightData.angle) * distance, distance, 12, 1, true)
+    const mat = new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+    const mesh = new THREE.Mesh(geo, mat)
+    mesh.rotation.x = -Math.PI / 2 // point along -Z
+    mesh.position.z = -distance / 2
+    gizmo.add(mesh)
+  }
+
+  gizmo.userData.gizmoKey = key
 }

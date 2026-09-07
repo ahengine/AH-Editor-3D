@@ -50,6 +50,8 @@ export interface FieldDef {
   nullable?: boolean
   /** hide from inspector (still serialized) */
   hidden?: boolean
+  /** only show for these light types (render.light component) */
+  showForTypes?: string[]
 }
 
 /**
@@ -303,13 +305,13 @@ const light: ComponentDefinition = define({
     },
     { key: 'color', label: 'Color', type: 'color' },
     { key: 'intensity', label: 'Intensity', type: 'slider', min: 0, max: 20, step: 0.05 },
-    { key: 'distance', label: 'Distance', type: 'number', min: 0 },
-    { key: 'decay', label: 'Decay', type: 'number', min: 0, step: 0.1 },
-    { key: 'angle', label: 'Angle', type: 'slider', min: 0.05, max: 1.55, step: 0.01 },
-    { key: 'penumbra', label: 'Penumbra', type: 'slider', min: 0, max: 1, step: 0.01 },
-    { key: 'castShadow', label: 'Cast Shadow', type: 'boolean' },
-    { key: 'shadowBias', label: 'Shadow Bias', type: 'number', step: 0.0001 },
-    { key: 'shadowMapSize', label: 'Shadow Map Size', type: 'integer', min: 64, max: 4096 },
+    { key: 'distance', label: 'Distance', type: 'number', min: 0, showForTypes: ['point', 'spot'] },
+    { key: 'decay', label: 'Decay', type: 'number', min: 0, step: 0.1, showForTypes: ['point', 'spot'] },
+    { key: 'angle', label: 'Angle', type: 'slider', min: 0.05, max: 1.55, step: 0.01, showForTypes: ['spot'] },
+    { key: 'penumbra', label: 'Penumbra', type: 'slider', min: 0, max: 1, step: 0.01, showForTypes: ['spot'] },
+    { key: 'castShadow', label: 'Cast Shadow', type: 'boolean', showForTypes: ['directional', 'point', 'spot'] },
+    { key: 'shadowBias', label: 'Shadow Bias', type: 'number', step: 0.0001, showForTypes: ['directional', 'point', 'spot'] },
+    { key: 'shadowMapSize', label: 'Shadow Map Size', type: 'integer', min: 64, max: 4096, showForTypes: ['directional', 'point', 'spot'] },
   ],
   schema: z.object({
     type: z.enum(['directional', 'point', 'spot', 'ambient', 'hemisphere']).optional(),

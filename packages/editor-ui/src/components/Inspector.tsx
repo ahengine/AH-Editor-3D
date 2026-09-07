@@ -627,6 +627,11 @@ function RegistrySection({
         )}
         {def.fields.map((field) => {
           if (field.hidden) return null
+          // Type-aware filtering: hide fields irrelevant to the current light type
+          if (field.showForTypes && componentId === 'render.light') {
+            const currentType = String(record.type ?? 'directional')
+            if (!field.showForTypes.includes(currentType)) return null
+          }
           const value = record[field.key]
           return (
             <div className="ah-field" key={field.key}>

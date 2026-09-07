@@ -494,6 +494,7 @@ function SceneEnvironment({
 }) {
   const scene = useThree((state) => state.scene)
   const gl = useThree((state) => state.gl)
+  const ambientLightRef = useRef<THREE.HemisphereLight | null>(null)
 
   useEffect(() => {
     if (!settings) return
@@ -531,11 +532,27 @@ function SceneEnvironment({
             if (cancelled) return
             scene.environment = texture
             scene.environmentIntensity = settings.environmentIntensity
+            if (settings.environmentRotation) {
+              texture.rotation = settings.environmentRotation
+            }
+            // Sky background: show HDRI as visible sky or use solid color
+            scene.background = settings.environmentBackground ? texture : null
           })
           .catch(() => undefined)
       }
     } else {
       scene.environment = null
+      scene.background = null
+    }
+
+    // Ambient contribution — hemisphere light (sky/ground approximation), not a fake entity
+    if (!ambientLightRef.current) {
+      ambientLightRef.current = new THREE.HemisphereLight('#c8d4e0', '#3a3f46', 0)
+      scene.add(ambientLightRef.current)
+    }
+    ambientLightRef.current.intensity = settings.ambientIntensity ?? 0
+    if (settings.ambientColor) {
+      ambientLightRef.current.color.set(settings.ambientColor)
     }
     return () => {
       cancelled = true

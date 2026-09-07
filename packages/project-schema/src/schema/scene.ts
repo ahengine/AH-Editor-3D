@@ -40,10 +40,19 @@ export type FogSettings = {
 export type ToneMappingType = 'none' | 'aces' | 'linear' | 'reinhard' | 'cineon'
 
 export interface SceneSettings {
+  /** Background color (hex string) or 'environment' to use HDRI as sky. */
   background: string
   /** HDRI environment asset id, or null. */
   environmentAssetId: string | null
   environmentIntensity: number
+  /** Environment map rotation in radians (Y-axis). */
+  environmentRotation: number
+  /** True = show HDRI as visible sky background; false = environment lighting only. */
+  environmentBackground: boolean
+  /** Ambient light contribution (0 = off). Uses hemisphere light in renderer. */
+  ambientIntensity: number
+  /** Ambient light color. */
+  ambientColor: string
   fog: FogSettings
   toneMapping: ToneMappingType
   toneMappingExposure: number
@@ -64,11 +73,16 @@ export const FogSettingsSchema = z.object({
 export const SceneSettingsSchema = z.object({
   background: hexColor,
   environmentAssetId: z.string().nullable(),
-  environmentIntensity: z.number(),
+  environmentIntensity: z.number().default(1),
+  // v1 backfill: fields added later default for existing data
+  environmentRotation: z.number().default(0),
+  environmentBackground: z.boolean().default(true),
+  ambientIntensity: z.number().default(0),
+  ambientColor: hexColor.default('#c8d4e0'),
   fog: FogSettingsSchema,
   toneMapping: z.enum(['none', 'aces', 'linear', 'reinhard', 'cineon']),
-  toneMappingExposure: z.number(),
-  shadowEnabled: z.boolean(),
+  toneMappingExposure: z.number().default(1),
+  shadowEnabled: z.boolean().default(true),
   defaultCameraId: z.string().nullable(),
 })
 
