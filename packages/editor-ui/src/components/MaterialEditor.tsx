@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { MeshStandardNodeMaterial, WebGPURenderer } from 'three/webgpu'
 import { Plus, Trash2 } from 'lucide-react'
@@ -298,29 +298,52 @@ function EditorSliderLazy(props: {
 
 /** Live preview sphere rendering the actual material service instance. */
 function MaterialPreview({ materialId, size = 190 }: { materialId: string; size?: number }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(false)
+
+  // Wait for real dimensions before mounting the canvas — mounting at the
+  // default 300×150 then resizing triggers a WebGPU depth-stencil size
+  // mismatch in three 0.185.1 (same bug worked around in the graph preview).
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    if (el.clientWidth > 10 && el.clientHeight > 10) {
+      setReady(true)
+      return
+    }
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth > 10 && el.clientHeight > 10) {
+        setReady(true)
+        ro.disconnect()
+      }
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // WebGL2 backend: WebGPURenderer's depth buffer doesn't resize on CSS-only
+  // canvas resizes (three 0.185.1); TSL/NodeMaterial compiles identically.
   const gl = useMemo(
     () => async (props: unknown) => {
-      const renderer = new WebGPURenderer({ ...(props as object), antialias: true })
-      try {
-        await renderer.init()
-      } catch {
-        const fallback = new WebGPURenderer({ ...(props as object), antialias: true, forceWebGL: true })
-        await fallback.init()
-        renderer.dispose()
-        return fallback
-      }
+      const renderer = new WebGPURenderer({ ...(props as object), antialias: true, forceWebGL: true })
+      await renderer.init()
       return renderer
     },
     []
   )
   return (
-    <div style={{ width: size, height: size, flex: 'none', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-card)', overflow: 'hidden', background: '#131820' }}>
-      <Canvas dpr={[1, 2]} camera={{ position: [0, 0.6, 2.6], fov: 40 }} gl={gl}>
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[3, 4, 2]} intensity={2.2} />
-        <directionalLight position={[-3, 2, -2]} intensity={0.6} color="#8fb4ff" />
-        <PreviewSphere materialId={materialId} />
-      </Canvas>
+    <div
+      ref={containerRef}
+      style={{ width: size, height: size, flex: 'none', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-card)', overflow: 'hidden', background: '#131820' }}
+    >
+      {ready && (
+        <Canvas dpr={[1, 2]} camera={{ position: [0, 0.6, 2.6], fov: 40 }} gl={gl}>
+          <ambientLight intensity={1.2} />
+          <directionalLight position={[3, 4, 2]} intensity={2.2} />
+          <directionalLight position={[-3, 2, -2]} intensity={0.6} color="#8fb4ff" />
+          <PreviewSphere materialId={materialId} />
+        </Canvas>
+      )}
     </div>
   )
 }

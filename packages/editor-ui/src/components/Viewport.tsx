@@ -458,7 +458,9 @@ function EditorRig({
         const dTris = info.triangles - stats.lastTriangles
         const interval = stats.frames || 1
         viewportState.stats.calls = dCalls >= 0 ? Math.round(dCalls / interval) : info.calls
-        viewportState.stats.triangles = dTris >= 0 ? Math.round(dTris / interval) : info.triangles
+        // WebGPURenderer 0.185.1 leaves info.triangles at 0; report -1 ("n/a")
+        // so the HUD never implies a triangle-less scene that has draw calls.
+        viewportState.stats.triangles = dTris > 0 ? Math.round(dTris / interval) : info.triangles > 0 ? info.triangles : -1
         stats.lastCalls = info.calls
         stats.lastTriangles = info.triangles
       }
@@ -655,7 +657,7 @@ function DiagnosticsPanel() {
         if (ui.fps) ui.fps.textContent = String(viewportState.stats.fps)
         if (ui.frame) ui.frame.textContent = `${viewportState.stats.frameMs} ms`
         if (ui.calls) ui.calls.textContent = String(viewportState.stats.calls)
-        if (ui.tris) ui.tris.textContent = viewportState.stats.triangles.toLocaleString()
+        if (ui.tris) ui.tris.textContent = viewportState.stats.triangles < 0 ? 'n/a' : viewportState.stats.triangles.toLocaleString()
       }
       raf = requestAnimationFrame(tick)
     }
