@@ -1,0 +1,59 @@
+{
+  "name": "@ahengine/ecs-runtime",
+  "version": "0.1.0",
+  "description": "Runtime kernel for AHEngine scenes — Koota traits, component registry, scene loader, materials and an R3F render bridge (WebGPU-first).",
+  "type": "module",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react/index.ts"
+  },
+  "types": "./src/index.ts",
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./react": {
+        "types": "./dist/react.d.ts",
+        "import": "./dist/react.js"
+      }
+    },
+    "types": "./dist/index.d.ts",
+    "main": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.5.4"
+  },
+  "peerDependencies": {
+    "koota": ">=0.6",
+    "three": ">=0.180",
+    "react": "^19.0.0",
+    "@react-three/fiber": "^9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@react-three/fiber": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@ahengine/project-schema": "workspace:*",
+    "@types/react": "^19.2.0",
+    "@react-three/fiber": "^9.7.0",
+    "koota": "^0.6.6",
+    "react": "^19.2.8",
+    "three": "^0.185.1",
+    "tsup": "^8.5.0"
+  }
+}

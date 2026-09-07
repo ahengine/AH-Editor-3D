@@ -1,0 +1,27 @@
+{
+  "name": "my-product",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Example product proving `npm i @ahengine/editor` integration: product on :3000, editor on :5000, saves land in this repo.",
+  "scripts": {
+    "dev": "vite --port 3000",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@ahengine/ecs-runtime": "file:../../ahengine-ecs-runtime-0.1.0.tgz",
+    "@react-three/fiber": "^9.7.0",
+    "koota": "^0.6.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "three": "^0.185.1",
+    "@ahengine/project-schema": "file:../../ahengine-project-schema-0.1.0.tgz"
+  },
+  "devDependencies": {
+    "@ahengine/editor": "file:../../ahengine-editor-0.1.0.tgz",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.2.2"
+  }
+}

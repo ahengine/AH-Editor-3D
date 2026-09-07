@@ -1,0 +1,29 @@
+{
+  "name": "@ahengine/editor-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "types": "./src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ahengine/editor-core": "workspace:*",
+    "@ahengine/ecs-runtime": "workspace:*",
+    "@ahengine/project-schema": "workspace:*",
+    "koota": "^0.6.6",
+    "lucide-react": "^1.42.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-resizable-panels": "^4.12.4",
+    "three": "^0.185.1",
+    "zustand": "^5.0.15"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": "^9.0.0"
+  }
+}

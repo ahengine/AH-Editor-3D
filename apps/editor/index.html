@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AHEngine Editor</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; background: #14181f; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      window.__ahLog = []
+      window.addEventListener('error', function (e) {
+        window.__ahLog.push('ERROR: ' + e.message + ' @ ' + (e.filename || '') + ':' + e.lineno + ':' + e.colno)
+      })
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e.reason
+        window.__ahLog.push('REJECT: ' + (r && r.stack ? r.stack : String(r)))
+      })
+      ;['log', 'info', 'warn', 'error'].forEach(function (method) {
+        var original = console[method].bind(console)
+        console[method] = function () {
+          var text = Array.from(arguments).map(function (a) {
+            return a && a.stack ? a.stack : (typeof a === 'object' ? JSON.stringify(a).slice(0, 200) : String(a))
+          }).join(' | ')
+          window.__ahLog.push(method.toUpperCase() + ': ' + text.slice(0, 600))
+          original.apply(null, arguments)
+        }
+      })
+    </script>
+    <!-- Dev-only harness (?harness=1): keeps the app alive inside hidden/throttled
+         automation webviews where rAF + ResizeObserver never fire. -->
+    <script>
+      if (location.search.includes('harness=1')) {
+        window.__AH_HARNESS = true
+        try {
+          Object.defineProperty(Document.prototype, 'hidden', { configurable: true, get: function () { return false } })
+          Object.defineProperty(Document.prototype, 'visibilityState', { configurable: true, get: function () { return 'visible' } })
+        } catch (e) { /* ignore */ }
+        window.requestAnimationFrame = function (cb) { return setTimeout(function () { cb(performance.now()) }, 16) }
+        window.cancelAnimationFrame = function (id) { return clearTimeout(id) }
+        var NativeRO = window.ResizeObserver
+        window.ResizeObserver = function (callback) {
+          var ro = NativeRO ? new NativeRO(callback) : { observe: function () {}, unobserve: function () {}, disconnect: function () {} }
+          return {
+            observe: function (target) {
+              ro.observe(target)
+              setTimeout(function () {
+                var rect = target.getBoundingClientRect()
+                var size = [{ inlineSize: rect.width, blockSize: rect.height }]
+                callback(
+                  [{ target: target, contentRect: rect, borderBoxSize: size, contentBoxSize: size }],
+                  ro
+                )
+              }, 0)
+            },
+            unobserve: function (t) { ro.unobserve(t) },
+            disconnect: function () { ro.disconnect() },
+          }
+        }
+      }
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

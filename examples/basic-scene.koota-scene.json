@@ -1,0 +1,601 @@
+{
+  "format": "koota-3d-scene",
+  "schemaVersion": 1,
+  "id": "main",
+  "name": "Main Scene",
+  "settings": {
+    "background": "#dfe3ea",
+    "environmentAssetId": null,
+    "environmentIntensity": 1,
+    "fog": {
+      "enabled": true,
+      "type": "linear",
+      "color": "#dfe3ea",
+      "near": 22,
+      "far": 85,
+      "density": 0.02
+    },
+    "toneMapping": "aces",
+    "toneMappingExposure": 1,
+    "shadowEnabled": true,
+    "defaultCameraId": "seed-84623ccd-0"
+  },
+  "entities": [
+    {
+      "id": "seed-84623ccd-0",
+      "name": "Camera",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            7,
+            4.5,
+            9
+          ],
+          "rotation": [
+            -12,
+            38,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "render.camera": {
+          "fov": 55,
+          "near": 0.1,
+          "far": 300
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-1",
+      "name": "Sun",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            6,
+            9,
+            4
+          ],
+          "rotation": [
+            -35,
+            25,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "render.light": {
+          "type": "directional",
+          "color": "#fff1d6",
+          "intensity": 2.4,
+          "distance": 0,
+          "decay": 2,
+          "angle": 0.5236,
+          "penumbra": 0,
+          "castShadow": true,
+          "shadowBias": -0.0005,
+          "shadowMapSize": 1024
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-2",
+      "name": "Sky Fill",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "render.light": {
+          "type": "hemisphere",
+          "color": "#dfe8f2",
+          "intensity": 0.7,
+          "distance": 0,
+          "decay": 2,
+          "angle": 0.5236,
+          "penumbra": 0,
+          "castShadow": true,
+          "shadowBias": -0.0005,
+          "shadowMapSize": 1024
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-3",
+      "name": "Ground",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "render.mesh": {
+          "shape": "plane",
+          "size": 40,
+          "segments": 1
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-sand"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-4",
+      "name": "Water",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            -5,
+            0.02,
+            -4
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1.6,
+            1,
+            1.2
+          ]
+        },
+        "render.mesh": {
+          "shape": "plane",
+          "size": 10,
+          "segments": 1
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-water"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-5",
+      "name": "Tree",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            3.5,
+            0,
+            -2.5
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-6",
+      "name": "Trunk",
+      "enabled": true,
+      "parentId": "seed-84623ccd-5",
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            0.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.5,
+            1,
+            0.5
+          ]
+        },
+        "render.mesh": {
+          "shape": "cylinder",
+          "size": 1,
+          "segments": 8
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-trunk"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-7",
+      "name": "Leaves",
+      "enabled": true,
+      "parentId": "seed-84623ccd-5",
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            1.6,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1.6,
+            2.2,
+            1.6
+          ]
+        },
+        "render.mesh": {
+          "shape": "cone",
+          "size": 1,
+          "segments": 10
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-grass"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-8",
+      "name": "Tree",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            -2.2,
+            0,
+            2.8
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-9",
+      "name": "Trunk",
+      "enabled": true,
+      "parentId": "seed-84623ccd-8",
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            0.65,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.65,
+            1.3,
+            0.65
+          ]
+        },
+        "render.mesh": {
+          "shape": "cylinder",
+          "size": 1,
+          "segments": 8
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-trunk"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-a",
+      "name": "Leaves",
+      "enabled": true,
+      "parentId": "seed-84623ccd-8",
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            2.08,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            2.08,
+            2.8600000000000003,
+            2.08
+          ]
+        },
+        "render.mesh": {
+          "shape": "cone",
+          "size": 1,
+          "segments": 10
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-grass"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-b",
+      "name": "Tree",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            5.5,
+            0,
+            3.2
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-c",
+      "name": "Trunk",
+      "enabled": true,
+      "parentId": "seed-84623ccd-b",
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            0.4,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            0.4,
+            0.8,
+            0.4
+          ]
+        },
+        "render.mesh": {
+          "shape": "cylinder",
+          "size": 1,
+          "segments": 8
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-trunk"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-d",
+      "name": "Leaves",
+      "enabled": true,
+      "parentId": "seed-84623ccd-b",
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            1.2800000000000002,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1.2800000000000002,
+            1.7600000000000002,
+            1.2800000000000002
+          ]
+        },
+        "render.mesh": {
+          "shape": "cone",
+          "size": 1,
+          "segments": 10
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-grass"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-e",
+      "name": "Cube",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            0,
+            0.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "render.mesh": {
+          "shape": "box",
+          "size": 1,
+          "segments": 1
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-terracotta"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-84623ccd-f",
+      "name": "Sphere",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            2.2,
+            0.6,
+            1.6
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "render.mesh": {
+          "shape": "sphere",
+          "size": 1.2,
+          "segments": 24
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": "mat-gold"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "seed-animated-box",
+      "name": "Animated Box",
+      "enabled": true,
+      "parentId": null,
+      "components": {
+        "core.transform": {
+          "position": [
+            -3.5,
+            0,
+            1
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "render.model": {
+          "assetId": "asset-animated-box",
+          "visible": true,
+          "castShadow": true,
+          "receiveShadow": true
+        },
+        "render.material": {
+          "slots": [
+            {
+              "materialId": null
+            }
+          ]
+        },
+        "animation.animator": {
+          "controllerId": "anim-spin",
+          "playing": true,
+          "speed": 1,
+          "initialState": "state-spin"
+        }
+      }
+    }
+  ]
+}

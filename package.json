@@ -1,0 +1,33 @@
+{
+  "name": "ahengine",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @ahengine/editor-dev dev",
+    "dev:runtime": "pnpm --filter @ahengine/runtime-demo dev",
+    "build": "pnpm -r build",
+    "typecheck": "tsc -b tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate:example": "pnpm --filter @ahengine/editor generate:example",
+    "lint": "eslint .",
+    "build:packages": "pnpm --filter @ahengine/project-schema build && pnpm --filter @ahengine/ecs-runtime build && pnpm --filter @ahengine/editor build",
+    "pack:all": "pnpm --filter @ahengine/project-schema pack && pnpm --filter @ahengine/ecs-runtime pack && pnpm --filter @ahengine/editor pack"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/three": "0.185.1",
+    "koota": "^0.6.6",
+    "three": "^0.185.1",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.0"
+  },
+  "dependencies": {
+    "@ahengine/ecs-runtime": "workspace:*",
+    "@ahengine/editor-core": "workspace:*",
+    "@ahengine/project-schema": "workspace:*"
+  }
+}

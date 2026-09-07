@@ -1,0 +1,7 @@
+node_modules
+dist
+*.local
+.vite
+.DS_Store
+*.tsbuildinfo
+*.tgz

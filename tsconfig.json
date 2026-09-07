@@ -1,0 +1,26 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/project-schema"
+    },
+    {
+      "path": "packages/ecs-runtime"
+    },
+    {
+      "path": "packages/editor-core"
+    },
+    {
+      "path": "packages/editor-ui"
+    },
+    {
+      "path": "apps/editor"
+    },
+    {
+      "path": "apps/runtime-demo"
+    },
+    {
+      "path": "packages/editor"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Product</title>
+    <style>
+      html, body, #root { height: 100%; margin: 0; background: #10141a; color: #d6dae0; font-family: 'Segoe UI', system-ui, sans-serif; }
+      .badge {
+        position: fixed; top: 12px; left: 12px; z-index: 10;
+        background: #1a2028dd; border: 1px solid #3d4754; padding: 8px 14px;
+        border-radius: 8px; font-size: 12px; line-height: 1.7;
+      }
+      .badge b { color: #f3c940; }
+      .hint { position: fixed; bottom: 12px; left: 12px; z-index: 10; font-size: 11px; color: #8b94a0; background: #141a22cc; padding: 6px 10px; border-radius: 6px; }
+    </style>
+    <script>
+      // Dev-only automation harness (?harness=1) — see AHEngine docs.
+      if (location.search.includes('harness=1')) {
+        window.__AH_HARNESS = true
+        try {
+          Object.defineProperty(Document.prototype, 'hidden', { configurable: true, get: function () { return false } })
+          Object.defineProperty(Document.prototype, 'visibilityState', { configurable: true, get: function () { return 'visible' } })
+        } catch (e) { /* ignore */ }
+        window.requestAnimationFrame = function (cb) { return setTimeout(function () { cb(performance.now()) }, 16) }
+        window.cancelAnimationFrame = function (id) { return clearTimeout(id) }
+        var NativeRO = window.ResizeObserver
+        window.ResizeObserver = function (callback) {
+          var ro = NativeRO ? new NativeRO(callback) : { observe: function () {}, unobserve: function () {}, disconnect: function () {} }
+          return {
+            observe: function (target) {
+              ro.observe(target)
+              setTimeout(function () {
+                var rect = target.getBoundingClientRect()
+                var size = [{ inlineSize: rect.width, blockSize: rect.height }]
+                callback([{ target: target, contentRect: rect, borderBoxSize: size, contentBoxSize: size }], ro)
+              }, 0)
+            },
+            unobserve: function (t) { ro.unobserve(t) },
+            disconnect: function () { ro.disconnect() },
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

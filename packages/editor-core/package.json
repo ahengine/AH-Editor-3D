@@ -1,0 +1,21 @@
+{
+  "name": "@ahengine/editor-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "types": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ahengine/ecs-runtime": "workspace:*",
+    "@ahengine/project-schema": "workspace:*",
+    "koota": "^0.6.6",
+    "nanoid": "^5.1.5",
+    "three": "^0.185.1",
+    "zustand": "^5.0.15"
+  }
+}
