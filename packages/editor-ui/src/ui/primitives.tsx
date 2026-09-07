@@ -248,7 +248,11 @@ export function EditorSlider({
       style={{ ['--fill' as string]: `${fill}%` }}
       onPointerDown={(event) => {
         pointerLock.current = true
-        ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+        try {
+          ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+        } catch {
+          // No active pointer (synthetic events) — value tracking still works
+        }
         const next = valueAt(event.clientX, event.currentTarget as HTMLElement)
         setLocal(next)
         onLiveChange?.(next)
