@@ -443,6 +443,28 @@ function MaterialPreview({ graph }: { graph: MaterialGraph }) {
   const [shape, setShape] = useState<'sphere' | 'cube' | 'plane'>('sphere')
   const materialRef = useRef<MeshStandardNodeMaterial | null>(null)
   const [material, setMaterial] = useState<MeshStandardNodeMaterial | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(false)
+
+  // Wait for the container to have real dimensions before mounting the
+  // WebGPU Canvas — mounting at the default 300×150 then resizing causes a
+  // depth-stencil size mismatch in WebGPURenderer.
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    if (el.clientWidth > 10 && el.clientHeight > 10) {
+      setReady(true)
+      return
+    }
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth > 10 && el.clientHeight > 10) {
+        setReady(true)
+        ro.disconnect()
+      }
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -457,11 +479,12 @@ function MaterialPreview({ graph }: { graph: MaterialGraph }) {
   useEffect(() => { materialRef.current = material }, [material])
 
   const gl = useMemo(() => async (props: unknown) => {
-    const r = new WebGPURenderer({ ...(props as object), antialias: true })
-    try { await r.init() } catch {
-      const f = new WebGPURenderer({ ...(props as object), antialias: true, forceWebGL: true })
-      await f.init(); r.dispose(); return f
-    }
+    // Material preview uses the WebGL2 backend — WebGPURenderer's depth
+    // buffer doesn't resize on CSS-only canvas resizes (three 0.185.1 bug),
+    // which floods the console with GPUValidationErrors on this small panel.
+    // Materials compile identically on both backends (TSL/NodeMaterial).
+    const r = new WebGPURenderer({ ...(props as object), antialias: true, forceWebGL: true })
+    await r.init()
     return r
   }, [])
 
@@ -480,13 +503,19 @@ function MaterialPreview({ graph }: { graph: MaterialGraph }) {
           <button key={s} className={shape === s ? 'active' : ''} onClick={() => setShape(s)}>{s}</button>
         ))}
       </div>
-      <div className="ah-mat-preview-canvas">
-        <Canvas gl={gl} camera={{ position: [0, 0.6, 3], fov: 40 }}>
-          <ambientLight intensity={1.2} />
-          <directionalLight position={[3, 4, 2]} intensity={2.2} />
-          <directionalLight position={[-3, 2, -2]} intensity={0.6} color="#8fb4ff" />
-          {material && <mesh material={material}>{geometry}</mesh>}
-        </Canvas>
+      <div className="ah-mat-preview-canvas" ref={containerRef}>
+        {ready ? (
+          <Canvas gl={gl} camera={{ position: [0, 0.6, 3], fov: 40 }}>
+            <ambientLight intensity={1.2} />
+            <directionalLight position={[3, 4, 2]} intensity={2.2} />
+            <directionalLight position={[-3, 2, -2]} intensity={0.6} color="#8fb4ff" />
+            {material && <mesh material={material}>{geometry}</mesh>}
+          </Canvas>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-tertiary)', fontSize: 'var(--fs-meta)' }}>
+            Preview…
+          </div>
+        )}
       </div>
     </div>
   )
