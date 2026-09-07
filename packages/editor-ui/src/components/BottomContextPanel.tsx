@@ -4,6 +4,7 @@ import { HierarchyPanel } from './HierarchyPanel.js'
 import { TimelinePanel } from './TimelinePanel.js'
 import { AssetBrowser } from './AssetBrowser.js'
 import { PrefabListPanel, MaterialListPanel, ParticleListPanel, IncompletePanelShell } from './WorkspacePanels.js'
+import { MaterialGraphWorkspace } from './MaterialGraphEditor.js'
 
 /**
  * Workspace configuration — one row per authoring workspace.
@@ -71,12 +72,7 @@ export const workspaceConfigs: WorkspaceConfig[] = [
       {
         id: 'graph',
         label: 'Graph',
-        content: (
-          <IncompletePanelShell
-            domain="Material node graph"
-            hint="TSL node-graph authoring arrives in the Material phase. Property materials (Base Color / Metallic / Roughness / maps) are editable now in Inspector ▸ Library."
-          />
-        ),
+        content: <MaterialGraphWorkspace />,
       },
     ],
   },

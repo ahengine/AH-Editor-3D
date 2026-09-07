@@ -1098,3 +1098,160 @@
   padding: 1px 6px;
   white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------- */
+/* Material Graph Editor                                             */
+/* ---------------------------------------------------------------- */
+
+.ah-mat-graph-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  min-width: 0;
+}
+.ah-mat-graph-center {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ah-graph-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ah-graph-edges path {
+  pointer-events: stroke;
+}
+.ah-graph-node {
+  position: absolute;
+  width: 180px;
+  background: var(--panel-bg-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+  user-select: none;
+}
+.ah-graph-node.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.ah-graph-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+.ah-graph-node-body {
+  padding: var(--sp-2) var(--sp-3);
+  min-height: 20px;
+  position: relative;
+}
+.ah-graph-socket {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  position: relative;
+}
+.ah-graph-socket.in { justify-content: flex-start; }
+.ah-graph-socket.out { justify-content: flex-end; }
+.ah-port {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border-visible);
+  background: var(--panel-bg);
+  cursor: crosshair;
+  flex: none;
+  transition: border-color var(--motion-hover);
+}
+.ah-port:hover { border-color: var(--accent); }
+.ah-port[data-type='float'] { border-radius: 50%; }
+.ah-port[data-type='color'] { border-color: #e2a44c; }
+.ah-port[data-type='texture'] { border-radius: 2px; }
+.ah-port[data-type='normal'] { border-color: #6ba8ff; }
+.ah-socket-label {
+  font-size: var(--fs-tiny);
+  color: var(--text-tertiary);
+}
+.ah-add-node-menu {
+  position: absolute;
+  top: 40px;
+  left: 50px;
+  width: 200px;
+  background: rgba(26, 33, 42, 0.98);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+  padding: var(--sp-1);
+  z-index: 100;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.ah-graph-errors {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(122, 46, 42, 0.92);
+  border: 1px solid rgba(168, 70, 61, 0.9);
+  color: #ffd9d5;
+  border-radius: var(--radius-small);
+  padding: 6px 10px;
+  font-size: var(--fs-meta);
+  z-index: 50;
+}
+.ah-mat-preview-bar {
+  flex: none;
+  height: 160px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+}
+.ah-mat-preview {
+  flex: 1;
+  display: flex;
+}
+.ah-mat-preview-canvas {
+  flex: 1;
+  min-width: 0;
+}
+.ah-mat-preview-shape-bar {
+  width: 70px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2);
+  border-right: 1px solid var(--border-subtle);
+  background: var(--panel-bg);
+}
+.ah-mat-preview-shape-bar button {
+  height: 24px;
+  border-radius: var(--radius-small);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--fs-tiny);
+  cursor: pointer;
+  text-transform: capitalize;
+}
+.ah-mat-preview-shape-bar button.active {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+.ah-mat-graph-inspector {
+  width: 200px;
+  flex: none;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--panel-bg);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}

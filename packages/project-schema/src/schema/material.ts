@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { hexColor } from './common.js'
+import { MaterialGraphSchema } from './material-graph.js'
 
 /** Material domain — data-only material definitions (Node Materials are runtime). */
 
@@ -30,6 +31,8 @@ export interface MaterialDefinition {
   name: string
   type: MaterialType
   properties: MaterialProperties
+  /** Optional node graph — when present, the graph compiler is authoritative. */
+  graph?: import('./material-graph.js').MaterialGraph
 }
 
 export const MaterialPropertiesSchema = z.object({
@@ -55,6 +58,7 @@ export const MaterialDefinitionSchema = z.object({
   name: z.string(),
   type: z.enum(['standard', 'physical', 'unlit']),
   properties: MaterialPropertiesSchema,
+  graph: MaterialGraphSchema.optional(),
 })
 
 /** Standalone exportable material file. */
