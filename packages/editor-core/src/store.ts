@@ -14,7 +14,6 @@ export type TransformSpace = 'local' | 'world'
 export type PlayMode = 'edit' | 'play' | 'paused'
 export type SidebarTab = 'scene' | 'assets'
 export type InspectorTab = 'inspector' | 'library'
-export type TimelineTab = 'timeline' | 'controller'
 /** Authoring workspaces (product navigation). Lighting lives in Scene; Animator lives in Animation. */
 export type WorkspaceId = 'scene' | 'prefab' | 'material' | 'animation' | 'particle'
 
@@ -127,7 +126,6 @@ export interface EditorStore {
 
   sidebarTab: SidebarTab
   inspectorTab: InspectorTab
-  timelineTab: TimelineTab
   workspace: WorkspaceId
   /** Active bottom context-panel tab per workspace (editor-only). */
   bottomTab: Record<WorkspaceId, string>
@@ -179,7 +177,6 @@ export interface EditorStore {
   setPaletteOpen(open: boolean): void
   setSidebarTab(tab: SidebarTab): void
   setInspectorTab(tab: InspectorTab): void
-  setTimelineTab(tab: TimelineTab): void
   setWorkspace(workspace: WorkspaceId): void
   setBottomTab(workspace: WorkspaceId, tab: string): void
   setGridVisible(visible: boolean): void
@@ -282,7 +279,6 @@ export const useEditorStore = create<EditorStore>((set) => ({
 
   sidebarTab: 'scene',
   inspectorTab: 'inspector',
-  timelineTab: 'timeline',
   workspace: 'scene',
   bottomTab: { scene: 'assets', prefab: 'structure', material: 'graph', animation: 'timeline', particle: 'curves' },
 
@@ -338,7 +334,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setEditingMaterial: (editingMaterialId) =>
     set({ editingMaterialId, inspectorTab: 'library' }),
   setEditingController: (editingControllerId) =>
-    set({ editingControllerId, workspace: 'animation', timelineTab: 'controller' }),
+    set({ editingControllerId, workspace: 'animation' }),
   setDiagnosticsOpen: (diagnosticsOpen) => set({ diagnosticsOpen }),
   setAnimatorPreview: (animatorPreviewUuid) => set({ animatorPreviewUuid }),
   setActivePrefabId: (activePrefabId) => set({ activePrefabId }),
@@ -350,7 +346,6 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   setInspectorTab: (inspectorTab) => set({ inspectorTab }),
-  setTimelineTab: (timelineTab) => set({ timelineTab }),
   setWorkspace: (workspace) => set({ workspace }),
   setBottomTab: (workspace, tab) => set((state) => ({ bottomTab: { ...state.bottomTab, [workspace]: tab } })),
   setGridVisible: (gridVisible) => {

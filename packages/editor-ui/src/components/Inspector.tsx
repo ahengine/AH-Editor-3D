@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Entity } from 'koota'
-import { ChevronDown, ChevronRight, ClipboardPaste, Copy, Eye, EyeOff, Lightbulb, Package, PenLine, Play, Plus, RotateCcw, Settings2, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, ClipboardPaste, Copy, Eye, EyeOff, Lightbulb, Package, PenLine, Plus, RotateCcw, Settings2, Trash2 } from 'lucide-react'
 import {
   EntityMeta,
   Light as LightTrait,

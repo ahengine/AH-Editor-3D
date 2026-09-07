@@ -468,6 +468,9 @@ function MaterialPreview({ graph }: { graph: MaterialGraph }) {
 
   useEffect(() => {
     let cancelled = false
+    // Empty/transient graphs (nodes not initialized yet) have nothing to
+    // compile — keep the last good material instead of warning.
+    if (!graph.nodes.some((n) => n.id === graph.outputNodeId)) return
     void compileMaterialGraphAsync(graph).then(result => {
       if (cancelled) return
       if (result.material) setMaterial(result.material)

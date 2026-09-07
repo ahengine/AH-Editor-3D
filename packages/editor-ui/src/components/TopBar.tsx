@@ -55,8 +55,6 @@ export function TopBar() {
   const saveState = useEditorStore((s) => s.saveState)
   const viewportScale = useEditorStore((s) => s.viewportScale)
   const returnWorkspace = useEditorStore((s) => s.returnWorkspace)
-  const editingMaterialId = useEditorStore((s) => s.editingMaterialId)
-  const editingControllerId = useEditorStore((s) => s.editingControllerId)
   const [menuOpen, setMenuOpen] = useState(false)
   const store = useEditorStore.getState
 
@@ -161,12 +159,7 @@ export function TopBar() {
           }}
           options={workspaceConfigs.map((config) => ({ value: config.id, label: config.label }))}
         />
-        {workspace === 'material' && editingMaterialId && (
-          <DocumentCrumb doc="Material" id={editingMaterialId} />
-        )}
-        {workspace === 'animation' && editingControllerId && (
-          <DocumentCrumb doc="Controller" id={editingControllerId} />
-        )}
+        <SelectionCrumb />
       </div>
 
       <div className="ah-topbar-right">
@@ -220,18 +213,63 @@ export function TopBar() {
   )
 }
 
-/** Small breadcrumb naming the open document inside the current workspace. */
-function DocumentCrumb({ doc, id }: { doc: string; id: string }) {
-  const name =
-    useEditorStore((s) =>
-      doc === 'Material' ? s.materials.find((m) => m.id === id)?.name : s.controllers.find((c) => c.id === id)?.name
-    ) ?? id
+/**
+ * The typed global selection, surfaced: names the open document object in
+ * the workspace that owns it. Reads selectionFocus (set by openAsset and
+ * single-entity selection), so every navigation surface stays in sync.
+ */
+function SelectionCrumb() {
+  const focus = useEditorStore((s) => s.selectionFocus)
+  const doc = focus ? docLabelFor(focus.kind) : null
+  const name = useEditorStore((s) => (focus ? nameForSelection(s, focus) : null))
+  if (!focus || !doc || focus.kind === 'entity') return null
   return (
-    <span className="ah-doc-crumb" title={`${doc}: ${name}`}>
+    <span className="ah-doc-crumb" title={`${doc}: ${name ?? focus.id}`}>
       <span className="ah-doc-crumb-kind">{doc}</span>
-      {name}
+      {name ?? focus.id}
     </span>
   )
+}
+
+function docLabelFor(kind: 'entity' | 'asset' | 'material' | 'prefab' | 'clip' | 'controller' | 'particleEffect'): string {
+  switch (kind) {
+    case 'material':
+      return 'Material'
+    case 'prefab':
+      return 'Prefab'
+    case 'clip':
+      return 'Clip'
+    case 'controller':
+      return 'Controller'
+    case 'particleEffect':
+      return 'Effect'
+    case 'asset':
+      return 'Asset'
+    default:
+      return kind
+  }
+}
+
+function nameForSelection(
+  s: ReturnType<typeof useEditorStore.getState>,
+  focus: { kind: 'entity' | 'asset' | 'material' | 'prefab' | 'clip' | 'controller' | 'particleEffect'; id: string }
+): string | null {
+  switch (focus.kind) {
+    case 'material':
+      return s.materials.find((m) => m.id === focus.id)?.name ?? null
+    case 'prefab':
+      return s.prefabs.find((p) => p.id === focus.id)?.name ?? null
+    case 'clip':
+      return s.animations.find((c) => c.id === focus.id)?.name ?? null
+    case 'controller':
+      return s.controllers.find((c) => c.id === focus.id)?.name ?? null
+    case 'particleEffect':
+      return s.particleEffects.find((e) => e.id === focus.id)?.name ?? null
+    case 'asset':
+      return s.assets.find((a) => a.id === focus.id)?.name ?? null
+    default:
+      return null
+  }
 }
 
 function importJsonFile(): void {
