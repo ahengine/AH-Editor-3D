@@ -4,8 +4,8 @@
   "project": {
     "id": "project-product",
     "name": "Product Scene",
-    "createdAt": "2026-09-07T15:29:30.141Z",
-    "updatedAt": "2026-09-07T15:42:04.493Z"
+    "createdAt": "2026-09-07T17:11:25.992Z",
+    "updatedAt": "2026-09-07T17:11:25.993Z"
   },
   "scene": {
     "format": "koota-3d-scene",
@@ -27,11 +27,11 @@
       "toneMapping": "aces",
       "toneMappingExposure": 1,
       "shadowEnabled": true,
-      "defaultCameraId": "product-camera"
+      "defaultCameraId": "fa092337-410e-4890-8735-4fb139c6fe24"
     },
     "entities": [
       {
-        "id": "product-camera",
+        "id": "fa092337-410e-4890-8735-4fb139c6fe24",
         "name": "Camera",
         "enabled": true,
         "parentId": null,
@@ -61,7 +61,7 @@
         }
       },
       {
-        "id": "product-sun",
+        "id": "4d7a1e25-ab96-4d38-88fc-6ee003173764",
         "name": "Sun",
         "enabled": true,
         "parentId": null,
@@ -86,19 +86,12 @@
           "render.light": {
             "type": "directional",
             "color": "#fff1d6",
-            "intensity": 2.4,
-            "distance": 0,
-            "decay": 2,
-            "angle": 0.5236,
-            "penumbra": 0,
-            "castShadow": true,
-            "shadowBias": -0.0005,
-            "shadowMapSize": 1024
+            "intensity": 2.4
           }
         }
       },
       {
-        "id": "product-ground",
+        "id": "e8dbc08b-4f1b-40f1-9907-61dd39085179",
         "name": "Ground",
         "enabled": true,
         "parentId": null,
@@ -128,7 +121,7 @@
         }
       },
       {
-        "id": "product-cube",
+        "id": "19d228cc-7287-4461-bb15-2712a1f5440b",
         "name": "Cube",
         "enabled": true,
         "parentId": null,
@@ -156,170 +149,11 @@
             "segments": 1
           }
         }
-      },
-      {
-        "id": "eb41d9a3-0544-4c00-b367-ea2b39679800",
-        "name": "Sphere",
-        "enabled": true,
-        "parentId": null,
-        "components": {
-          "core.transform": {
-            "position": [
-              0,
-              0,
-              0
-            ],
-            "rotation": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0,
-              0,
-              0
-            ]
-          },
-          "render.mesh": {
-            "shape": "sphere",
-            "size": 1,
-            "segments": 16
-          },
-          "render.material": {
-            "slots": [
-              {
-                "materialId": null
-              }
-            ]
-          }
-        }
-      },
-      {
-        "id": "492c5704-86da-4e94-b38f-aeec519af8fd",
-        "name": "Cone",
-        "enabled": true,
-        "parentId": null,
-        "components": {
-          "core.transform": {
-            "position": [
-              0,
-              0,
-              0
-            ],
-            "rotation": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0,
-              0,
-              0
-            ]
-          },
-          "render.mesh": {
-            "shape": "cone",
-            "size": 1,
-            "segments": 16
-          },
-          "render.material": {
-            "slots": [
-              {
-                "materialId": null
-              }
-            ]
-          }
-        }
-      },
-      {
-        "id": "c6cf617c-e5bf-4a94-99cb-c8be2985ec8c",
-        "name": "Cylinder",
-        "enabled": true,
-        "parentId": null,
-        "components": {
-          "core.transform": {
-            "position": [
-              0,
-              0,
-              0
-            ],
-            "rotation": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0,
-              0,
-              0
-            ]
-          },
-          "render.mesh": {
-            "shape": "cylinder",
-            "size": 1,
-            "segments": 16
-          },
-          "render.material": {
-            "slots": [
-              {
-                "materialId": null
-              }
-            ]
-          }
-        }
-      },
-      {
-        "id": "5ddb8210-16af-4b8b-9794-3744d4bb344b",
-        "name": "Plane",
-        "enabled": true,
-        "parentId": null,
-        "components": {
-          "core.transform": {
-            "position": [
-              3.2678854133696547,
-              0,
-              -4.9093514674265855
-            ],
-            "rotation": [
-              0,
-              0,
-              0
-            ],
-            "scale": [
-              0,
-              0,
-              0
-            ]
-          },
-          "render.mesh": {
-            "shape": "plane",
-            "size": 6,
-            "segments": 16
-          },
-          "render.material": {
-            "slots": [
-              {
-                "materialId": null
-              }
-            ]
-          }
-        }
       }
     ]
   },
   "assets": [],
-  "materials": [
-    {
-      "id": "mat-f1d47e07",
-      "name": "Material 1",
-      "type": "standard",
-      "properties": {
-        "baseColor": "#b8bec7",
-        "metalness": 0,
-        "roughness": 0.8
-      }
-    }
-  ],
+  "materials": [],
   "prefabs": [],
   "animatorControllers": []
 }

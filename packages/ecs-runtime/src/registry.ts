@@ -7,10 +7,12 @@ import {
   Light,
   MaterialReference,
   ModelRenderer,
+  ParticleEmitter,
   PrimitiveMesh,
   Transform,
 } from './traits.js'
 import { ChildOf, getParent } from './relations.js'
+import { ThreeObject } from './traits.js'
 import type { PrimitiveShape, LightType } from './traits.js'
 
 /**
@@ -43,32 +45,65 @@ export interface FieldDef {
   /** enum options */
   options?: { value: string; label: string }[]
   /** asset field: which asset types are assignable */
-  assetType?: 'model' | 'texture' | 'material' | 'animation-controller' | 'environment'
+  assetType?: 'model' | 'texture' | 'material' | 'animation-controller' | 'environment' | 'animation-clip' | 'particle-effect'
   /** asset field: allows clearing (nullable references) */
   nullable?: boolean
   /** hide from inspector (still serialized) */
   hidden?: boolean
 }
 
+/**
+ * Trait classification — the three-layer contract in one field:
+ *  - 'authored': serializable authored data
+ *  - 'runtime':  runtime-only references (THREE/GPU) — never serialized
+ *  - 'editor':   editor-only state — never serialized, never exported
+ */
+export type TraitKind = 'authored' | 'runtime' | 'editor'
+
 export interface ComponentDefinition<T = unknown> {
   /** Stable serialized id, e.g. `core.transform` */
   id: string
   name: string
+  /** Spec-facing alias of `name`. */
+  displayName: string
   category: string
   trait: Trait
+  kind: TraitKind
   /** Participates in runtime loading. */
   runtime: boolean
   /** Included in exported JSON. Runtime-only traits set this to false. */
   serializable: boolean
   /** Shown in the Add Component dialog. */
   addable: boolean
+  /** Shown in the inspector when present on an entity. */
+  editorVisible: boolean
   fields: FieldDef[]
+  /** Spec-facing alias of `fields`. */
+  inspectorMetadata: FieldDef[]
   schema: z.ZodTypeAny
   defaults: () => T
+  /** Spec-facing alias of `defaults`. */
+  defaultValue: () => T
   /** trait record → plain JSON data */
   serialize: (record: Record<string, unknown>) => Record<string, unknown>
   /** plain JSON data → full trait value (defaults merged) */
   deserialize: (data: unknown) => T
+}
+
+/** Helper applying the spec-facing aliases without repeating them per definition. */
+function define<T>(def: Omit<ComponentDefinition<T>, 'displayName' | 'kind' | 'editorVisible' | 'inspectorMetadata' | 'defaultValue'> & Partial<Pick<ComponentDefinition<T>, 'kind' | 'editorVisible'>>): ComponentDefinition<T> {
+  return {
+    ...def,
+    displayName: def.name,
+    kind: def.kind ?? 'authored',
+    editorVisible: def.editorVisible ?? true,
+    get inspectorMetadata() {
+      return def.fields
+    },
+    get defaultValue() {
+      return def.defaults
+    },
+  } as ComponentDefinition<T>
 }
 
 /* ------------------------------------------------------------------ */
@@ -97,7 +132,7 @@ function pick(record: Record<string, unknown>, keys: string[]) {
 /* Definitions                                                         */
 /* ------------------------------------------------------------------ */
 
-const transform: ComponentDefinition = {
+const transform = define({
   id: 'core.transform',
   name: 'Transform',
   category: 'Core',
@@ -142,9 +177,9 @@ const transform: ComponentDefinition = {
       scale: fromVec3Array(toVec3Array(d.scale)),
     }
   },
-}
+})
 
-const modelRenderer: ComponentDefinition = {
+const modelRenderer = define({
   id: 'render.model',
   name: 'Model Renderer',
   category: 'Rendering',
@@ -172,9 +207,9 @@ const modelRenderer: ComponentDefinition = {
     castShadow: (data as Record<string, unknown>)?.castShadow !== false,
     receiveShadow: (data as Record<string, unknown>)?.receiveShadow !== false,
   }),
-}
+})
 
-const primitiveMesh: ComponentDefinition = {
+const primitiveMesh = define({
   id: 'render.mesh',
   name: 'Primitive Mesh',
   category: 'Rendering',
@@ -214,9 +249,9 @@ const primitiveMesh: ComponentDefinition = {
       segments: Math.round(Number(d.segments ?? 16)) || 16,
     }
   },
-}
+})
 
-const materialReference: ComponentDefinition = {
+const materialReference = define({
   id: 'render.material',
   name: 'Material Reference',
   category: 'Rendering',
@@ -240,9 +275,9 @@ const materialReference: ComponentDefinition = {
     const slots = d?.slots && d.slots.length > 0 ? d.slots : [{ materialId: null as string | null }]
     return { slots: slots.map((s) => ({ materialId: s.materialId ?? null })) }
   },
-}
+})
 
-const light: ComponentDefinition = {
+const light: ComponentDefinition = define({
   id: 'render.light',
   name: 'Light',
   category: 'Lighting',
@@ -314,9 +349,9 @@ const light: ComponentDefinition = {
     const base = light.defaults() as Record<string, unknown>
     return { ...base, ...((data ?? {}) as Record<string, unknown>) } as ReturnType<typeof light.defaults>
   },
-}
+})
 
-const camera: ComponentDefinition = {
+const camera = define({
   id: 'render.camera',
   name: 'Camera',
   category: 'Camera',
@@ -340,9 +375,9 @@ const camera: ComponentDefinition = {
       far: Number(d.far ?? 500) || 500,
     }
   },
-}
+})
 
-const animator: ComponentDefinition = {
+const animator = define({
   id: 'animation.animator',
   name: 'Animator',
   category: 'Animation',
@@ -373,10 +408,10 @@ const animator: ComponentDefinition = {
       initialState: String(d.initialState ?? ''),
     }
   },
-}
+})
 
 /** Not registered as an addable component — hierarchy is edited through the tree. */
-export const hierarchyMarker: ComponentDefinition = {
+export const hierarchyMarker = define({
   id: 'core.hierarchy',
   name: 'Hierarchy',
   category: 'Core',
@@ -389,11 +424,16 @@ export const hierarchyMarker: ComponentDefinition = {
   defaults: () => ({}),
   serialize: () => ({}),
   deserialize: () => ({}),
-}
+})
 
-/** Non-serializable bookkeeping components. */
+/* Non-serializable bookkeeping components.
+ *
+ * - core.meta: authored identity, serialized at the ENTITY level (id/name/
+ *   enabled), never as a component entry.
+ * - runtime.threeObject: runtime-only THREE.Object3D reference (kind=runtime).
+ */
 export const registryHidden: ComponentDefinition[] = [
-  {
+  define({
     id: 'core.meta',
     name: 'Entity Meta',
     category: 'Core',
@@ -401,13 +441,64 @@ export const registryHidden: ComponentDefinition[] = [
     runtime: true,
     serializable: false,
     addable: false,
+    editorVisible: false,
     fields: [],
     schema: z.never(),
     defaults: () => ({ uuid: '', name: 'Entity', enabled: true }),
     serialize: () => ({}),
     deserialize: () => ({ uuid: '', name: 'Entity', enabled: true }),
-  },
+  }),
+  define({
+    id: 'runtime.threeObject',
+    name: 'Three Object Ref',
+    category: 'Runtime',
+    trait: ThreeObject,
+    kind: 'runtime' as const,
+    runtime: true,
+    serializable: false,
+    addable: false,
+    editorVisible: false,
+    fields: [],
+    schema: z.never(),
+    defaults: () => ({ object: null }),
+    serialize: () => ({}),
+    deserialize: () => ({ object: null }),
+  }),
 ]
+
+const particleEmitter = define({
+  id: 'particle.emitter',
+  name: 'Particle Emitter',
+  category: 'Particles',
+  trait: ParticleEmitter,
+  kind: 'authored' as const,
+  runtime: true,
+  serializable: true,
+  addable: true,
+  fields: [
+    { key: 'effectId', label: 'Effect', type: 'asset', assetType: 'particle-effect', nullable: true },
+    { key: 'playing', label: 'Playing', type: 'boolean' },
+    { key: 'rate', label: 'Rate Override', type: 'number', min: 0 },
+    { key: 'seed', label: 'Seed', type: 'integer', min: 0 },
+  ],
+  schema: z.object({
+    effectId: z.string().optional(),
+    playing: z.boolean().optional(),
+    rate: z.number().min(0).optional(),
+    seed: z.number().int().min(0).optional(),
+  }),
+  defaults: () => ({ effectId: '', playing: true, rate: 0, seed: 0 }),
+  serialize: (record) => pick(record, ['effectId', 'playing', 'rate', 'seed']),
+  deserialize: (data) => {
+    const d = (data ?? {}) as Record<string, unknown>
+    return {
+      effectId: String(d.effectId ?? ''),
+      playing: d.playing !== false,
+      rate: Number(d.rate ?? 0) || 0,
+      seed: Math.round(Number(d.seed ?? 0)) || 0,
+    }
+  },
+})
 
 export const componentRegistry: readonly ComponentDefinition[] = [
   transform,
@@ -417,6 +508,7 @@ export const componentRegistry: readonly ComponentDefinition[] = [
   light,
   camera,
   animator,
+  particleEmitter,
 ]
 
 const byId = new Map<string, ComponentDefinition>()
@@ -483,6 +575,28 @@ export function findEntityByUuid(world: World, uuid: string): Entity | undefined
     if (entity.get(EntityMeta)?.uuid === uuid) return entity
   }
   return undefined
+}
+
+/**
+ * Per-component validator matching @ahengine/project-schema's
+ * ComponentValidator contract (engine-free integrity checking).
+ */
+export function validateComponentEntry(
+  componentId: string,
+  data: unknown,
+  path: string
+): { path: string; message: string }[] {
+  const def = getComponentDef(componentId)
+  if (!def) {
+    return [{ path, message: `Unknown component id "${componentId}"` }]
+  }
+  if (!def.serializable) return []
+  const result = def.schema.safeParse(data)
+  if (result.success) return []
+  return result.error.issues.slice(0, 3).map((issue) => ({
+    path: `${path}${issue.path.length ? `.${issue.path.map(String).join('.')}` : ''}`,
+    message: issue.message,
+  }))
 }
 
 /**

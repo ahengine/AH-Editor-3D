@@ -4,9 +4,11 @@ import {
   CURRENT_SCHEMA_VERSION,
   PROJECT_FORMAT,
   SCENE_FORMAT,
+  assertProjectIntegrity,
   parseProject,
   validateSceneIntegrity,
 } from '@ahengine/project-schema'
+import { validateComponentEntry } from '@ahengine/ecs-runtime'
 import { EntityMeta, deserializeScene, serializeSceneEntities } from '@ahengine/ecs-runtime'
 import { useEditorStore, bindWorldReactivity } from './store.js'
 import { captureAllInstanceOverrides } from './prefab-ops.js'
@@ -48,6 +50,8 @@ export function loadProject(project: ProjectData): void {
     materials: project.materials ?? [],
     prefabs: project.prefabs ?? [],
     controllers: project.animatorControllers ?? [],
+    animations: project.animations ?? [],
+    particleEffects: project.particleEffects ?? [],
     selection: [],
     dirty: false,
   })
@@ -79,7 +83,9 @@ export function buildProjectData(): ProjectData {
     assets: store.assets,
     materials: store.materials,
     prefabs: store.prefabs,
+    animations: store.animations,
     animatorControllers: store.controllers,
+    particleEffects: store.particleEffects,
   }
 }
 /** Export a standalone scene file. */
@@ -125,7 +131,8 @@ export async function openSavedProject(): Promise<boolean> {
   if (!saved) return false
   try {
     const project = parseProject(saved)
-    validateSceneIntegrity(project.scene)
+    validateSceneIntegrity(project.scene, { validateComponentData: validateComponentEntry })
+    assertProjectIntegrity(project, { validateComponentData: validateComponentEntry })
     loadProject(project)
     return true
   } catch (error) {
@@ -138,7 +145,8 @@ export async function openSavedProject(): Promise<boolean> {
 export function importProjectJson(json: unknown): void {
   try {
     const project = parseProject(json)
-    validateSceneIntegrity(project.scene)
+    validateSceneIntegrity(project.scene, { validateComponentData: validateComponentEntry })
+    assertProjectIntegrity(project, { validateComponentData: validateComponentEntry })
     loadProject(project)
     useEditorStore.getState().notify('success', `Project "${project.project.name}" imported`)
   } catch (error) {
@@ -216,11 +224,8 @@ export function createDefaultProject(): ProjectData {
     rotation: rotation ?? [0, 0, 0],
     scale: scale ?? [1, 1, 1],
   })
-  const uuid = (() => {
-    let counter = 0
-    const prefix = crypto.randomUUID().slice(0, 8)
-    return () => `seed-${prefix}-${(counter++).toString(36)}`
-  })()
+  // Persistent contract: authored entities get real UUIDs (integrity-validated).
+  const uuid = () => crypto.randomUUID()
   const cameraId = uuid()
   const tree = (x: number, z: number, s: number): SerializedEntity[] => {
     const root = uuid()
@@ -359,6 +364,8 @@ export function createDefaultProject(): ProjectData {
     assets: [],
     materials,
     prefabs: [],
+    animations: [],
     animatorControllers: [],
+    particleEffects: [],
   }
 }

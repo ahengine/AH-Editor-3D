@@ -28,7 +28,7 @@ if (existsSync(glbPath)) {
   const modelAssetId = 'asset-animated-box'
   const controllerId = 'anim-spin'
   const stateId = 'state-spin'
-  const animatedEntityId = 'seed-animated-box'
+  const animatedEntityId = crypto.randomUUID()
   const withAnimation: ProjectData = {
     ...project,
     assets: [

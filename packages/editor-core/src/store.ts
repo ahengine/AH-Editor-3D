@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import { createWorld, type World } from 'koota'
 import type {
+  AnimationClipAsset,
   AnimatorController,
   AssetRecord,
   MaterialDefinition,
+  ParticleEffectAsset,
   PrefabDefinition,
   SceneSettings,
 } from '@ahengine/project-schema'
@@ -44,6 +46,8 @@ export interface EditorStore {
   materials: MaterialDefinition[]
   prefabs: PrefabDefinition[]
   controllers: AnimatorController[]
+  animations: AnimationClipAsset[]
+  particleEffects: ParticleEffectAsset[]
 
   selection: string[]
   hovered: string | null
@@ -87,6 +91,8 @@ export interface EditorStore {
   setMaterials(materials: MaterialDefinition[]): void
   setPrefabs(prefabs: PrefabDefinition[]): void
   setControllers(controllers: AnimatorController[]): void
+  setAnimations(animations: AnimationClipAsset[]): void
+  setParticleEffects(effects: ParticleEffectAsset[]): void
   setDirty(dirty: boolean): void
   select(uuids: string[]): void
   setHovered(uuid: string | null): void
@@ -132,6 +138,8 @@ export const useEditorStore = create<EditorStore>((set) => ({
   materials: [],
   prefabs: [],
   controllers: [],
+  animations: [],
+  particleEffects: [],
 
   selection: [],
   hovered: null,
@@ -172,6 +180,8 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setMaterials: (materials) => set({ materials, dirty: true }),
   setPrefabs: (prefabs) => set({ prefabs, dirty: true }),
   setControllers: (controllers) => set({ controllers, dirty: true }),
+  setAnimations: (animations) => set({ animations, dirty: true }),
+  setParticleEffects: (particleEffects) => set({ particleEffects, dirty: true }),
   setDirty: (dirty) => set({ dirty }),
   select: (selection) => set({ selection }),
   setHovered: (hovered) => set({ hovered }),

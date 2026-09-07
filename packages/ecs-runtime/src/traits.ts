@@ -84,6 +84,18 @@ export const Animator = trait({
   initialState: '',
 })
 
+/**
+ * Particle emitter — authored reference to a ParticleEffectAsset plus
+ * per-instance emission overrides. V1 stores data only; runtime simulation
+ * is a later phase.
+ */
+export const ParticleEmitter = trait({
+  effectId: '',
+  playing: true,
+  rate: 0, // 0 = use the effect's emissionRate
+  seed: 0,
+})
+
 export const PrefabInstance = trait((): {
   prefabId: string
   instanceId: string

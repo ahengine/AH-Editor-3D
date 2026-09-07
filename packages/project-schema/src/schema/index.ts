@@ -1,0 +1,9 @@
+/** Domain module barrel — dependency order: common → domains → project. */
+export * from './common.js'
+export * from './scene.js'
+export * from './material.js'
+export * from './prefab.js'
+export * from './animation.js'
+export * from './animator.js'
+export * from './particle.js'
+export * from './project.js'

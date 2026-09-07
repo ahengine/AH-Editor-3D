@@ -119,10 +119,22 @@ export function deserializeEntity(world: World, data: SerializedEntity): Entity 
   const entity = world.spawn(
     [EntityMeta, { uuid, name: data.name ?? 'Entity', enabled: data.enabled !== false }]
   )
+  const unknown: string[] = []
   for (const [componentId, value] of Object.entries(data.components ?? {})) {
     const def = getComponentDef(componentId)
-    if (!def || !def.serializable) continue
+    if (!def) {
+      unknown.push(componentId)
+      continue
+    }
+    if (!def.serializable) continue
     entity.add([def.trait, def.deserialize(value) as never])
+  }
+  if (unknown.length > 0) {
+    entity.destroy()
+    throw new Error(
+      `Unknown component${unknown.length > 1 ? 's' : ''} on entity "${data.name}": ${unknown.join(', ')}` +
+        ' (registry ids are stable — data authored by a newer editor cannot load here)'
+    )
   }
   return entity
 }

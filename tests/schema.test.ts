@@ -5,7 +5,8 @@ import {
   parseScene,
   validateSceneIntegrity,
   ValidationError,
-  migrate,
+  migrateProject,
+  migrateScene,
   UnsupportedSchemaVersionError,
 } from '@ahengine/project-schema'
 import { createDefaultProject, buildProjectData, loadProject } from '@ahengine/editor-core'
@@ -59,19 +60,28 @@ describe('project schema', () => {
 })
 
 describe('migrations', () => {
-  it('passes through current-version data untouched', () => {
-    const data = { schemaVersion: CURRENT_SCHEMA_VERSION, marker: true }
-    expect(migrate(data)).toEqual(data)
+  it('passes through current-version project data untouched', () => {
+    const project = createDefaultProject()
+    expect(migrateProject(project)).toEqual(project)
   })
 
-  it('refuses versions from the future', () => {
-    expect(() => migrate({ schemaVersion: CURRENT_SCHEMA_VERSION + 5 })).toThrow(
+  it('scene dispatcher refuses versions from the future', () => {
+    const project = createDefaultProject()
+    expect(() => migrateScene({ ...project.scene, schemaVersion: CURRENT_SCHEMA_VERSION + 5 })).toThrow(
+      UnsupportedSchemaVersionError
+    )
+  })
+
+  it('project dispatcher refuses versions from the future', () => {
+    const project = createDefaultProject()
+    expect(() => migrateProject({ ...project, schemaVersion: CURRENT_SCHEMA_VERSION + 5 })).toThrow(
       UnsupportedSchemaVersionError
     )
   })
 
   it('refuses historical versions with no registered migration', () => {
     // v1 is the oldest version; nothing below it exists — fabricate v0.
-    expect(() => migrate({ schemaVersion: 0 })).toThrow(UnsupportedSchemaVersionError)
+    const project = createDefaultProject()
+    expect(() => migrateScene({ ...project.scene, schemaVersion: 0 })).toThrow(UnsupportedSchemaVersionError)
   })
 })

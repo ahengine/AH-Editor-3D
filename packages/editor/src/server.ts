@@ -114,6 +114,7 @@ function serveFile(response: ServerResponse, filePath: string, fallbackType = 'a
 
 /** Minimal valid starter project written into a fresh host product. */
 export function starterProjectJson(): string {
+  const cameraId = crypto.randomUUID()
   return JSON.stringify(
     {
       format: 'koota-3d-project',
@@ -132,11 +133,11 @@ export function starterProjectJson(): string {
           toneMapping: 'aces',
           toneMappingExposure: 1,
           shadowEnabled: true,
-          defaultCameraId: 'product-camera',
+          defaultCameraId: cameraId,
         },
         entities: [
           {
-            id: 'product-camera',
+            id: cameraId,
             name: 'Camera',
             enabled: true,
             parentId: null,
@@ -146,7 +147,7 @@ export function starterProjectJson(): string {
             },
           },
           {
-            id: 'product-sun',
+            id: crypto.randomUUID(),
             name: 'Sun',
             enabled: true,
             parentId: null,
@@ -156,7 +157,7 @@ export function starterProjectJson(): string {
             },
           },
           {
-            id: 'product-ground',
+            id: crypto.randomUUID(),
             name: 'Ground',
             enabled: true,
             parentId: null,
@@ -166,7 +167,7 @@ export function starterProjectJson(): string {
             },
           },
           {
-            id: 'product-cube',
+            id: crypto.randomUUID(),
             name: 'Cube',
             enabled: true,
             parentId: null,
