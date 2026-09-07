@@ -57,9 +57,10 @@ export function AnimatorPanel({ hideTimeline = false }: { hideTimeline?: boolean
   const createController = () => {
     const store = useEditorStore.getState()
     const controller: AnimatorController = {
+      format: 'koota-3d-animator',
+      schemaVersion: 1,
       id: `anim-${crypto.randomUUID().slice(0, 8)}`,
       name: `Controller ${store.controllers.length + 1}`,
-      modelAssetId: modelAssetId || null,
       parameters: [],
       states: [
         { id: 'state-entry', name: 'Idle', clipId: null, loop: true, speed: 1 },
@@ -438,7 +439,7 @@ function TransitionInspector({
             patch({
               conditions: [
                 ...transition.conditions,
-                { parameterId: parameter.id, operator: parameter.type === 'activated' ? 'activated' : '>', value: 0.5 },
+                { parameterId: parameter.id, operator: parameter.type === 'trigger' ? 'activated' : '>', value: 0.5 },
               ],
             })
           }}
@@ -454,7 +455,7 @@ function TransitionInspector({
 }
 
 function modelClipNames(controller: AnimatorController): string[] {
-  const clips = controller.modelAssetId ? modelAnimationRegistry.get(controller.modelAssetId) : undefined
-  return clips?.map((clip) => clip.name) ?? []
+  void controller
+  return []
 }
 

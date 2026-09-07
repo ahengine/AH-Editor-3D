@@ -148,7 +148,7 @@ function AnimatorGraph({
   onMoveState, onControllerChange,
 }: {
   controller: AnimatorControllerV2
-  clips: unknown[]
+  clips: { id: string; name: string }[]
   selectedStateId: string | null
   selectedTransitionId: string | null
   previewStateId: string | null
@@ -266,7 +266,7 @@ function AnimatorGraph({
             </div>
             <div className="ah-graph-node-body" style={{ padding: '4px 10px' }}>
               <span style={{ fontSize: 'var(--fs-tiny)', color: 'var(--text-tertiary)' }}>
-                {state.clipId ? clips.find((c) => (c as { id: string }).id === state.clipId)?.['name'] ?? state.clipId : 'no clip'}
+                {state.clipId ? clips.find((c) => c.id === state.clipId)?.name ?? state.clipId : 'no clip'}
               </span>
             </div>
             {/* Connect handle (right edge) */}

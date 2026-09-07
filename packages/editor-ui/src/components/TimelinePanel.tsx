@@ -117,13 +117,13 @@ function TimelineBody({ tabs }: { tabs: React.ReactNode }) {
     const out: ClipRow[] = []
     if (controller) {
       for (const state of controller.states) {
-        const clip = clips.find((c) => c.name === state.clip)
+        const clip = clips.find((c) => c.name === state.clipId)
         out.push({
           id: state.id,
           label: state.name,
           track: 'animator',
           color: 'blue',
-          clipName: state.clip,
+          clipName: state.clipId,
           duration: clip?.duration ?? 0,
         })
       }
@@ -146,7 +146,7 @@ function TimelineBody({ tabs }: { tabs: React.ReactNode }) {
   const activeClip = useMemo(() => {
     if (!previewEntity) return null
     const state = animator.getStateFor(previewEntity)
-    const clipName = controller?.states.find((s) => s.id === state?.currentStateId)?.clip
+    const clipName = controller?.states.find((s) => s.id === state?.currentStateId)?.clipId
     return clips.find((c) => c.name === clipName) ?? clips[0] ?? null
   }, [previewEntity, controller, clips, playing, time])
 
