@@ -11,20 +11,23 @@ import {
   bootstrapDefaultProject,
   openSavedProject,
 } from '@ahengine/editor-core'
-import { MenuBar } from './components/MenuBar.js'
-import { Toolbar } from './components/Toolbar.js'
+import { viewportState } from './components/Viewport.js'
+import { TopBar } from './components/TopBar.js'
 import { HierarchyPanel } from './components/HierarchyPanel.js'
-import { Viewport, viewportState } from './components/Viewport.js'
+import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
-import { BottomPanel } from './components/BottomPanel.js'
+import { TimelinePanel } from './components/TimelinePanel.js'
 
 /**
- * Editor shell — layout mirrors Design/Editor Concept.png:
- * full-height Hierarchy on the left; Viewport + Inspector above a wide
- * bottom dock (Assets / Materials / Animator).
+ * Editor shell — pixel-locked to Design/Editor Concept.png (1672×941):
+ * a floating 22px-radius window on a dark page; top bar 46px; workspace =
+ * hierarchy 292 | center (viewport + timeline 246) | inspector 352.
+ * Hierarchy and inspector span the full workspace height; the timeline
+ * exists only beneath the viewport.
  */
 export function EditorApp() {
   const [booted, setBooted] = useState(false)
+  const editorMode = useEditorStore((s) => s.editorMode)
 
   useEffect(() => {
     void (async () => {
@@ -37,36 +40,36 @@ export function EditorApp() {
   useGlobalShortcuts(booted)
   useAutosave(booted)
 
+  // Animate mode gives the timeline more room (Render keeps scene default).
+  const timelineDefault = editorMode === 'animate' ? 340 : 246
+
   return (
-    <div className="ah-app">
-      <MenuBar />
-      <Toolbar />
-      <div className="ah-body">
-        <Group orientation="horizontal" className="ah-group-h">
-          <Panel defaultSize="19%" minSize="12%" maxSize="32%">
-            <HierarchyPanel />
-          </Panel>
-          <Separator className="ah-resize-handle" />
-          <Panel minSize="30%">
-            <Group orientation="vertical" className="ah-group-v">
-              <Panel defaultSize="62%" minSize="25%">
-                <Group orientation="horizontal" className="ah-group-h">
-                  <Panel defaultSize="68%" minSize="30%">
-                    <Viewport />
-                  </Panel>
-                  <Separator className="ah-resize-handle" />
-                  <Panel defaultSize="32%" minSize="18%" maxSize="45%">
-                    <Inspector />
-                  </Panel>
-                </Group>
-              </Panel>
-              <Separator className="ah-resize-handle" />
-              <Panel defaultSize="38%" minSize="10%">
-                <BottomPanel />
-              </Panel>
-            </Group>
-          </Panel>
-        </Group>
+    <div className="ah-page">
+      <div className="ah-shell">
+        <TopBar />
+        <div className="ah-workspace">
+          <Group orientation="horizontal" className="ah-group-h">
+            <Panel defaultSize={292} minSize={240} maxSize={360}>
+              <HierarchyPanel />
+            </Panel>
+            <Separator className="ah-resize-handle" />
+            <Panel minSize={400}>
+              <Group orientation="vertical" className="ah-group-v">
+                <Panel minSize={200}>
+                  <Viewport />
+                </Panel>
+                <Separator className="ah-resize-handle" />
+                <Panel defaultSize={timelineDefault} minSize={120} maxSize={520}>
+                  <TimelinePanel />
+                </Panel>
+              </Group>
+            </Panel>
+            <Separator className="ah-resize-handle" />
+            <Panel defaultSize={352} minSize={290} maxSize={430}>
+              <Inspector />
+            </Panel>
+          </Group>
+        </div>
       </div>
       <Notifications />
     </div>
@@ -104,6 +107,9 @@ function useGlobalShortcuts(enabled: boolean): void {
         return
       }
       switch (event.key.toLowerCase()) {
+        case 'q':
+          store.setTool('select')
+          break
         case 'w':
           store.setTool('translate')
           break
@@ -167,7 +173,7 @@ function Notifications() {
             <span style={{ flex: 1 }}>{notification.message}</span>
             <button
               onClick={() => dismiss(notification.id)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 0 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)', padding: 0 }}
             >
               <X size={12} />
             </button>

@@ -3,29 +3,23 @@ import { useEditorStore } from '@ahengine/editor-core'
 import type { SceneSettings } from '@ahengine/project-schema'
 
 /** Scene settings — shown in the Inspector when nothing is selected. */
-export function SceneSettingsPanel() {
+export function SceneSettingsPanel({ embedded = false }: { embedded?: boolean }) {
   const settings = useEditorStore((s) => s.sceneSettings)
   const assets = useEditorStore((s) => s.assets)
   const set = useEditorStore((s) => s.setSceneSettings)
   const patch = (partial: Partial<SceneSettings>) => set({ ...settings, ...partial })
 
   return (
-    <div>
-      <div className="ah-component-header" style={{ cursor: 'default' }}>
-        <Settings size={13} style={{ color: 'var(--text-muted)' }} />
-        <span className="name">Scene Settings</span>
-      </div>
-      <div className="ah-component-body">
+    <div className="ah-scene-settings-grid">
         <div className="ah-field">
           <label>Background</label>
-          <div className="ah-color">
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
             <input
               type="color"
               value={settings.background.slice(0, 7)}
               onChange={(e) => patch({ background: e.target.value })}
             />
-            <span />
-            <input className="ah-input" value={settings.background} onChange={(e) => patch({ background: e.target.value })} />
+            <input className="ah-input" style={{ flex: 1 }} value={settings.background} onChange={(e) => patch({ background: e.target.value })} />
           </div>
         </div>
 
@@ -71,7 +65,7 @@ export function SceneSettingsPanel() {
           <>
             <div className="ah-field">
               <label>Fog Color</label>
-              <div className="ah-color">
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <input
                   type="color"
                   value={settings.fog.color.slice(0, 7)}
@@ -139,7 +133,6 @@ export function SceneSettingsPanel() {
           <Mountain size={13} style={{ flex: 'none', marginTop: 1 }} />
           Import an .hdr file in Assets, then assign it as Environment.
         </div>
-      </div>
     </div>
   )
 }

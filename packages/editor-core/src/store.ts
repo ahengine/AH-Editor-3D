@@ -9,9 +9,14 @@ import type {
 } from '@ahengine/project-schema'
 import { componentRegistry, EntityMeta, InstanceMember, PrefabInstance } from '@ahengine/ecs-runtime'
 
-export type ToolMode = 'translate' | 'rotate' | 'scale'
+export type ToolMode = 'select' | 'translate' | 'rotate' | 'scale'
 export type TransformSpace = 'local' | 'world'
 export type PlayMode = 'edit' | 'play' | 'paused'
+export type SidebarTab = 'scene' | 'assets'
+export type InspectorTab = 'inspector' | 'library'
+export type TimelineTab = 'timeline' | 'controller'
+export type EditorMode = 'scene' | 'animate' | 'render'
+/** @deprecated legacy bottom dock tab (Materials/Animator moved into Inspector/Timeline) */
 export type BottomTab = 'assets' | 'materials' | 'animator'
 
 export interface EditorNotification {
@@ -56,6 +61,12 @@ export interface EditorStore {
   /** animator transport targets the selected entity */
   animatorPreviewUuid: string | null
 
+  sidebarTab: SidebarTab
+  inspectorTab: InspectorTab
+  timelineTab: TimelineTab
+  editorMode: EditorMode
+  gridVisible: boolean
+
   clipboardEntity: import('@ahengine/project-schema').SerializedEntity[] | null
   clipboardComponent: { componentId: string; data: Record<string, unknown> } | null
 
@@ -86,6 +97,11 @@ export interface EditorStore {
   setEditingController(id: string | null): void
   setDiagnosticsOpen(open: boolean): void
   setAnimatorPreview(uuid: string | null): void
+  setSidebarTab(tab: SidebarTab): void
+  setInspectorTab(tab: InspectorTab): void
+  setTimelineTab(tab: TimelineTab): void
+  setEditorMode(mode: EditorMode): void
+  setGridVisible(visible: boolean): void
   setPlayMode(mode: PlayMode, playWorld: World | null): void
   setClipboardEntity(data: EditorStore['clipboardEntity']): void
   setClipboardComponent(data: EditorStore['clipboardComponent']): void
@@ -129,6 +145,12 @@ export const useEditorStore = create<EditorStore>((set) => ({
   diagnosticsOpen: false,
   animatorPreviewUuid: null,
 
+  sidebarTab: 'scene',
+  inspectorTab: 'inspector',
+  timelineTab: 'timeline',
+  editorMode: 'scene',
+  gridVisible: true,
+
   clipboardEntity: null,
   clipboardComponent: null,
 
@@ -160,6 +182,11 @@ export const useEditorStore = create<EditorStore>((set) => ({
     set({ editingControllerId, bottomTab: 'animator', bottomPanelOpen: true }),
   setDiagnosticsOpen: (diagnosticsOpen) => set({ diagnosticsOpen }),
   setAnimatorPreview: (animatorPreviewUuid) => set({ animatorPreviewUuid }),
+  setSidebarTab: (sidebarTab) => set({ sidebarTab }),
+  setInspectorTab: (inspectorTab) => set({ inspectorTab }),
+  setTimelineTab: (timelineTab) => set({ timelineTab }),
+  setEditorMode: (editorMode) => set({ editorMode }),
+  setGridVisible: (gridVisible) => set({ gridVisible }),
   setPlayMode: (playMode, playWorld) => set({ playMode, playWorld }),
   setClipboardEntity: (clipboardEntity) => set({ clipboardEntity }),
   setClipboardComponent: (clipboardComponent) => set({ clipboardComponent }),

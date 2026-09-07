@@ -1,21 +1,22 @@
 import { useMemo, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import * as THREE from 'three'
 import { MeshStandardNodeMaterial, WebGPURenderer } from 'three/webgpu'
 import { Plus, Trash2 } from 'lucide-react'
 import type { MaterialDefinition } from '@ahengine/project-schema'
 import { UpsertMaterialCommand, runCommand, useEditorStore } from '@ahengine/editor-core'
 import { materialService } from '@ahengine/editor-core'
 import { editComponentField } from '@ahengine/editor-core'
+import { IconButton } from '../ui/primitives.js'
 
-/** Material editor: project-owned material assets with live preview sphere. */
-
+/**
+ * Material editor — the Inspector's Library tab. Material assets are project
+ * data; edits rebuild the live NodeMaterial so the viewport updates.
+ */
 export function MaterialEditor() {
   const materials = useEditorStore((s) => s.materials)
   const assets = useEditorStore((s) => s.assets)
-  const editingId = useEditorStore((s) => s.editingMaterialId)
   const selection = useEditorStore((s) => s.selection)
-  const [selected, setSelected] = useState<string | null>(editingId)
+  const [selected, setSelected] = useState<string | null>(null)
 
   const activeId = selected ?? materials[0]?.id ?? null
   const material = materials.find((m) => m.id === activeId) ?? null
@@ -30,9 +31,10 @@ export function MaterialEditor() {
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
       {/* List */}
-      <div style={{ width: 190, flex: 'none', borderRight: '1px solid var(--border)', overflowY: 'auto', padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div className="ah-mat-list">
         <button
           className="ah-btn"
+          style={{ justifyContent: 'center' }}
           onClick={() => {
             const id = `mat-${crypto.randomUUID().slice(0, 8)}`
             const def: MaterialDefinition = {
@@ -45,26 +47,19 @@ export function MaterialEditor() {
             setSelected(id)
           }}
         >
-          <Plus size={13} /> New Material
+          <Plus size={13} /> New
         </button>
         {materials.map((m) => (
           <div
             key={m.id}
-            className={`ah-ac-item ${m.id === activeId ? 'focused' : ''}`}
-            style={{ padding: '5px 8px' }}
+            className={`ah-mat-item ${m.id === activeId ? 'focused' : ''}`}
             onClick={() => setSelected(m.id)}
             draggable
             onDragStart={(event) => event.dataTransfer.setData('ah/material', m.id)}
           >
             <span
-              style={{
-                width: 14,
-                height: 14,
-                borderRadius: 3,
-                border: '1px solid var(--border-light)',
-                background: m.properties.baseColor ?? '#888',
-                flex: 'none',
-              }}
+              className="ah-mat-swatch"
+              style={{ background: m.properties.baseColor ?? '#888' }}
             />
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</span>
           </div>
@@ -73,29 +68,28 @@ export function MaterialEditor() {
 
       {/* Editor */}
       {material ? (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', display: 'flex', gap: 16, minHeight: 0 }}>
-          <div style={{ width: 210, flex: 'none', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+        <div className="ah-mat-editor">
+          <div style={{ width: 190, flex: 'none', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
             <MaterialPreview materialId={material.id} />
             <input
               className="ah-input"
               style={{ width: '100%', textAlign: 'center', fontWeight: 600 }}
               defaultValue={material.name}
               key={material.id}
-              onBlur={(e) => {
-                const name = e.target.value.trim() || material.name
+              onBlur={(event) => {
+                const name = event.target.value.trim() || material.name
                 if (name !== material.name) {
                   runCommand(new UpsertMaterialCommand('Rename material', { ...material, name }))
                 }
               }}
-              onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
             />
             <div style={{ display: 'flex', gap: 6, width: '100%' }}>
               <select
                 className="ah-input"
                 style={{ flex: 1 }}
                 value={material.type}
-                onChange={(e) => {
-                  const type = (e.target as HTMLSelectElement).value as MaterialDefinition['type']
+                onChange={(event) => {
+                  const type = (event.target as HTMLSelectElement).value as MaterialDefinition['type']
                   if (type !== material.type) {
                     runCommand(new UpsertMaterialCommand('Change material type', { ...material, type }))
                   }
@@ -105,17 +99,16 @@ export function MaterialEditor() {
                 <option value="physical">Physical</option>
                 <option value="unlit">Unlit</option>
               </select>
-              <button
-                className="ah-btn danger"
-                title="Delete material"
+              <IconButton
+                small
+                icon={<Trash2 size={13} />}
+                label="Delete material"
                 onClick={() => {
                   const store = useEditorStore.getState()
                   store.setMaterials(store.materials.filter((m) => m.id !== material.id))
                   materialService.remove(material.id)
                 }}
-              >
-                <Trash2 size={13} />
-              </button>
+              />
             </div>
             {selection[0] && (
               <button
@@ -128,66 +121,40 @@ export function MaterialEditor() {
             )}
           </div>
 
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 460 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 420 }}>
             <div className="ah-field">
               <label>Base Color</label>
-              <div className="ah-color">
+              <div style={{ display: 'flex', gap: 6 }}>
                 <input
                   type="color"
+                  className="ah-color-chip"
                   value={(material.properties.baseColor ?? '#ffffff').slice(0, 7)}
-                  onChange={(e) => update({ baseColor: e.target.value })}
+                  onChange={(event) => update({ baseColor: event.target.value })}
                 />
-                <span />
                 <input
                   className="ah-input"
-                  value={material.properties.baseColor ?? ''}
-                  onChange={(e) => update({ baseColor: e.target.value })}
+                  style={{ flex: 1 }}
+                  defaultValue={material.properties.baseColor ?? ''}
+                  key={material.id + (material.properties.baseColor ?? '')}
+                  onBlur={(event) => update({ baseColor: event.target.value })}
                 />
               </div>
             </div>
 
-            <RangeRow
-              label="Metalness"
-              min={0}
-              max={1}
-              step={0.01}
-              value={material.properties.metalness ?? 0}
-              onChange={(v) => update({ metalness: v })}
-            />
-            <RangeRow
-              label="Roughness"
-              min={0}
-              max={1}
-              step={0.01}
-              value={material.properties.roughness ?? 0.8}
-              onChange={(v) => update({ roughness: v })}
-            />
-            <RangeRow
-              label="Opacity"
-              min={0}
-              max={1}
-              step={0.01}
-              value={material.properties.opacity ?? 1}
-              onChange={(v) => update({ opacity: v, transparent: v < 1 })}
-            />
-            <RangeRow
-              label="Emissive Int."
-              min={0}
-              max={8}
-              step={0.05}
-              value={material.properties.emissiveIntensity ?? 0}
-              onChange={(v) => update({ emissiveIntensity: v })}
-            />
+            <SliderRow label="Metalness" value={material.properties.metalness ?? 0} min={0} max={1} onChange={(v) => update({ metalness: v })} />
+            <SliderRow label="Roughness" value={material.properties.roughness ?? 0.8} min={0} max={1} onChange={(v) => update({ roughness: v })} />
+            <SliderRow label="Opacity" value={material.properties.opacity ?? 1} min={0} max={1} onChange={(v) => update({ opacity: v, transparent: v < 1 })} />
+            <SliderRow label="Emissive I." value={material.properties.emissiveIntensity ?? 0} min={0} max={8} step={0.05} onChange={(v) => update({ emissiveIntensity: v })} />
 
             <div className="ah-field">
               <label>Emissive</label>
-              <div className="ah-color">
+              <div style={{ display: 'flex', gap: 6 }}>
                 <input
                   type="color"
+                  className="ah-color-chip"
                   value={(material.properties.emissive ?? '#000000').slice(0, 7)}
-                  onChange={(e) => update({ emissive: e.target.value })}
+                  onChange={(event) => update({ emissive: event.target.value })}
                 />
-                <span />
                 <span />
               </div>
             </div>
@@ -197,8 +164,7 @@ export function MaterialEditor() {
               <select
                 className="ah-input"
                 value={material.properties.side ?? 'front'}
-                onChange={(e) => update({ side: e.target.value as 'front' | 'back' | 'double' })}
-                style={{ height: 24 }}
+                onChange={(event) => update({ side: event.target.value as 'front' | 'back' | 'double' })}
               >
                 <option value="front">Front</option>
                 <option value="back">Back</option>
@@ -206,26 +172,25 @@ export function MaterialEditor() {
               </select>
             </div>
 
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4 }}>
-              <div style={{ fontSize: 10, letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 6 }}>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 8, marginTop: 4 }}>
+              <div style={{ fontSize: 'var(--fs-tiny)', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: 6 }}>
                 TEXTURE MAPS
               </div>
               {(
                 [
-                  ['baseColorTexture', 'Base Color Map'],
-                  ['metalnessTexture', 'Metalness Map'],
-                  ['roughnessTexture', 'Roughness Map'],
-                  ['normalTexture', 'Normal Map'],
-                  ['emissiveTexture', 'Emissive Map'],
+                  ['baseColorTexture', 'Base Color'],
+                  ['metalnessTexture', 'Metalness'],
+                  ['roughnessTexture', 'Roughness'],
+                  ['normalTexture', 'Normal'],
+                  ['emissiveTexture', 'Emissive'],
                 ] as const
               ).map(([key, label]) => (
-                <div className="ah-field" key={key} style={{ marginBottom: 6 }}>
+                <div className="ah-field" key={key} style={{ marginBottom: 4 }}>
                   <label>{label}</label>
                   <select
                     className="ah-input"
-                    style={{ height: 24 }}
                     value={material.properties[key] ?? ''}
-                    onChange={(e) => update({ [key]: e.target.value || null } as Partial<MaterialDefinition['properties']>)}
+                    onChange={(event) => update({ [key]: event.target.value || null } as Partial<MaterialDefinition['properties']>)}
                   >
                     <option value="">— none —</option>
                     {textures.map((t) => (
@@ -248,52 +213,54 @@ export function MaterialEditor() {
   )
 }
 
-function RangeRow({
+function SliderRow({
   label,
   min,
   max,
-  step,
+  step = 0.01,
   value,
   onChange,
 }: {
   label: string
   min: number
   max: number
-  step: number
+  step?: number
   value: number
   onChange: (value: number) => void
 }) {
   const [live, setLive] = useState<number | null>(null)
   const shown = live ?? value
-  const fill = ((shown - min) / (max - min)) * 100
   return (
-    <div className="ah-slider ah-field" style={{ gridTemplateColumns: '84px 1fr' }}>
-      <label style={{ fontSize: 11, color: 'var(--text-dim)' }}>{label}</label>
+    <div className="ah-field" style={{ gridTemplateColumns: '92px 1fr' }}>
+      <label>{label}</label>
       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <input
-          type="range"
+        <EditorSliderLazy
+          value={shown}
           min={min}
           max={max}
           step={step}
-          value={shown}
-          style={{ flex: 1, ['--fill' as string]: `${fill}%` }}
-          onChange={(e) => {
-            setLive(parseFloat(e.target.value))
-          }}
-          onPointerUp={() => {
-            if (live !== null) onChange(live)
-            setLive(null)
-          }}
+          onLive={setLive}
+          onCommit={(v) => { setLive(null); onChange(v) }}
         />
-        <span style={{ width: 40, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-dim)' }}>
-          {shown.toFixed(2)}
-        </span>
+        <span className="ah-slider-value">{shown.toFixed(2)}</span>
       </div>
     </div>
   )
 }
 
-/** Small live preview sphere rendering the actual material service instance. */
+import { EditorSlider } from '../ui/primitives.js'
+function EditorSliderLazy(props: {
+  value: number
+  min: number
+  max: number
+  step?: number
+  onLive: (v: number) => void
+  onCommit: (v: number) => void
+}) {
+  return <EditorSlider value={props.value} min={props.min} max={props.max} step={props.step} onLiveChange={props.onLive} onCommit={props.onCommit} />
+}
+
+/** Live preview sphere rendering the actual material service instance. */
 function MaterialPreview({ materialId }: { materialId: string }) {
   const gl = useMemo(
     () => async (props: unknown) => {
@@ -311,7 +278,7 @@ function MaterialPreview({ materialId }: { materialId: string }) {
     []
   )
   return (
-    <div style={{ width: 210, height: 160, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden', background: '#131820' }}>
+    <div style={{ width: 190, height: 150, border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-card)', overflow: 'hidden', background: '#131820' }}>
       <Canvas dpr={[1, 2]} camera={{ position: [0, 0.6, 2.6], fov: 40 }} gl={gl}>
         <ambientLight intensity={1.2} />
         <directionalLight position={[3, 4, 2]} intensity={2.2} />
@@ -330,7 +297,6 @@ function PreviewSphere({ materialId }: { materialId: string }) {
     return m
   }, [])
 
-  // Rebuild the live material when its definition changes so the preview matches.
   useMemo(() => {
     void materials
     materialService.update(materialId)

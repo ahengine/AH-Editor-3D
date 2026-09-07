@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react'
 import type { Entity } from 'koota'
-import { Camera, ChevronDown, ChevronRight, Eye, EyeOff, Lightbulb, Box, Package, Search } from 'lucide-react'
+import {
+  Camera,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Lightbulb,
+  Box,
+  Package,
+  PackageOpen,
+} from 'lucide-react'
 import {
   ChildOf,
   EntityMeta,
@@ -29,11 +39,17 @@ import {
   applyInstanceOverridesToPrefab,
   createPrefabFromSelection,
   instantiatePrefabAction,
+  useEditorStore,
 } from '@ahengine/editor-core'
-import { useEditorStore } from '@ahengine/editor-core'
+import { SegmentedControl, SearchInput } from '../ui/primitives.js'
 import { useContextMenu } from '../hooks.js'
+import { AssetBrowser } from './AssetBrowser.js'
 
-/** Hierarchy tree — driven entirely by Koota relations; no shadow state. */
+/**
+ * Left hierarchy panel (292px): Scene|Assets segmented control, ⌘K search,
+ * compact 28px tree rows with 17px nesting, muted-blue selection, and the
+ * environment card pinned at the bottom (Scene tab only).
+ */
 
 interface RowInfo {
   entity: Entity
@@ -48,12 +64,33 @@ interface RowInfo {
 }
 
 export function HierarchyPanel() {
+  const sidebarTab = useEditorStore((s) => s.sidebarTab)
+  const store = useEditorStore.getState
+
+  return (
+    <div className="ah-panel">
+      <div className="ah-panel-head" style={{ paddingBottom: 0 }}>
+        <SegmentedControl
+          value={sidebarTab}
+          onChange={(tab) => store().setSidebarTab(tab)}
+          options={[
+            { value: 'scene', label: 'Scene' },
+            { value: 'assets', label: 'Assets' },
+          ]}
+        />
+      </div>
+      {sidebarTab === 'scene' ? <SceneTree /> : <div className="ah-panel-body"><AssetBrowser compact /></div>}
+    </div>
+  )
+}
+
+function SceneTree() {
   const world = useEditorStore((s) => s.world)
   const worldVersion = useEditorStore((s) => s.worldVersion)
   const selection = useEditorStore((s) => s.selection)
   const prefabs = useEditorStore((s) => s.prefabs)
   const [query, setQuery] = useState('')
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
   const [renaming, setRenaming] = useState<string | null>(null)
   const contextMenu = useContextMenu()
   const [dragOver, setDragOver] = useState<string | null>(null)
@@ -62,22 +99,14 @@ export function HierarchyPanel() {
   const rows = useMemo<RowInfo[]>(() => {
     void worldVersion
     const out: RowInfo[] = []
-    const visible = new Set<string>()
     if (query) {
-      // Search mode: flat list of matches.
       for (const entity of world.query(EntityMeta)) {
         const meta = entity.get(EntityMeta)!
         if (meta.name.toLowerCase().includes(query.toLowerCase())) {
           out.push({
-            entity,
-            uuid: meta.uuid,
-            name: meta.name,
-            enabled: meta.enabled,
-            depth: 0,
-            hasChildren: getChildren(world, entity).length > 0,
-            expanded: false,
-            isPrefabRoot: entity.has(PrefabInstance),
-            isInstanceMember: entity.has(InstanceMember),
+            entity, uuid: meta.uuid, name: meta.name, enabled: meta.enabled,
+            depth: 0, hasChildren: getChildren(world, entity).length > 0, expanded: false,
+            isPrefabRoot: entity.has(PrefabInstance), isInstanceMember: entity.has(InstanceMember),
           })
         }
       }
@@ -87,22 +116,15 @@ export function HierarchyPanel() {
       const meta = entity.get(EntityMeta)!
       const children = getChildren(world, entity)
       out.push({
-        entity,
-        uuid: meta.uuid,
-        name: meta.name,
-        enabled: meta.enabled,
-        depth,
-        hasChildren: children.length > 0,
-        expanded: expanded.has(meta.uuid),
-        isPrefabRoot: entity.has(PrefabInstance),
-        isInstanceMember: entity.has(InstanceMember),
+        entity, uuid: meta.uuid, name: meta.name, enabled: meta.enabled,
+        depth, hasChildren: children.length > 0, expanded: expanded.has(meta.uuid),
+        isPrefabRoot: entity.has(PrefabInstance), isInstanceMember: entity.has(InstanceMember),
       })
       if (expanded.has(meta.uuid)) for (const child of children) walk(child, depth + 1)
     }
     for (const entity of world.query(EntityMeta)) {
       if (entity.targetFor(ChildOf) === undefined) walk(entity, 0)
     }
-    void visible
     return out
   }, [world, worldVersion, expanded, query])
 
@@ -118,8 +140,7 @@ export function HierarchyPanel() {
   const onRowClick = (event: React.MouseEvent, uuid: string) => {
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
       const current = useEditorStore.getState().selection
-      const next = current.includes(uuid) ? current.filter((u) => u !== uuid) : [...current, uuid]
-      useEditorStore.getState().select(next)
+      useEditorStore.getState().select(current.includes(uuid) ? current.filter((u) => u !== uuid) : [...current, uuid])
     } else {
       useEditorStore.getState().select([uuid])
     }
@@ -174,14 +195,14 @@ export function HierarchyPanel() {
   }
 
   return (
-    <div className="ah-panel">
-      <div className="ah-panel-header">
-        <span className="ah-panel-title">Hierarchy</span>
-        <div style={{ flex: 1 }} />
-        <div className="ah-search" style={{ width: 130 }}>
-          <Search size={12} />
-          <input placeholder="Search…" value={query} onChange={(e) => setQuery(e.target.value)} />
-        </div>
+    <div className="ah-panel-body">
+      <div className="ah-hierarchy-tools">
+        <SearchInput
+          placeholder="Search objects, materials…"
+          value={query}
+          onChange={setQuery}
+          shortcut="⌘K"
+        />
       </div>
       <div className="ah-tree" onContextMenu={emptyContextMenu}>
         {rows.length === 0 && <div className="ah-empty">No entities</div>}
@@ -194,11 +215,11 @@ export function HierarchyPanel() {
                 'ah-tree-row',
                 selected ? 'selected' : '',
                 !info.enabled ? 'disabled-entity' : '',
-                dragOver === info.uuid && dragMode === 'inside' ? 'ah-tree-drop-inside' : '',
+                dragOver === info.uuid && dragMode === 'inside' ? 'drop-inside' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
-              style={{ paddingLeft: 4 }}
+              style={{ paddingLeft: 6 + info.depth * 17 }}
               onClick={(event) => onRowClick(event, info.uuid)}
               onDoubleClick={() => setRenaming(info.uuid)}
               onContextMenu={(event) => rowContextMenu(event, info)}
@@ -228,9 +249,6 @@ export function HierarchyPanel() {
                 }
               }}
             >
-              <span className="ah-tree-indent" style={{ width: info.depth * 14 }}>
-                {info.depth > 0 && <span style={{ position: 'absolute', left: 6, top: 0, bottom: 0, width: 1, background: '#ffffff0f' }} />}
-              </span>
               {info.hasChildren ? (
                 <span className="ah-tree-caret" onClick={(e) => { e.stopPropagation(); toggleExpand(info.uuid) }}>
                   {info.expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
@@ -259,7 +277,7 @@ export function HierarchyPanel() {
               )}
               <span className="ah-tree-actions">
                 <button
-                  className="ah-icon-btn"
+                  className="ah-icon-btn small"
                   title={info.enabled ? 'Disable' : 'Enable'}
                   onClick={(e) => { e.stopPropagation(); setEnabled(info.uuid, !info.enabled) }}
                 >
@@ -270,6 +288,7 @@ export function HierarchyPanel() {
           )
         })}
       </div>
+      <EnvironmentCard />
       {contextMenu.node}
     </div>
   )
@@ -280,22 +299,54 @@ function EntityIcon({ info }: { info: RowInfo }) {
   if (info.isPrefabRoot)
     return (
       <span className="ah-tree-icon">
-        <Package size={13} />
+        <PackageOpen size={14} />
       </span>
     )
   return (
     <span className="ah-tree-icon">
       {entity.has(CameraTrait) ? (
-        <Camera size={13} />
+        <Camera size={14} />
       ) : entity.has(Light) ? (
-        <Lightbulb size={13} />
+        <Lightbulb size={14} />
       ) : entity.has(ModelRenderer) ? (
-        <Package size={13} />
+        <Package size={14} />
       ) : entity.has(PrimitiveMesh) ? (
-        <Box size={13} />
+        <Box size={14} />
       ) : (
-        <span style={{ width: 13, height: 13, borderRadius: 3, border: '1px solid var(--text-muted)' }} />
+        <span style={{ width: 14, height: 14, borderRadius: 4, border: '1px solid currentColor', opacity: 0.55 }} />
       )}
     </span>
+  )
+}
+
+/** Compact environment summary pinned to the hierarchy bottom. */
+function EnvironmentCard() {
+  const settings = useEditorStore((s) => s.sceneSettings)
+  const assets = useEditorStore((s) => s.assets)
+  const projectName = useEditorStore((s) => s.projectName)
+  const store = useEditorStore.getState
+  const envAsset = assets.find((a) => a.id === settings.environmentAssetId)
+  return (
+    <button
+      className="ah-env-card"
+      onClick={() => {
+        store().setInspectorTab('inspector')
+        store().select([])
+      }}
+      title="Scene environment — click to open Scene Settings"
+    >
+      <span
+        className="ah-env-thumb"
+        style={{
+          background: envAsset
+            ? 'radial-gradient(circle at 35% 30%, #9db8d8, #2c3e57 70%)'
+            : `radial-gradient(circle at 35% 30%, ${settings.background}, #141b24 78%)`,
+        }}
+      />
+      <span className="ah-env-meta">
+        <span className="ah-env-name">{envAsset ? envAsset.name.replace(/\.(hdr|exr)$/i, '') : 'Gradient'}</span>
+        <span className="ah-env-sub">Environment · {projectName}</span>
+      </span>
+    </button>
   )
 }

@@ -1,0 +1,118 @@
+/* ================================================================
+   AHEngine design tokens — pixel-locked to Design/Editor Concept.png
+   (reference 1672×941). Single source of truth: colors, spacing,
+   radii, typography, control sizes. Do not hardcode these values
+   anywhere else.
+   ================================================================ */
+
+:root {
+  /* ---- page & shell ---- */
+  --page-bg: #2c3037;
+  --page-bg-hi: #3d424a;
+
+  --shell-bg: rgba(29, 39, 51, 0.96);
+  --shell-gradient: linear-gradient(180deg, rgba(27, 39, 53, 0.97), rgba(17, 27, 39, 0.98));
+  --shell-border: rgba(255, 255, 255, 0.13);
+  --shell-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+  /* ---- surfaces ---- */
+  --panel-bg: rgba(28, 34, 42, 0.97);
+  --panel-bg-soft: rgba(41, 50, 61, 0.96);
+  --panel-bg-raised: rgba(48, 57, 70, 0.96);
+  --panel-bg-deep: rgba(23, 29, 37, 0.97);
+
+  --topbar-bg: rgba(48, 57, 70, 0.55);
+
+  --control-bg: rgba(43, 52, 63, 0.92);
+  --control-hover: rgba(54, 65, 78, 0.96);
+  --control-active: rgba(75, 95, 125, 0.94);
+
+  --input-bg: rgba(35, 43, 52, 0.96);
+  --input-bg-focus: rgba(24, 31, 39, 0.98);
+
+  --surface-hover: rgba(255, 255, 255, 0.035);
+  --surface-active: rgba(120, 168, 255, 0.22);
+
+  /* ---- text ---- */
+  --text-primary: rgba(248, 250, 252, 0.96);
+  --text-secondary: rgba(224, 231, 238, 0.69);
+  --text-tertiary: rgba(209, 219, 228, 0.43);
+
+  /* ---- borders ---- */
+  --border-subtle: rgba(255, 255, 255, 0.055);
+  --border-default: rgba(255, 255, 255, 0.085);
+  --border-visible: rgba(255, 255, 255, 0.13);
+
+  /* ---- accent ---- */
+  --accent: #78a8ff;
+  --accent-soft: rgba(105, 155, 239, 0.22);
+  --accent-line: #78a8ff;
+
+  --selection-bg: rgba(62, 76, 100, 0.95);
+  --selection-text: rgba(248, 250, 252, 0.98);
+
+  /* ---- timeline clip palette (controlled saturation, from reference) ---- */
+  --clip-blue: #3a5aa6;
+  --clip-blue-hi: #4668ba;
+  --clip-violet: #5859b5;
+  --clip-violet-hi: #6a6bc7;
+  --clip-green: #478664;
+  --clip-green-hi: #549a74;
+
+  /* ---- semantic ---- */
+  --axis-x: #ff6b6b;
+  --axis-y: #7df17d;
+  --axis-z: #6ba8ff;
+
+  /* ---- radii hierarchy ---- */
+  --radius-window: 22px;
+  --radius-panel: 14px;
+  --radius-card: 12px;
+  --radius-group: 10px;
+  --radius-button: 9px;
+  --radius-input: 7px;
+  --radius-small: 6px;
+
+  /* ---- spacing scale (4-based) ---- */
+  --sp-1: 4px;
+  --sp-2: 6px;
+  --sp-3: 8px;
+  --sp-4: 10px;
+  --sp-5: 12px;
+  --sp-6: 16px;
+  --sp-7: 20px;
+
+  /* ---- typography ---- */
+  --font-ui: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fs-ui: 13px;
+  --fs-panel-heading: 13px;
+  --fs-secondary: 11.5px;
+  --fs-meta: 10.5px;
+  --fs-tiny: 10px;
+
+  /* ---- control sizes (dense desktop) ---- */
+  --row-height: 28px;
+  --input-height: 28px;
+  --toolbar-btn: 34px;
+  --toolbar-group-h: 38px;
+  --topbar-height: 46px;
+
+  /* ---- layout geometry (reference frame: 1672×941) ---- */
+  --hierarchy-width: 292px;
+  --inspector-width: 352px;
+  --timeline-height: 246px;
+  --panel-gap: 8px;
+  --shell-padding: 9px;
+
+  /* ---- motion ---- */
+  --motion-hover: 120ms ease;
+  --motion-control: 160ms ease;
+  --motion-panel: 200ms ease;
+
+  /* ---- focus ---- */
+  --focus-ring: 0 0 0 1px rgba(120, 168, 255, 0.75);
+
+  /* ---- shadows (restrained) ---- */
+  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-float: 0 6px 20px rgba(0, 0, 0, 0.28);
+}

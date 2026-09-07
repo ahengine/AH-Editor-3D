@@ -6,6 +6,19 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import type { Entity } from 'koota'
 import {
+  Activity,
+  ChevronDown,
+  Focus,
+  LayoutGrid,
+  Magnet,
+  MousePointer2,
+  Move3d,
+  Orbit,
+  Rotate3d,
+  Scale3d,
+  Sun,
+} from 'lucide-react'
+import {
   EntityMeta,
   ThreeObject,
   Transform,
@@ -24,6 +37,8 @@ import {
 import { createEntity, instantiatePrefabAction } from '@ahengine/editor-core'
 import { commandStack } from '@ahengine/editor-core'
 import { getComponentDef, applyPatch } from '@ahengine/ecs-runtime'
+import { IconButton } from '../ui/primitives.js'
+import { MenuList } from '../hooks.js'
 
 /**
  * WebGPU viewport: orbit camera, transform gizmo, click picking, grid,
@@ -35,6 +50,7 @@ import { getComponentDef, applyPatch } from '@ahengine/ecs-runtime'
 export const viewportState = {
   camera: null as THREE.PerspectiveCamera | null,
   focusRequests: 0,
+  cameraPreset: 'perspective' as 'perspective' | 'top' | 'front' | 'side',
   stats: { fps: 0, frameMs: 0, calls: 0, triangles: 0 },
 }
 
@@ -95,9 +111,10 @@ export function Viewport() {
       </Canvas>
 
       <ViewportToolbar />
+      <ViewportRail />
+      <ViewportStatus />
       {playMode !== 'edit' && <PlayModeBanner mode={playMode} />}
       {diagnosticsOpen && <DiagnosticsPanel />}
-      <ViewportInfo />
       <AxisWidget />
     </div>
   )
@@ -148,7 +165,7 @@ function EditorRig({
   world,
 }: {
   selection: string[]
-  tool: 'translate' | 'rotate' | 'scale'
+  tool: 'select' | 'translate' | 'rotate' | 'scale'
   space: 'local' | 'world'
   snapEnabled: boolean
   world: import('koota').World
@@ -247,7 +264,7 @@ function EditorRig({
   useEffect(() => {
     const gizmo = gizmoRef.current
     if (!gizmo) return
-    gizmo.setMode(tool)
+    gizmo.setMode(tool === 'select' ? 'translate' : tool) // 'select' keeps the gizmo detached (see useFrame)
     gizmo.setSpace(space === 'world' ? 'world' : 'local')
     const store = useEditorStore.getState()
     gizmo.translationSnap = snapEnabled ? store.snapTranslate : null
@@ -315,15 +332,36 @@ function EditorRig({
   }, [camera, gl, raycaster, scene])
 
   /* Per-frame: outline update, gizmo attach, orbit damping, focus, stats */
+  const lastPreset = useRef(viewportState.cameraPreset)
   useFrame((_, delta) => {
     controlsRef.current?.update()
 
+    // Camera preset switch (Perspective/Top/Front/Side from the toolbar).
+    if (viewportState.cameraPreset !== lastPreset.current) {
+      lastPreset.current = viewportState.cameraPreset
+      const controls = controlsRef.current
+      if (controls) {
+        const presets: Record<string, [THREE.Vector3, THREE.Vector3]> = {
+          perspective: [new THREE.Vector3(9, 6, 12), new THREE.Vector3(0, 1, 0)],
+          top: [new THREE.Vector3(0, 24, 0.001), new THREE.Vector3(0, 0, 0)],
+          front: [new THREE.Vector3(0, 2, 20), new THREE.Vector3(0, 1.5, 0)],
+          side: [new THREE.Vector3(20, 2, 0), new THREE.Vector3(0, 1.5, 0)],
+        }
+        const [position, target] = presets[viewportState.cameraPreset] ?? presets.perspective
+        camera.position.copy(position)
+        controls.target.copy(target)
+        controls.update()
+      }
+    }
+
     // Gizmo attach — self-healing every frame; only objects already in the
-    // scene graph may attach (TransformControls throws otherwise).
+    // scene graph may attach (TransformControls throws otherwise). The
+    // Select tool keeps the gizmo detached.
     const gizmo = gizmoRef.current
     if (gizmo) {
       const uuid = selection[0]
-      const expected = uuid ? findEntityByUuid(world, uuid)?.get(ThreeObject)?.object ?? null : null
+      const expected =
+        tool === 'select' ? null : uuid ? findEntityByUuid(world, uuid)?.get(ThreeObject)?.object ?? null : null
       const attachable = expected !== null && isInSceneGraph(expected)
       if (attachable && gizmo.object !== expected) gizmo.attach(expected)
       else if (!attachable && gizmo.object) gizmo.detach()
@@ -378,10 +416,10 @@ function EditorRig({
     }
   })
 
+  const gridVisible = useEditorStore((s) => s.gridVisible)
   return (
     <>
-      <gridHelper args={[80, 80, '#46536a', '#2a3341']} position={[0, -0.001, 0]} />
-      <axesHelper args={[1.2]} position={[0, 0.002, 0]} />
+      {gridVisible && <gridHelper args={[80, 80, '#46536a', '#2a3341']} position={[0, -0.001, 0]} />}
     </>
   )
 }
@@ -390,16 +428,124 @@ function EditorRig({
 /* Overlays                                                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Floating viewport chrome per reference: grouped pill toolbars at the top
+ * (Perspective | layout … Select/Move/Rotate/Scale … Global), a vertical
+ * utility rail on the right edge, and a compact bottom-right status cluster.
+ */
 function ViewportToolbar() {
+  const tool = useEditorStore((s) => s.tool)
+  const space = useEditorStore((s) => s.space)
+  const snapEnabled = useEditorStore((s) => s.snapEnabled)
+  const gridVisible = useEditorStore((s) => s.gridVisible)
+  const store = useEditorStore.getState
+  const [cameraMenu, setCameraMenu] = useState(false)
+  const [spaceMenu, setSpaceMenu] = useState(false)
+
+  const setCameraPreset = (preset: 'perspective' | 'top' | 'front' | 'side') => {
+    viewportState.cameraPreset = preset
+    setCameraMenu(false)
+  }
+
   return (
-    <div className="ah-viewport-toolbar">
-      <span style={{ fontSize: 10.5, color: 'var(--text-dim)', padding: '0 8px', letterSpacing: '0.06em' }}>
-        PERSPECTIVE
-      </span>
-      <span className="ah-separator" />
-      <span style={{ fontSize: 10.5, color: 'var(--text-muted)', padding: '0 8px' }}>
-        Lit · Grid · Gizmo
-      </span>
+    <div className="ah-viewport-chrome-top">
+      <div className="ah-toolbar-group">
+        <div className={`ah-menu ${cameraMenu ? 'open' : ''}`}>
+          <button className="ah-vtool" onClick={() => setCameraMenu(!cameraMenu)}>
+            Perspective <ChevronDown size={12} style={{ opacity: 0.6 }} />
+          </button>
+          {cameraMenu && (
+            <div className="ah-menu-pop">
+              <MenuList
+                items={[
+                  { label: 'Perspective', onClick: () => setCameraPreset('perspective') },
+                  { label: 'Top', onClick: () => setCameraPreset('top') },
+                  { label: 'Front', onClick: () => setCameraPreset('front') },
+                  { label: 'Side', onClick: () => setCameraPreset('side') },
+                ]}
+                onDone={() => setCameraMenu(false)}
+              />
+            </div>
+          )}
+        </div>
+        <span className="ah-vtool-sep" />
+        <IconButton
+          icon={<LayoutGrid size={15} />}
+          label="Toggle grid"
+          active={gridVisible}
+          onClick={() => store().setGridVisible(!gridVisible)}
+        />
+      </div>
+
+      <div className="ah-toolbar-group">
+        <IconButton icon={<MousePointer2 size={15} />} label="Select (Q)" active={tool === 'select'} onClick={() => store().setTool('select')} />
+        <IconButton icon={<Move3d size={15} />} label="Move (W)" active={tool === 'translate'} onClick={() => store().setTool('translate')} />
+        <IconButton icon={<Rotate3d size={15} />} label="Rotate (E)" active={tool === 'rotate'} onClick={() => store().setTool('rotate')} />
+        <IconButton icon={<Scale3d size={15} />} label="Scale (R)" active={tool === 'scale'} onClick={() => store().setTool('scale')} />
+        <span className="ah-vtool-sep" />
+        <IconButton icon={<Magnet size={15} />} label="Snapping" active={snapEnabled} onClick={() => store().setSnap(!snapEnabled)} />
+      </div>
+
+      <div className={`ah-menu ${spaceMenu ? 'open' : ''}`}>
+        <button className="ah-vtool ah-toolbar-group" style={{ padding: '0 10px' }} onClick={() => setSpaceMenu(!spaceMenu)}>
+          {space === 'local' ? 'Local' : 'Global'} <ChevronDown size={12} style={{ opacity: 0.6 }} />
+        </button>
+        {spaceMenu && (
+          <div className="ah-menu-pop">
+            <MenuList
+              items={[
+                { label: 'Local', onClick: () => { store().setSpace('local'); setSpaceMenu(false) } },
+                { label: 'Global', onClick: () => { store().setSpace('world'); setSpaceMenu(false) } },
+              ]}
+              onDone={() => setSpaceMenu(false)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/** Vertical pill rail on the viewport's right edge — 42px wide, 34px buttons. */
+function ViewportRail() {
+  const diagnosticsOpen = useEditorStore((s) => s.diagnosticsOpen)
+  const settings = useEditorStore((s) => s.sceneSettings)
+  const store = useEditorStore.getState
+  return (
+    <div className="ah-viewport-rail">
+      <IconButton icon={<Focus size={15} />} label="Frame selection (F)" onClick={() => { viewportState.focusRequests += 1 }} />
+      <IconButton icon={<Orbit size={15} />} label="Orbit — drag viewport to orbit" active />
+      <IconButton
+        icon={<Sun size={15} />}
+        label="Realtime shadows (RTX)"
+        active={settings.shadowEnabled}
+        onClick={() => store().setSceneSettings({ ...settings, shadowEnabled: !settings.shadowEnabled })}
+      />
+      <IconButton icon={<Activity size={15} />} label="Diagnostics" active={diagnosticsOpen} onClick={() => store().setDiagnosticsOpen(!diagnosticsOpen)} />
+    </div>
+  )
+}
+
+/** Bottom-right status cluster: Grid 1m · Snap · RTX — floats over canvas. */
+function ViewportStatus() {
+  const snapEnabled = useEditorStore((s) => s.snapEnabled)
+  const settings = useEditorStore((s) => s.sceneSettings)
+  const gridVisible = useEditorStore((s) => s.gridVisible)
+  const store = useEditorStore.getState
+  return (
+    <div className="ah-viewport-status">
+      <button className={`chip ${gridVisible ? '' : 'off'}`} onClick={() => store().setGridVisible(!gridVisible)}>
+        Grid <b>1m</b>
+      </button>
+      <button className={`chip ${snapEnabled ? 'on' : ''}`} onClick={() => store().setSnap(!snapEnabled)}>
+        Snap {snapEnabled ? '◉' : '○'}
+      </button>
+      <button
+        className={`chip ${settings.shadowEnabled ? 'on' : ''}`}
+        onClick={() => store().setSceneSettings({ ...settings, shadowEnabled: !settings.shadowEnabled })}
+      >
+        RTX {settings.shadowEnabled ? '◉' : '○'}
+      </button>
     </div>
   )
 }
@@ -458,24 +604,6 @@ function DiagnosticsPanel() {
       <div>Loaded Assets <b>{assets.length}</b></div>
     </div>
   )
-}
-
-function ViewportInfo() {
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    let raf = 0
-    const tick = () => {
-      const camera = viewportState.camera
-      if (camera && ref.current) {
-        const p = camera.position
-        ref.current.textContent = `Cam  x ${p.x.toFixed(1)}  y ${p.y.toFixed(1)}  z ${p.z.toFixed(1)}`
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return <div className="ah-viewport-info" ref={ref} />
 }
 
 /** Orientation gizmo rendered as projected SVG axes (bottom-right). */

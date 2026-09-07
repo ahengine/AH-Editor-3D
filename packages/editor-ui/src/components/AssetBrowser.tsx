@@ -20,7 +20,7 @@ const typeIcon = (asset: AssetRecord | { type: string }) => {
   }
 }
 
-export function AssetBrowser() {
+export function AssetBrowser({ compact = false }: { compact?: boolean }) {
   const assets = useEditorStore((s) => s.assets)
   const prefabs = useEditorStore((s) => s.prefabs)
   const [query, setQuery] = useState('')
@@ -37,9 +37,9 @@ export function AssetBrowser() {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <div style={{ display: 'flex', gap: 8, padding: '8px 10px', alignItems: 'center', flex: 'none' }}>
-        <div className="ah-search" style={{ width: 220 }}>
+    <div className="ah-panel-body">
+      <div className={compact ? 'ah-assets-toolbar' : 'ah-assets-toolbar'}>
+        <div className="ah-search" style={{ flex: 1, maxWidth: 220 }}>
           <Search size={12} />
           <input placeholder="Search assets…" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>

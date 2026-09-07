@@ -22,7 +22,7 @@ interface NodePosition {
   y: number
 }
 
-export function AnimatorPanel() {
+export function AnimatorPanel({ hideTimeline = false }: { hideTimeline?: boolean }) {
   const controllers = useEditorStore((s) => s.controllers)
   const assets = useEditorStore((s) => s.assets)
   const world = useEditorStore((s) => s.world)
@@ -98,7 +98,7 @@ export function AnimatorPanel() {
   return (
     <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
       {/* Controller list */}
-      <div style={{ width: 180, flex: 'none', borderRight: '1px solid var(--border)', padding: 6, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div className="ah-ctl-list">
         <button className="ah-btn" onClick={createController}>
           <Plus size={13} /> New Controller
         </button>
@@ -254,7 +254,7 @@ export function AnimatorPanel() {
 
       {/* State / transition inspector */}
       {controller && (
-        <div style={{ width: 230, flex: 'none', borderLeft: '1px solid var(--border)', padding: 10, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="ah-ctl-inspector">
           {selectedTransitionId ? (
             <TransitionInspector
               controller={controller}
@@ -293,7 +293,8 @@ export function AnimatorPanel() {
         </div>
       )}
 
-      {/* Timeline preview */}
+      {/* Timeline preview (only in standalone mode — the docked Timeline has its own transport) */}
+      {!hideTimeline && (
       <PreviewTimeline
         entity={previewEntity ?? null}
         controller={controller}
@@ -310,6 +311,7 @@ export function AnimatorPanel() {
           }
         }}
       />
+      )}
     </div>
   )
 }

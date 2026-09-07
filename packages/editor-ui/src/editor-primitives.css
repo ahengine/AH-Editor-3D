@@ -1,0 +1,868 @@
+/* ================================================================
+   AHEngine primitive components — built exclusively from tokens.
+   editor-tokens.css → editor-primitives.css → panel styles.
+   ================================================================ */
+
+/* ---------------------------------------------------------------- */
+/* Base                                                              */
+/* ---------------------------------------------------------------- */
+
+* {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--page-bg);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--fs-ui);
+  font-weight: 400;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+button,
+select {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+/* Scrollbars — extremely subtle */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---------------------------------------------------------------- */
+/* EditorPanel — major panel surface                                 */
+/* ---------------------------------------------------------------- */
+
+.ah-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ah-panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.ah-panel-title {
+  font-size: var(--fs-panel-heading);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.ah-panel-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- */
+/* ToolbarGroup — floating rounded toolbar capsule                   */
+/* ---------------------------------------------------------------- */
+
+.ah-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--toolbar-group-h);
+  padding: 0 var(--sp-2);
+  background: rgba(30, 38, 48, 0.88);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-group);
+  backdrop-filter: blur(20px) saturate(120%);
+  box-shadow: var(--shadow-float);
+}
+
+/* ---------------------------------------------------------------- */
+/* IconButton                                                        */
+/* ---------------------------------------------------------------- */
+
+.ah-icon-btn {
+  width: var(--toolbar-btn);
+  height: var(--toolbar-btn);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-button);
+  color: var(--text-secondary);
+  background: transparent;
+  transition: background var(--motion-hover), color var(--motion-hover);
+  position: relative;
+  flex: none;
+}
+.ah-icon-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.ah-icon-btn:active:not(:disabled) {
+  background: var(--accent-soft);
+}
+.ah-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ah-icon-btn.active {
+  background: var(--accent-soft);
+  color: #cfe0ff;
+}
+.ah-icon-btn.small {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-small);
+}
+
+/* Tooltip via title attr is native; delayed custom tooltip: */
+.ah-icon-btn[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 24, 32, 0.96);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-size: var(--fs-meta);
+  padding: 4px 8px;
+  border-radius: var(--radius-small);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 400;
+}
+
+/* ---------------------------------------------------------------- */
+/* Buttons                                                           */
+/* ---------------------------------------------------------------- */
+
+.ah-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--input-height);
+  padding: 0 var(--sp-4);
+  border-radius: var(--radius-button);
+  border: 1px solid var(--border-default);
+  background: var(--control-bg);
+  color: var(--text-primary);
+  font-size: var(--fs-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--motion-hover), border-color var(--motion-hover);
+}
+.ah-btn:hover {
+  background: var(--control-hover);
+}
+.ah-btn.primary {
+  background: var(--accent-soft);
+  border-color: rgba(120, 168, 255, 0.35);
+  color: #d6e5ff;
+}
+.ah-btn.danger:hover {
+  background: rgba(160, 60, 55, 0.35);
+}
+
+/* ---------------------------------------------------------------- */
+/* SegmentedControl                                                  */
+/* ---------------------------------------------------------------- */
+
+.ah-segment {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: rgba(46, 55, 67, 0.72);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+}
+.ah-segment > button {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-small);
+  font-size: var(--fs-secondary);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  transition: background var(--motion-hover), color var(--motion-hover);
+  white-space: nowrap;
+}
+.ah-segment > button:hover {
+  color: var(--text-secondary);
+}
+.ah-segment > button.active {
+  background: rgba(66, 78, 93, 0.95);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Top-bar variant (larger) */
+.ah-segment.top {
+  padding: 2px;
+  gap: 2px;
+}
+.ah-segment.top > button {
+  height: 28px;
+  padding: 0 14px;
+  font-size: var(--fs-ui);
+}
+
+/* ---------------------------------------------------------------- */
+/* SearchInput                                                       */
+/* ---------------------------------------------------------------- */
+
+.ah-search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--input-height);
+  padding: 0 var(--sp-3);
+  background: var(--input-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  color: var(--text-tertiary);
+  transition: border-color var(--motion-hover);
+}
+.ah-search:focus-within {
+  border-color: rgba(120, 168, 255, 0.45);
+  box-shadow: var(--focus-ring);
+}
+.ah-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: var(--fs-secondary);
+}
+.ah-search input::placeholder {
+  color: var(--text-tertiary);
+}
+.ah-search kbd {
+  font-family: inherit;
+  font-size: var(--fs-tiny);
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.4;
+}
+
+/* ---------------------------------------------------------------- */
+/* Inputs — text / number                                            */
+/* ---------------------------------------------------------------- */
+
+.ah-input {
+  height: var(--input-height);
+  background: var(--input-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  padding: 0 var(--sp-2);
+  color: var(--text-primary);
+  outline: none;
+  min-width: 0;
+  font-size: var(--fs-secondary);
+  transition: border-color var(--motion-hover), background var(--motion-hover);
+}
+.ah-input:hover {
+  background: rgba(40, 49, 60, 0.96);
+}
+.ah-input:focus {
+  border-color: rgba(120, 168, 255, 0.45);
+  background: var(--input-bg-focus);
+  box-shadow: var(--focus-ring);
+}
+.ah-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+select.ah-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0.5L4 4.5L8 0.5' fill='none' stroke='%23aeb9c6' stroke-opacity='0.55'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 22px;
+}
+
+/* NumberInput (compact, axis-labelled) */
+.ah-num {
+  display: flex;
+  align-items: center;
+  height: var(--input-height);
+  background: var(--input-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  overflow: hidden;
+  transition: border-color var(--motion-hover);
+}
+.ah-num:hover {
+  border-color: var(--border-default);
+}
+.ah-num:focus-within {
+  border-color: rgba(120, 168, 255, 0.45);
+  box-shadow: var(--focus-ring);
+}
+.ah-num .ah-num-axis {
+  flex: none;
+  width: 17px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.03);
+  border-right: 1px solid var(--border-subtle);
+}
+.ah-num.axis-x .ah-num-axis { color: var(--axis-x); }
+.ah-num.axis-y .ah-num-axis { color: var(--axis-y); }
+.ah-num.axis-z .ah-num-axis { color: var(--axis-z); }
+.ah-num input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0 6px;
+  text-align: right;
+  color: var(--text-primary);
+  font-size: var(--fs-secondary);
+  font-variant-numeric: tabular-nums;
+  user-select: text;
+}
+.ah-num input::-webkit-outer-spin-button,
+.ah-num input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* EditorSlider — custom track/thumb, no browser default             */
+/* ---------------------------------------------------------------- */
+
+.ah-slider {
+  --fill: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  cursor: ew-resize;
+}
+.ah-slider .track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.09);
+  overflow: visible;
+}
+.ah-slider .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--fill);
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+.ah-slider .thumb {
+  position: absolute;
+  top: 50%;
+  left: var(--fill);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #e8eef6;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  transition: transform var(--motion-hover);
+}
+.ah-slider:hover .thumb {
+  transform: translate(-50%, -50%) scale(1.12);
+}
+.ah-slider:focus-within {
+  border-radius: var(--radius-small);
+  box-shadow: var(--focus-ring);
+}
+
+/* Color field */
+.ah-color-chip {
+  width: 34px;
+  height: 20px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border-default);
+  padding: 0;
+  cursor: pointer;
+  background: none;
+}
+.ah-color-chip::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.ah-color-chip::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-small) - 1px);
+}
+
+/* Checkbox */
+.ah-check {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  cursor: pointer;
+  font-size: var(--fs-secondary);
+  color: var(--text-secondary);
+}
+.ah-check input {
+  width: 13px;
+  height: 13px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- */
+/* TreeItem                                                          */
+/* ---------------------------------------------------------------- */
+
+.ah-tree-row {
+  height: var(--row-height);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding-right: var(--sp-2);
+  border-radius: var(--radius-small);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition: background 80ms ease;
+}
+.ah-tree-row:hover {
+  background: var(--surface-hover);
+}
+.ah-tree-row.selected {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+.ah-tree-row.disabled-entity .ah-tree-name {
+  opacity: 0.4;
+}
+
+.ah-tree-caret {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  border-radius: 4px;
+}
+.ah-tree-caret:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+.ah-tree-row.selected .ah-tree-caret {
+  color: rgba(220, 230, 245, 0.8);
+}
+
+.ah-tree-icon {
+  flex: none;
+  display: inline-flex;
+  color: var(--accent);
+  opacity: 0.9;
+}
+.ah-tree-row.selected .ah-tree-icon {
+  color: #a8c8ff;
+}
+
+.ah-tree-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--fs-ui);
+}
+.ah-tree-row input {
+  background: var(--input-bg-focus);
+  border: 1px solid rgba(120, 168, 255, 0.5);
+  border-radius: var(--radius-small);
+  padding: 1px 6px;
+  outline: none;
+  color: var(--text-primary);
+  width: 100%;
+  font-size: var(--fs-ui);
+  user-select: text;
+}
+
+.ah-tree-actions {
+  display: none;
+  gap: 2px;
+  flex: none;
+}
+.ah-tree-row:hover .ah-tree-actions,
+.ah-tree-row.selected .ah-tree-actions {
+  display: flex;
+}
+
+/* ---------------------------------------------------------------- */
+/* InspectorSection — card inside inspector                          */
+/* ---------------------------------------------------------------- */
+
+.ah-section {
+  margin: 0 var(--sp-2) var(--sp-2);
+  background: var(--panel-bg-soft);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.ah-section.collapsed {
+  background: transparent;
+  border-color: transparent;
+}
+.ah-section-head {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3) 0 var(--sp-4);
+  cursor: pointer;
+  transition: background var(--motion-hover);
+}
+.ah-section-head:hover {
+  background: var(--surface-hover);
+}
+.ah-section-head .title {
+  flex: 1;
+  font-size: var(--fs-panel-heading);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ah-section-head .chev {
+  color: var(--text-tertiary);
+  display: flex;
+}
+.ah-section-body {
+  padding: var(--sp-1) var(--sp-4) var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* Field grid: label + control */
+.ah-field {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: var(--sp-3);
+  align-items: center;
+  min-height: var(--row-height);
+}
+.ah-field > label {
+  font-size: var(--fs-secondary);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* AssetField */
+.ah-asset-field {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--input-height);
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+  background: var(--input-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-input);
+  color: var(--text-secondary);
+  font-size: var(--fs-secondary);
+  cursor: pointer;
+  transition: border-color var(--motion-hover);
+}
+.ah-asset-field:hover {
+  border-color: var(--border-default);
+}
+
+/* ---------------------------------------------------------------- */
+/* Timeline primitives                                               */
+/* ---------------------------------------------------------------- */
+
+.ah-timeline {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: rgba(20, 25, 32, 0.6);
+}
+
+.ah-tl-track {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035);
+  position: relative;
+}
+
+.ah-tl-clip {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-tiny);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: ew-resize;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: filter var(--motion-hover);
+}
+.ah-tl-clip:hover {
+  filter: brightness(1.12);
+}
+.ah-tl-clip.blue { background: var(--clip-blue); }
+.ah-tl-clip.violet { background: var(--clip-violet); }
+.ah-tl-clip.green { background: var(--clip-green); }
+
+.ah-tl-keyframe {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg) translateY(-1px);
+  background: #d8e2ee;
+  border-radius: 1.5px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  top: 50%;
+  cursor: pointer;
+}
+.ah-tl-keyframe:hover {
+  background: var(--accent);
+}
+
+.ah-tl-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-line);
+  pointer-events: none;
+  z-index: 5;
+}
+.ah-tl-playhead::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------------------------------------------------------------- */
+/* Menus (dropdown)                                                  */
+/* ---------------------------------------------------------------- */
+
+.ah-menu {
+  position: relative;
+}
+.ah-menu-trigger {
+  border-radius: var(--radius-button);
+  transition: background var(--motion-hover);
+}
+.ah-menu-trigger:hover,
+.ah-menu.open .ah-menu-trigger {
+  background: var(--surface-hover);
+}
+.ah-menu-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  min-width: 210px;
+  background: rgba(26, 33, 42, 0.98);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+  padding: var(--sp-1);
+  z-index: 300;
+  backdrop-filter: blur(24px) saturate(120%);
+}
+.ah-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  height: 28px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--radius-small);
+  color: var(--text-secondary);
+  font-size: var(--fs-secondary);
+  text-align: left;
+  transition: background var(--motion-hover), color var(--motion-hover);
+}
+.ah-menu-item:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.ah-menu-item .shortcut {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: var(--fs-tiny);
+}
+.ah-menu-item.danger:hover {
+  background: rgba(160, 60, 55, 0.3);
+}
+.ah-menu-sep {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--sp-1) var(--sp-2);
+}
+.ah-menu-label {
+  padding: var(--sp-2) var(--sp-3) var(--sp-1);
+  font-size: var(--fs-tiny);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.ah-context {
+  position: fixed;
+  z-index: 500;
+  min-width: 200px;
+  background: rgba(26, 33, 42, 0.98);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55);
+  padding: var(--sp-1);
+}
+
+/* ---------------------------------------------------------------- */
+/* Notifications / modal                                             */
+/* ---------------------------------------------------------------- */
+
+.ah-notifications {
+  position: fixed;
+  bottom: var(--sp-7);
+  right: calc(var(--shell-padding) + var(--sp-5));
+  z-index: 600;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-width: 340px;
+}
+.ah-notification {
+  background: rgba(26, 33, 42, 0.97);
+  border: 1px solid var(--border-default);
+  border-left: 3px solid var(--text-tertiary);
+  border-radius: var(--radius-button);
+  padding: var(--sp-3) var(--sp-5);
+  font-size: var(--fs-secondary);
+  box-shadow: var(--shadow-float);
+  animation: ah-slide-in 160ms ease;
+}
+.ah-notification.error { border-left-color: #e2574c; }
+.ah-notification.success { border-left-color: #6fcf8e; }
+@keyframes ah-slide-in {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.ah-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 10, 16, 0.62);
+  z-index: 700;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 14vh;
+  backdrop-filter: blur(6px);
+}
+.ah-modal {
+  width: 480px;
+  max-width: 92vw;
+  background: rgba(28, 35, 44, 0.98);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.ah-modal-header {
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.ah-modal-body {
+  padding: var(--sp-4) var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.ah-empty {
+  color: var(--text-tertiary);
+  font-size: var(--fs-secondary);
+  padding: var(--sp-6);
+  text-align: center;
+}
+
+.ah-kbd {
+  font-size: var(--fs-tiny);
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
