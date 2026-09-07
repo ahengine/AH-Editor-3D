@@ -52,6 +52,7 @@ export function EditorApp() {
           <Group
             orientation="horizontal"
             className="ah-group-h"
+            defaultLayout={loadLayout('main')}
             onLayoutChange={(layout) => saveLayout('main', layout)}
           >
             <Panel id="left" defaultSize={292} minSize={240} maxSize={360}>
@@ -62,6 +63,7 @@ export function EditorApp() {
               <Group
                 orientation="vertical"
                 className="ah-group-v"
+                defaultLayout={loadLayout('center')}
                 onLayoutChange={(layout) => saveLayout('center', layout)}
               >
                 <Panel id="viewport" minSize={200}>

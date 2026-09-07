@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { Package, Sparkles, Wand2 } from 'lucide-react'
 import type { WorkspaceId } from '@ahengine/editor-core'
 import { useEditorStore, instantiatePrefabAction } from '@ahengine/editor-core'
@@ -85,11 +84,6 @@ export function MaterialListPanel() {
 
 export function ParticleListPanel() {
   const effects = useEditorStore((s) => s.particleEffects)
-  const totalEntities = useMemo(
-    () => useEditorStore.getState().world.query(require_trait()).length,
-    []
-  )
-  void totalEntities
   return (
     <div className="ah-panel">
       <div className="ah-panel-head">
@@ -118,12 +112,6 @@ export function ParticleListPanel() {
       </div>
     </div>
   )
-}
-
-// ParticleEmitter trait import kept local to avoid a top-level import cycle at module init
-import { ParticleEmitter } from '@ahengine/ecs-runtime'
-function require_trait() {
-  return ParticleEmitter
 }
 
 /** Clearly-incomplete shell for bottom panels whose phase hasn't started. */
