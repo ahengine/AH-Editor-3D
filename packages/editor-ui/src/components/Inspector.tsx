@@ -277,10 +277,6 @@ function TransformSection({ entity, uuid }: { entity: Entity; uuid: string }) {
   )
 }
 
-function axisIndexRemoved() {
-  /* placeholder removed */
-}
-
 /* ------------------------------------------------------------------ */
 /* Material                                                            */
 /* ------------------------------------------------------------------ */

@@ -19,7 +19,7 @@
 | vite | 8.2.2 |
 | Lint | **not configured** (no ESLint config in repo) |
 | Tests | vitest, 5 files / 29 tests, all passing |
-| Source size | ~10.1k LOC TS/TSX across 6 workspace packages |
+| Source size | ~9.9k LOC TS/TSX (excl. node_modules/dist/.d.ts) across 6 workspace packages |
 
 ### Koota API surface actually used (all verified against installed 0.6.6)
 
