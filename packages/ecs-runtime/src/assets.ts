@@ -7,7 +7,8 @@ import type { AssetRecord } from '@ahengine/project-schema'
  * Asset resolution is infrastructure agnostic. The editor resolves to
  * IndexedDB object URLs; a game can resolve to a CDN, S3, IPFS…
  */
-export interface AssetResolver {
+export type AssetResolverLegacy = AssetResolver
+interface AssetResolver {
   resolve(asset: AssetRecord): Promise<string>
 }
 
@@ -111,7 +112,8 @@ export class AssetCache {
   }
 }
 
-export const sharedAssetCache = new AssetCache()
+/** @deprecated use sharedAssetCache from asset-cache.js */
+export const legacyAssetCache = new AssetCache()
 
 /** Model animation clips by asset id, used by the animator runtime and editor. */
 export const modelAnimations = new Map<string, THREE.AnimationClip[]>()

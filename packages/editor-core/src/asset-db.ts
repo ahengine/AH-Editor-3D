@@ -2,6 +2,7 @@ import type { AssetRecord, AssetType } from '@ahengine/project-schema'
 import { idbPutBlob } from './idb.js'
 import { useEditorStore } from './store.js'
 import { projectBackend } from './backend.js'
+import { sharedAssetCache } from '@ahengine/ecs-runtime'
 
 /** Asset database: file imports land here as stable-id records + backend blobs. */
 
@@ -21,7 +22,7 @@ export function assetTypeForFile(fileName: string): AssetType | null {
   return EXTENSION_TYPES[extension] ?? null
 }
 
-/** Reads a chosen file into the asset DB (backend blob + record). */
+/** Reads a chosen file into the asset DB (backend blob + record + metadata). */
 export async function importAssetFile(file: File): Promise<AssetRecord | null> {
   const type = assetTypeForFile(file.name)
   if (!type) {
@@ -36,12 +37,34 @@ export async function importAssetFile(file: File): Promise<AssetRecord | null> {
     useEditorStore.getState().notify('error', `Asset import failed: ${(error as Error).message}`)
     return null
   }
+
+  // Extract GLTF metadata (node names, animation names, material slots, bbox, tri count).
+  let metadata: Record<string, unknown> = { size: file.size, importedAt: new Date().toISOString() }
+  if (type === 'model') {
+    try {
+      const loaded = await sharedAssetCache.acquireModel(id, uri === `idb://${id}` ? URL.createObjectURL(file) : uri)
+      metadata = {
+        ...metadata,
+        nodeNames: loaded.metadata.nodeNames.slice(0, 50),
+        animationNames: loaded.metadata.animationNames,
+        materialSlots: loaded.metadata.materialSlots,
+        boundingBox: loaded.metadata.boundingBox,
+        triangleCount: loaded.metadata.triangleCount,
+      }
+      sharedAssetCache.release(id)
+    } catch {
+      // Metadata is best-effort — the model still imports even if extraction fails.
+    }
+  }
+
   const record: AssetRecord = {
     id,
     type,
     name: file.name,
     uri,
-    metadata: { size: file.size, importedAt: new Date().toISOString() },
+    source: file.name,
+    createdAt: new Date().toISOString(),
+    metadata,
   }
   const store = useEditorStore.getState()
   store.setAssets([...store.assets, record])

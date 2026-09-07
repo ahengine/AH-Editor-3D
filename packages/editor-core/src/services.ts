@@ -1,9 +1,9 @@
 import type { AssetRecord } from '@ahengine/project-schema'
 import {
   AnimatorRuntime,
-  AssetCache,
   MaterialService,
   modelAnimationRegistry,
+  sharedAssetCache,
   type AssetResolver,
 } from '@ahengine/ecs-runtime'
 import { idbGetBlob } from './idb.js'
@@ -40,7 +40,7 @@ class EditorAssetResolver implements AssetResolver {
 }
 
 export const assetResolver = new EditorAssetResolver()
-export const assetCache = new AssetCache()
+export const assetCache = sharedAssetCache
 
 export const materialService = new MaterialService(
   materialMap,

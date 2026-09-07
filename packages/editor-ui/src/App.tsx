@@ -192,10 +192,11 @@ function useGlobalShortcuts(enabled: boolean): void {
 function useAutosave(enabled: boolean): void {
   useEffect(() => {
     if (!enabled) return
-    const interval = window.setInterval(() => {
-      if (useEditorStore.getState().dirty) void saveProject()
-    }, 30_000)
-    return () => window.clearInterval(interval)
+    // Debounced: bumpWorld / setDirty → scheduleAutosave (2s idle → one save)
+    const unsub = useEditorStore.subscribe((state, prev) => {
+      if (state.dirty && !prev.dirty) void import('@ahengine/editor-core').then(m => m.scheduleAutosave())
+    })
+    return unsub
   }, [enabled])
 }
 

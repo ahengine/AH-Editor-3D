@@ -48,6 +48,7 @@ export function TopBar() {
   const undoDepth = useEditorStore((s) => s.undoDepth)
   const redoDepth = useEditorStore((s) => s.redoDepth)
   const diagnosticsOpen = useEditorStore((s) => s.diagnosticsOpen)
+  const saveState = useEditorStore((s) => s.saveState)
   const viewportScale = useEditorStore((s) => s.viewportScale)
   const [menuOpen, setMenuOpen] = useState(false)
   const store = useEditorStore.getState
@@ -57,6 +58,10 @@ export function TopBar() {
       { label: 'New Project', icon: <FilePlus2 {...icon13} />, onClick: () => bootstrapDefaultProject() },
       { label: 'Open Saved', icon: <FolderOpen {...icon13} />, onClick: () => void openSavedProject() },
       { label: 'Save', icon: <Save {...icon13} />, shortcut: 'Ctrl+S', onClick: () => void saveProject() },
+      { label: 'Save As…', onClick: () => {
+        const name = window.prompt('Project name', useEditorStore.getState().projectName)
+        if (name && name.trim()) void import('@ahengine/editor-core').then(m => m.saveProjectAs(name.trim()))
+      } },
       { label: 'Import Project JSON…', icon: <Upload {...icon13} />, onClick: () => importJsonFile() },
       { separatorBefore: true, label: 'Export Project', icon: <Download {...icon13} />, onClick: exportProjectJson },
       { label: 'Export Scene', icon: <Download {...icon13} />, onClick: exportSceneJson },
@@ -94,8 +99,11 @@ export function TopBar() {
           </span>
         </div>
         <span className="ah-topbar-project" title={projectName}>
-          {dirty && <span className="dirty-dot" />}
+          {saveState === 'unsaved' && <span className="dirty-dot" />}
           {projectName}
+        </span>
+        <span className={`ah-save-state ${saveState}`} title={saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}>
+          {saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved'}
         </span>
       </div>
 

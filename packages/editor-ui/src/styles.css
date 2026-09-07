@@ -1073,3 +1073,28 @@
 .ah-icon-btn.off:hover {
   opacity: 0.9;
 }
+
+.ah-save-state {
+  font-size: var(--fs-tiny);
+  color: var(--text-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border-subtle);
+  flex: none;
+  letter-spacing: 0.04em;
+}
+.ah-save-state.saved { color: #8fcf9f; }
+.ah-save-state.saving { color: var(--accent); }
+.ah-save-state.unsaved { color: #e2a44c; border-color: rgba(226, 164, 76, 0.3); }
+
+.ah-missing-asset {
+  flex: none;
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  color: #e2574c;
+  background: rgba(226, 87, 76, 0.12);
+  border: 1px solid rgba(226, 87, 76, 0.3);
+  border-radius: var(--radius-small);
+  padding: 1px 6px;
+  white-space: nowrap;
+}

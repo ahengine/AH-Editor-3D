@@ -1,8 +1,7 @@
 import * as THREE from 'three'
 import { MeshBasicNodeMaterial, MeshPhysicalNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu'
 import type { MaterialDefinition } from '@ahengine/project-schema'
-import type { AssetCache, AssetResolver } from './assets.js'
-import { sharedAssetCache } from './assets.js'
+import { sharedAssetCache, type AssetResolver, type AssetCache } from './asset-cache.js'
 
 /**
  * Material service: MaterialDefinition (data) → THREE NodeMaterial (GPU).

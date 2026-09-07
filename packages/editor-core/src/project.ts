@@ -105,18 +105,52 @@ export function buildSceneExport(): SceneData {
 /* Save / Load / Import / Export                                       */
 /* ------------------------------------------------------------------ */
 export async function saveProject(): Promise<void> {
+  const store = useEditorStore.getState()
+  store.setSaveState('saving')
   const data = buildProjectData()
   try {
     await projectBackend.save(data)
   } catch (error) {
+    useEditorStore.getState().setSaveState('unsaved')
     useEditorStore.getState().notify('error', `Save failed: ${(error as Error).message}`)
     return
   }
   useEditorStore.getState().setDirty(false)
+  useEditorStore.getState().setSaveState('saved')
   const host = getHostConfig()
   useEditorStore
     .getState()
     .notify('success', host ? `Saved → ${host.projectFile}` : 'Project saved')
+}
+
+/** Debounced autosave — coalesces rapid dirty flags into one save (2s idle). */
+let autosaveTimer: ReturnType<typeof setTimeout> | null = null
+export function scheduleAutosave(): void {
+  if (autosaveTimer) clearTimeout(autosaveTimer)
+  autosaveTimer = setTimeout(() => {
+    autosaveTimer = null
+    if (useEditorStore.getState().dirty) void saveProject()
+  }, 2000)
+}
+
+/** Save As: duplicate the project under a new name and switch to it. */
+export async function saveProjectAs(newName: string): Promise<void> {
+  const store = useEditorStore.getState()
+  const data = buildProjectData()
+  data.project.name = newName
+  data.project.id = `project-${crypto.randomUUID().slice(0, 8)}`
+  store.setProjectMeta(data.project.id, newName, store.sceneId, store.sceneName)
+  store.setSaveState('saving')
+  try {
+    await projectBackend.save(data)
+  } catch (error) {
+    useEditorStore.getState().setSaveState('unsaved')
+    useEditorStore.getState().notify('error', `Save As failed: ${(error as Error).message}`)
+    return
+  }
+  useEditorStore.getState().setDirty(false)
+  useEditorStore.getState().setSaveState('saved')
+  useEditorStore.getState().notify('success', `Saved as "${newName}"`)
 }
 export async function openSavedProject(): Promise<boolean> {
   let saved: ProjectData | null = null

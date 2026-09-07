@@ -17,7 +17,7 @@ import {
 import { ChildOf, getParent } from '../relations.js'
 import { fallbackMaterial, type MaterialService } from '../materials.js'
 import type { AnimatorRuntime } from '../animation.js'
-import { sharedAssetCache } from '../assets.js'
+import { sharedAssetCache } from '../asset-cache.js'
 import { modelAnimationRegistry } from '../loader.js'
 import { entityUuid } from '../registry.js'
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js'

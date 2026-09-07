@@ -3,7 +3,7 @@ import type { ProjectData, SceneData, AssetRecord, MaterialDefinition, AnimatorC
 import { parseScene, validateSceneIntegrity } from '@ahengine/project-schema'
 import { AnimatorRuntime } from './animation.js'
 import { MaterialService } from './materials.js'
-import { AssetCache, sharedAssetCache, type AssetResolver } from './assets.js'
+import { sharedAssetCache, type AssetResolver, type AssetCache } from './asset-cache.js'
 import { deserializeScene, serializeScene } from './serialize.js'
 import { ThreeObject } from './traits.js'
 import { validateSceneComponents } from './registry.js'

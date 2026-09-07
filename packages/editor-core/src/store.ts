@@ -40,6 +40,8 @@ export interface EditorStore {
   sceneName: string
   sceneSettings: SceneSettings
   dirty: boolean
+  /** Derived save indicator: 'saved' | 'saving' | 'unsaved' */
+  saveState: 'saved' | 'saving' | 'unsaved'
 
   assets: AssetRecord[]
   materials: MaterialDefinition[]
@@ -95,6 +97,7 @@ export interface EditorStore {
   setAnimations(animations: AnimationClipAsset[]): void
   setParticleEffects(effects: ParticleEffectAsset[]): void
   setDirty(dirty: boolean): void
+  setSaveState(state: 'saved' | 'saving' | 'unsaved'): void
   select(uuids: string[]): void
   setHovered(uuid: string | null): void
   setTool(tool: ToolMode): void
@@ -134,6 +137,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   sceneName: 'Main Scene',
   sceneSettings: defaultSceneSettings(),
   dirty: false,
+  saveState: 'saved',
 
   assets: [],
   materials: [],
@@ -184,7 +188,8 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setControllers: (controllers) => set({ controllers, dirty: true }),
   setAnimations: (animations) => set({ animations, dirty: true }),
   setParticleEffects: (particleEffects) => set({ particleEffects, dirty: true }),
-  setDirty: (dirty) => set({ dirty }),
+  setDirty: (dirty) => set({ dirty, saveState: dirty ? 'unsaved' : 'saved' }),
+  setSaveState: (saveState) => set({ saveState }),
   select: (selection) => set({ selection }),
   setHovered: (hovered) => set({ hovered }),
   setTool: (tool) => set({ tool }),

@@ -43,7 +43,10 @@ export interface AssetRecord {
   name: string
   /** Infrastructure agnostic URI. e.g. `idb://…` in the editor, `https://…` or `/assets/…` at runtime. */
   uri: string
+  /** Where the asset came from (e.g. original filename or 'generated'). */
+  source?: string
   metadata?: Record<string, unknown>
+  createdAt?: string
 }
 
 export const AssetRecordSchema = z.object({
@@ -51,5 +54,8 @@ export const AssetRecordSchema = z.object({
   type: AssetTypeSchema,
   name: z.string(),
   uri: z.string().min(1),
+  source: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  // v1 backfill: records authored before this field existed parse without it.
+  createdAt: z.string().optional(),
 })
