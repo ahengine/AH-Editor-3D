@@ -23,7 +23,9 @@ export function ParticleWorkspace() {
   const [playing, setPlaying] = useState(true)
   const [simSpeed, setSimSpeed] = useState(1)
 
-  const effect = effects.find((e) => e.id === activeId) ?? null
+  // Auto-select the first effect when none is selected
+  const effectiveActiveId = activeId ?? effects[0]?.id ?? null
+  const effect = effects.find((e) => e.id === effectiveActiveId) ?? null
 
   const updateEffect = useCallback((next: ParticleEffectData) => {
     const s = useEditorStore.getState()
@@ -160,13 +162,6 @@ function ParticleUpdater({
   speed: number
   pointsRef: React.RefObject<THREE.Points | null>
 }) {
-  const sceneRef = useRef<THREE.Group | null>(null)
-  const { scene } = useFrame((_, dt) => ({ scene: null })) as never
-
-  useEffect(() => {
-    // Mount points to scene on first frame
-  }, [])
-
   useFrame(({ scene }, delta) => {
     const inst = instanceRef.current
     if (!inst) return
