@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import type { AnimationClipData, AnimationTrack, AnimationKeyframe } from '@ahengine/project-schema'
 import { sampleClip, sampleTrack } from '@ahengine/ecs-runtime'
-import { useEditorStore } from '@ahengine/editor-core'
+import { runCommand, SetDocumentListCommand, useEditorStore } from '@ahengine/editor-core'
 import { IconButton } from '../ui/primitives.js'
 
 /**
@@ -32,7 +32,15 @@ export function AnimationWorkspace() {
 
   const updateClip = useCallback((next: AnimationClipData) => {
     const s = useEditorStore.getState()
-    s.setAnimations(s.animations.map((c) => (c.id === next.id ? next : c)))
+    runCommand(
+      new SetDocumentListCommand(
+        `Edit ${next.name}`,
+        'animation',
+        'animations',
+        s.animations,
+        s.animations.map((c) => (c.id === next.id ? next : c))
+      )
+    )
   }, [])
 
   return (
@@ -57,7 +65,15 @@ export function AnimationWorkspace() {
                 fps: 30,
                 tracks: [],
               }
-              s.setAnimations([...s.animations, newClip])
+              runCommand(
+                new SetDocumentListCommand(
+                  `Create ${newClip.name}`,
+                  'animation',
+                  'animations',
+                  s.animations,
+                  [...s.animations, newClip]
+                )
+              )
               setActiveClipId(id)
             }}
           />

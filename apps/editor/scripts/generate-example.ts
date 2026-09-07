@@ -43,11 +43,12 @@ if (existsSync(glbPath)) {
     ],
     animatorControllers: [
       {
+        format: 'koota-3d-animator',
+        schemaVersion: 1,
         id: controllerId,
         name: 'Spin Controller',
-        modelAssetId,
         parameters: [],
-        states: [{ id: stateId, name: 'Spin', clip: 'SpinBounce', loop: true, speed: 1 }],
+        states: [{ id: stateId, name: 'Spin', clipId: 'SpinBounce', loop: true, speed: 1 }],
         transitions: [],
         entryStateId: stateId,
       },

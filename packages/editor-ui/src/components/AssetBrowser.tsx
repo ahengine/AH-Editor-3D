@@ -12,8 +12,8 @@ import {
   Upload,
 } from 'lucide-react'
 import type { AssetRecord, AssetType } from '@ahengine/project-schema'
-import { importAssetFiles, resolveAssetUri, useEditorStore } from '@ahengine/editor-core'
-import { instantiatePrefabAction, deleteAsset } from '@ahengine/editor-core'
+import { importAssetFiles, openAsset, resolveAssetUri, useEditorStore } from '@ahengine/editor-core'
+import { deleteAsset } from '@ahengine/editor-core'
 import { MaterialReference, ModelRenderer } from '@ahengine/ecs-runtime'
 import { useContextMenu } from '../hooks.js'
 
@@ -169,8 +169,8 @@ export function AssetBrowser({ compact = false }: { compact?: boolean }) {
                 className="ah-asset-card"
                 draggable
                 onDragStart={(event) => event.dataTransfer.setData('ah/prefab', prefab.id)}
-                onDoubleClick={() => instantiatePrefabAction(prefab.id)}
-                title={`${prefab.name} — drag into viewport or double-click`}
+                onDoubleClick={() => openAsset({ kind: 'prefab', id: prefab.id })}
+                title={`${prefab.name} — double-click to open, drag into viewport to instantiate`}
               >
                 <div className="ah-asset-thumb" style={{ color: 'var(--accent)' }}>
                   <PackageOpen size={22} />
@@ -185,8 +185,9 @@ export function AssetBrowser({ compact = false }: { compact?: boolean }) {
                 className="ah-asset-card"
                 draggable
                 onDragStart={(event) => event.dataTransfer.setData('ah/asset', asset.id)}
+                onDoubleClick={() => openAsset({ kind: 'asset', id: asset.id })}
                 onContextMenu={(event) => assetContextMenu(event, asset)}
-                title={`${asset.name} (${asset.type}) — drag into viewport`}
+                title={`${asset.name} (${asset.type}) — double-click to open, drag into viewport`}
               >
                 <div className="ah-asset-thumb">
                   <AssetThumbnail record={asset} />
@@ -204,7 +205,7 @@ export function AssetBrowser({ compact = false }: { compact?: boolean }) {
                 className="ah-list-row"
                 draggable
                 onDragStart={(event) => event.dataTransfer.setData('ah/prefab', prefab.id)}
-                onDoubleClick={() => instantiatePrefabAction(prefab.id)}
+                onDoubleClick={() => openAsset({ kind: 'prefab', id: prefab.id })}
               >
                 <span className="ah-list-icon"><PackageOpen size={14} /></span>
                 <span className="ah-list-name">{prefab.name}</span>
@@ -217,6 +218,7 @@ export function AssetBrowser({ compact = false }: { compact?: boolean }) {
                 className="ah-list-row"
                 draggable
                 onDragStart={(event) => event.dataTransfer.setData('ah/asset', asset.id)}
+                onDoubleClick={() => openAsset({ kind: 'asset', id: asset.id })}
                 onContextMenu={(event) => assetContextMenu(event, asset)}
               >
                 <span className="ah-list-icon"><AssetTypeIcon record={asset} /></span>

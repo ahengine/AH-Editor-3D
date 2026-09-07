@@ -5,7 +5,7 @@ import type {
   AnimatorConditionOperator,
 } from '@ahengine/project-schema'
 import { validOperatorsFor } from '@ahengine/project-schema'
-import { useEditorStore } from '@ahengine/editor-core'
+import { useEditorStore, runCommand, SetDocumentListCommand } from '@ahengine/editor-core'
 import { IconButton } from '../ui/primitives.js'
 
 /**
@@ -21,17 +21,28 @@ const paramId = () => `param-${crypto.randomUUID().slice(0, 8)}`
 export function AnimatorWorkspace() {
   const controllers = useEditorStore((s) => s.controllers)
   const animationClips = useEditorStore((s) => s.animations)
+  const editingControllerId = useEditorStore((s) => s.editingControllerId)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [selectedStateId, setSelectedStateId] = useState<string | null>(null)
   const [selectedTransitionId, setSelectedTransitionId] = useState<string | null>(null)
   const [connecting, setConnecting] = useState<{ fromStateId: string } | null>(null)
   const [previewState, setPreviewState] = useState<string | null>(null)
 
-  const controller = controllers.find((c) => c.id === activeId) ?? null
+  // Deep links (openAsset → controller) focus the linked controller.
+  const effectiveActiveId = activeId ?? editingControllerId ?? null
+  const controller = controllers.find((c) => c.id === effectiveActiveId) ?? null
 
   const updateController = useCallback((next: AnimatorControllerV2) => {
     const s = useEditorStore.getState()
-    s.setControllers(s.controllers.map((c) => (c.id === next.id ? next : c)))
+    runCommand(
+      new SetDocumentListCommand(
+        `Edit ${next.name}`,
+        'animation',
+        'controllers',
+        s.controllers,
+        s.controllers.map((c) => (c.id === next.id ? next : c))
+      )
+    )
   }, [])
 
   return (
@@ -54,16 +65,45 @@ export function AnimatorWorkspace() {
               transitions: [],
               entryStateId: entryId,
             }
-            s.setControllers([...s.controllers, newCtrl])
+            runCommand(
+              new SetDocumentListCommand(
+                `Create ${newCtrl.name}`,
+                'animation',
+                'controllers',
+                s.controllers,
+                [...s.controllers, newCtrl]
+              )
+            )
             setActiveId(id)
           }} />
         </div>
         <div className="ah-panel-body" style={{ overflow: 'visible' }}>
           {controllers.map((c) => (
-            <div key={c.id} className={`ah-list-row ${c.id === activeId ? 'focused' : ''}`}
+            <div key={c.id} className={`ah-list-row ${c.id === effectiveActiveId ? 'focused' : ''}`}
               onClick={() => { setActiveId(c.id); setSelectedStateId(null); setSelectedTransitionId(null) }}>
               <span className="ah-list-name">{c.name}</span>
               <span className="ah-list-meta">{(c as AnimatorControllerV2).states?.length ?? 0} st</span>
+              <button
+                className="ah-icon-btn"
+                style={{ width: 20, height: 20, flex: 'none' }}
+                title={`Delete ${c.name}`}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  const s = useEditorStore.getState()
+                  runCommand(
+                    new SetDocumentListCommand(
+                      `Delete ${c.name}`,
+                      'animation',
+                      'controllers',
+                      s.controllers,
+                      s.controllers.filter((x) => x.id !== c.id)
+                    )
+                  )
+                  if (activeId === c.id) setActiveId(null)
+                }}
+              >
+                <Trash2 size={12} />
+              </button>
             </div>
           ))}
           {controllers.length === 0 && <div className="ah-empty">Create a controller</div>}

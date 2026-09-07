@@ -5,7 +5,7 @@ import { WebGPURenderer, MeshStandardNodeMaterial } from 'three/webgpu'
 import { Plus, Search, Trash2, Copy, X } from 'lucide-react'
 import type { MaterialGraph, MaterialGraphNode, MaterialGraphConnection, SocketType } from '@ahengine/project-schema'
 import { getNodeTypeDef, nodesByCategory, compileMaterialGraphAsync, type NodeTypeDef } from '@ahengine/ecs-runtime'
-import { useEditorStore, materialService } from '@ahengine/editor-core'
+import { useEditorStore, materialService, runCommand, UpsertMaterialCommand } from '@ahengine/editor-core'
 import { IconButton } from '../ui/primitives.js'
 
 /**
@@ -41,8 +41,8 @@ export function MaterialGraphWorkspace() {
       <div className="ah-lib-list" style={{ width: 140 }}>
         <button className="ah-btn" style={{ justifyContent: 'center' }} onClick={() => {
           const id = `mat-${crypto.randomUUID().slice(0, 8)}`
-          const s = useEditorStore.getState()
-          s.setMaterials([...s.materials, { id, name: `Graph ${s.materials.length + 1}`, type: 'standard' as const, properties: {}, graph: undefined } as never])
+          const def = { id, name: `Graph ${materials.length + 1}`, type: 'standard' as const, properties: {} }
+          runCommand(new UpsertMaterialCommand('Create graph material', def))
           setSelectedId(id)
         }}>
           <Plus size={13} /> New Graph

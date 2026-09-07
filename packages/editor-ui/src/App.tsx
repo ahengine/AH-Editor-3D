@@ -16,6 +16,8 @@ import { TopBar } from './components/TopBar.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
 import { BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
+import { CommandPalette } from './components/CommandPalette.js'
+import { ProblemsPanel } from './components/ProblemsPanel.js'
 
 /**
  * Editor shell — pixel-locked to Design/Editor Concept.png (1672×941):
@@ -83,6 +85,8 @@ export function EditorApp() {
         </div>
       </div>
       <Notifications />
+      <CommandPalette />
+      <ProblemsPanel />
     </div>
   )
 }
@@ -143,11 +147,7 @@ function useGlobalShortcuts(enabled: boolean): void {
       }
       if (mod && event.key.toLowerCase() === 'k') {
         event.preventDefault()
-        const store2 = useEditorStore.getState()
-        store2.setSidebarTab('scene')
-        requestAnimationFrame(() => {
-          document.getElementById('ah-hierarchy-search')?.focus()
-        })
+        useEditorStore.getState().setPaletteOpen(true)
         return
       }
       if (mod && event.key.toLowerCase() === 'd') {
@@ -156,8 +156,11 @@ function useGlobalShortcuts(enabled: boolean): void {
         return
       }
       if (event.key === 'Escape') {
-        // Cancel the current interaction: drop selection (menus/dialogs close themselves).
-        if (store.selection.length > 0) store.select([])
+        // Cancel the current interaction: palette/problems close first,
+        // then drop selection (menus/dialogs close themselves).
+        if (store.paletteOpen) store.setPaletteOpen(false)
+        else if (store.problemsOpen) store.setProblemsOpen(false)
+        else if (store.selection.length > 0) store.select([])
         return
       }
       switch (event.key.toLowerCase()) {

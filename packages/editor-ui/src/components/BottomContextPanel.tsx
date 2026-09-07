@@ -5,8 +5,8 @@ import { AnimationWorkspace } from './AnimationWorkspace.js'
 import { AnimatorWorkspace } from './AnimatorWorkspace.js'
 import { ParticleWorkspace } from './ParticleWorkspace.js'
 import { AssetBrowser } from './AssetBrowser.js'
-import { MaterialListPanel, ParticleListPanel, IncompletePanelShell } from './WorkspacePanels.js'
-import { PrefabWorkspace } from './PrefabWorkspace.js'
+import { MaterialListPanel, ParticleListPanel } from './WorkspacePanels.js'
+import { PrefabStructurePanel, PrefabWorkspace } from './PrefabWorkspace.js'
 import { MaterialGraphWorkspace } from './MaterialGraphEditor.js'
 
 /**
@@ -57,12 +57,7 @@ export const workspaceConfigs: WorkspaceConfig[] = [
       {
         id: 'structure',
         label: 'Structure',
-        content: (
-          <IncompletePanelShell
-            domain="Prefab structure"
-            hint="Instance-override inspection and visual diff arrive next. The data model (localIds, nestedInstances, overrides, cycle protection) is fully functional and tested."
-          />
-        ),
+        content: <PrefabStructureTab />,
       },
     ],
   },
@@ -103,6 +98,20 @@ export const workspaceConfigs: WorkspaceConfig[] = [
     ],
   },
 ]
+
+/** Bottom tab for the prefab workspace — structure of the open prefab. */
+function PrefabStructureTab() {
+  const activePrefabId = useEditorStore((s) => s.activePrefabId)
+  const prefab = useEditorStore((s) => s.prefabs.find((p) => p.id === activePrefabId))
+  if (!prefab) {
+    return (
+      <div className="ah-empty" style={{ height: '100%' }}>
+        Open a prefab from the left panel to inspect its structure.
+      </div>
+    )
+  }
+  return <PrefabStructurePanel prefab={prefab} />
+}
 
 /** Bottom context panel — tabbed, content per workspace, architecture open. */
 export function BottomContextPanel({ workspace }: { workspace: WorkspaceId }) {

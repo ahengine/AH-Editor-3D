@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Box,
   Camera,
+  ChevronLeft,
   Circle,
   Cone,
   Cylinder,
@@ -14,11 +15,12 @@ import {
   MoreHorizontal,
   Play,
   Save,
+  Search,
   Share2,
   Upload,
 } from 'lucide-react'
 import { useEditorStore } from '@ahengine/editor-core'
-import { redo, undo } from '@ahengine/editor-core'
+import { redo, returnFromDocument, undo } from '@ahengine/editor-core'
 import { enterPlayMode, stopPlayMode } from '@ahengine/editor-core'
 import {
   bootstrapDefaultProject,
@@ -32,6 +34,7 @@ import { createCamera, createEntity, createLight, createPrimitive } from '@aheng
 import { SegmentedControl, IconButton } from '../ui/primitives.js'
 import { workspaceConfigs } from './BottomContextPanel.js'
 import { MenuList, type MenuItemSpec } from '../hooks.js'
+import { ProblemsChip } from './ProblemsPanel.js'
 
 const icon13 = { size: 13, strokeWidth: 1.7 }
 
@@ -44,20 +47,28 @@ export function TopBar() {
   const playMode = useEditorStore((s) => s.playMode)
   const projectName = useEditorStore((s) => s.projectName)
   const dirty = useEditorStore((s) => s.dirty)
+  const dirtyDocs = useEditorStore((s) => s.dirtyDocs)
   const backend = useEditorStore((s) => s.backend)
   const undoDepth = useEditorStore((s) => s.undoDepth)
   const redoDepth = useEditorStore((s) => s.redoDepth)
   const diagnosticsOpen = useEditorStore((s) => s.diagnosticsOpen)
   const saveState = useEditorStore((s) => s.saveState)
   const viewportScale = useEditorStore((s) => s.viewportScale)
+  const returnWorkspace = useEditorStore((s) => s.returnWorkspace)
+  const editingMaterialId = useEditorStore((s) => s.editingMaterialId)
+  const editingControllerId = useEditorStore((s) => s.editingControllerId)
   const [menuOpen, setMenuOpen] = useState(false)
   const store = useEditorStore.getState
+
+  const dirtyDocLabels = Object.entries(dirtyDocs)
+    .filter(([, value]) => value)
+    .map(([key]) => key[0].toUpperCase() + key.slice(1))
 
   const menus: Record<string, MenuItemSpec[]> = {
     File: [
       { label: 'New Project', icon: <FilePlus2 {...icon13} />, onClick: () => bootstrapDefaultProject() },
       { label: 'Open Saved', icon: <FolderOpen {...icon13} />, onClick: () => void openSavedProject() },
-      { label: 'Save', icon: <Save {...icon13} />, shortcut: 'Ctrl+S', onClick: () => void saveProject() },
+      { label: 'Save All', icon: <Save {...icon13} />, shortcut: 'Ctrl+S', onClick: () => void saveProject() },
       { label: 'Save As…', onClick: () => {
         const name = window.prompt('Project name', useEditorStore.getState().projectName)
         if (name && name.trim()) void import('@ahengine/editor-core').then(m => m.saveProjectAs(name.trim()))
@@ -102,26 +113,68 @@ export function TopBar() {
           {saveState === 'unsaved' && <span className="dirty-dot" />}
           {projectName}
         </span>
-        <span className={`ah-save-state ${saveState}`} title={saveState === 'saved' ? 'All changes saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved changes'}>
+        <span
+          className={`ah-save-state ${saveState}`}
+          title={
+            dirtyDocLabels.length > 0
+              ? `Unsaved: ${dirtyDocLabels.join(', ')} — Ctrl+S saves all documents`
+              : saveState === 'saved'
+                ? 'All changes saved'
+                : saveState === 'saving'
+                  ? 'Saving…'
+                  : 'Unsaved changes'
+          }
+        >
           {saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved'}
         </span>
+        {dirty && dirtyDocLabels.length > 0 && (
+          <span className="ah-doc-dots" title={`Unsaved documents: ${dirtyDocLabels.join(', ')}`}>
+            {dirtyDocLabels.map((label) => (
+              <span key={label} className="ah-doc-dot">
+                {label}
+              </span>
+            ))}
+          </span>
+        )}
       </div>
 
       <div className="ah-topbar-center">
+        {returnWorkspace && workspace !== 'scene' && (
+          <button
+            className="ah-back-nav"
+            title={`Back to ${returnWorkspace}`}
+            onClick={returnFromDocument}
+          >
+            <ChevronLeft size={13} />
+            {returnWorkspace[0].toUpperCase() + returnWorkspace.slice(1)}
+          </button>
+        )}
         <SegmentedControl
           size="top"
           value={workspace}
           onChange={(next) => {
             store().setWorkspace(next)
+            store().setReturnWorkspace(null)
             // Workspaces own their inspector focus (Material → Library).
             const config = workspaceConfigs.find((entry) => entry.id === next)
             if (config) store().setInspectorTab(config.inspectorTab)
           }}
           options={workspaceConfigs.map((config) => ({ value: config.id, label: config.label }))}
         />
+        {workspace === 'material' && editingMaterialId && (
+          <DocumentCrumb doc="Material" id={editingMaterialId} />
+        )}
+        {workspace === 'animation' && editingControllerId && (
+          <DocumentCrumb doc="Controller" id={editingControllerId} />
+        )}
       </div>
 
       <div className="ah-topbar-right">
+        <button className="ah-btn ah-search-btn" onClick={() => store().setPaletteOpen(true)} title="Search (Ctrl+K)">
+          <Search size={13} /> Search
+          <span className="ah-kbd">Ctrl K</span>
+        </button>
+        <ProblemsChip />
         <button className="ah-btn" onClick={exportProjectJson}>
           <Share2 size={13} /> Share
         </button>
@@ -164,6 +217,20 @@ export function TopBar() {
         </div>
       </div>
     </div>
+  )
+}
+
+/** Small breadcrumb naming the open document inside the current workspace. */
+function DocumentCrumb({ doc, id }: { doc: string; id: string }) {
+  const name =
+    useEditorStore((s) =>
+      doc === 'Material' ? s.materials.find((m) => m.id === id)?.name : s.controllers.find((c) => c.id === id)?.name
+    ) ?? id
+  return (
+    <span className="ah-doc-crumb" title={`${doc}: ${name}`}>
+      <span className="ah-doc-crumb-kind">{doc}</span>
+      {name}
+    </span>
   )
 }
 

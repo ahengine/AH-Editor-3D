@@ -64,6 +64,14 @@
   --axis-y: #7df17d;
   --axis-z: #6ba8ff;
 
+  --error: #e2574c;
+  --error-soft: rgba(226, 87, 76, 0.16);
+  --warning: #e2b93c;
+  --warning-soft: rgba(226, 185, 60, 0.14);
+  --success: #6fcf8e;
+  --success-soft: rgba(111, 207, 142, 0.14);
+  --accent-green: #6fcf8e;
+
   /* ---- radii hierarchy ---- */
   --radius-window: 22px;
   --radius-panel: 14px;

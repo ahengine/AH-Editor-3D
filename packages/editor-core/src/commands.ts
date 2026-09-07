@@ -13,7 +13,7 @@ import {
   serializeSubtree,
 } from '@ahengine/ecs-runtime'
 import { ChildOf, getParent, setParent } from '@ahengine/ecs-runtime'
-import { useEditorStore } from './store.js'
+import { docForWorkspace, useEditorStore, type DocId } from './store.js'
 import { materialService } from './services.js'
 import type { World as KootaWorld } from 'koota'
 
@@ -21,10 +21,16 @@ import type { World as KootaWorld } from 'koota'
  * Command system. Every meaningful editor action is a command with do/undo.
  * Gizmo drags capture state on drag start and commit ONE command on release —
  * never per mouse move.
+ *
+ * History is per-document (scene / prefab / material / animation / particle):
+ * commands carry the doc they mutate, undo/redo act on the ACTIVE document so
+ * each authoring surface has an independent, coherent stack.
  */
 
 export interface EditorCommand {
   readonly label: string
+  /** Document whose history this command belongs to. Defaults to the active workspace's doc. */
+  readonly doc?: DocId
   /**
    * When set, rapidly consecutive commands with the same key merge into one
    * undo entry (numeric nudges, slider bursts). First `before` is kept.
@@ -34,15 +40,35 @@ export interface EditorCommand {
   undo(): void
 }
 
+interface DocStack {
+  undo: EditorCommand[]
+  redo: EditorCommand[]
+}
+
 class CommandStack {
-  private undoStack: EditorCommand[] = []
-  private redoStack: EditorCommand[] = []
+  private stacks: Record<DocId, DocStack> = {
+    scene: { undo: [], redo: [] },
+    prefab: { undo: [], redo: [] },
+    material: { undo: [], redo: [] },
+    animation: { undo: [], redo: [] },
+    particle: { undo: [], redo: [] },
+  }
   private lastPushAt = 0
   private static COALESCE_WINDOW_MS = 1000
 
+  private stackFor(doc: DocId): DocStack {
+    return this.stacks[doc]
+  }
+
+  private activeDoc(): DocId {
+    return docForWorkspace(useEditorStore.getState().workspace)
+  }
+
   push(command: EditorCommand): void {
+    const doc = command.doc ?? this.activeDoc()
+    const stack = this.stackFor(doc)
     const now = Date.now()
-    const top = this.undoStack[this.undoStack.length - 1]
+    const top = stack.undo[stack.undo.length - 1]
     if (
       command.coalesceKey &&
       top?.coalesceKey === command.coalesceKey &&
@@ -51,7 +77,7 @@ class CommandStack {
       command instanceof SetComponentFieldCommand
     ) {
       // Merge: keep the FIRST before, adopt the LATEST after.
-      this.undoStack[this.undoStack.length - 1] = new SetComponentFieldCommand(
+      stack.undo[stack.undo.length - 1] = new SetComponentFieldCommand(
         top.label,
         top.uuid,
         top.componentId,
@@ -59,43 +85,47 @@ class CommandStack {
         command.after
       )
       this.lastPushAt = now
-      this.redoStack = []
+      stack.redo = []
       return
     }
-    this.undoStack.push(command)
-    if (this.undoStack.length > 256) this.undoStack.shift()
-    this.redoStack = []
+    stack.undo.push(command)
+    if (stack.undo.length > 256) stack.undo.shift()
+    stack.redo = []
     this.lastPushAt = now
     this.syncDepths()
   }
 
   /** Loading a different project invalidates all history. */
   clearForLoad(): void {
-    this.undoStack = []
-    this.redoStack = []
+    for (const doc of Object.keys(this.stacks) as DocId[]) {
+      this.stacks[doc] = { undo: [], redo: [] }
+    }
     this.syncDepths()
   }
 
   undo(): EditorCommand | undefined {
-    const command = this.undoStack.pop()
+    const stack = this.stackFor(this.activeDoc())
+    const command = stack.undo.pop()
     if (!command) return undefined
     command.undo()
-    this.redoStack.push(command)
+    stack.redo.push(command)
     this.syncDepths()
     return command
   }
 
   redo(): EditorCommand | undefined {
-    const command = this.redoStack.pop()
+    const stack = this.stackFor(this.activeDoc())
+    const command = stack.redo.pop()
     if (!command) return undefined
     command.execute()
-    this.undoStack.push(command)
+    stack.undo.push(command)
     this.syncDepths()
     return command
   }
 
   private syncDepths(): void {
-    useEditorStore.getState().setCommandDepths(this.undoStack.length, this.redoStack.length)
+    const stack = this.stackFor(this.activeDoc())
+    useEditorStore.getState().setCommandDepths(stack.undo.length, stack.redo.length)
   }
 }
 
@@ -115,6 +145,7 @@ function world(): KootaWorld {
 /* ------------------------------------------------------------------ */
 
 export class AddEntitiesCommand implements EditorCommand {
+  readonly doc: DocId = 'scene'
   constructor(
     readonly label: string,
     private readonly data: SerializedEntity[],
@@ -141,6 +172,7 @@ export class AddEntitiesCommand implements EditorCommand {
 }
 
 export class DeleteEntitiesCommand implements EditorCommand {
+  readonly doc: DocId = 'scene'
   private snapshots: { data: SerializedEntity[]; roots: Entity[] }[] = []
 
   constructor(
@@ -202,6 +234,7 @@ function destroySubtree(world: KootaWorld, root: Entity): void {
 /* ------------------------------------------------------------------ */
 
 export class AddComponentCommand implements EditorCommand {
+  readonly doc: DocId = 'scene'
   private prevData: Record<string, unknown> | null = null
 
   constructor(
@@ -230,6 +263,7 @@ export class AddComponentCommand implements EditorCommand {
 }
 
 export class RemoveComponentCommand implements EditorCommand {
+  readonly doc: DocId = 'scene'
   private prevData: Record<string, unknown> | null = null
 
   constructor(
@@ -257,6 +291,7 @@ export class RemoveComponentCommand implements EditorCommand {
 
 /** Generic component property change with field-level before/after. */
 export class SetComponentFieldCommand implements EditorCommand {
+  readonly doc: DocId = 'scene'
   readonly coalesceKey: string
   constructor(
     readonly label: string,
@@ -286,6 +321,7 @@ export class SetComponentFieldCommand implements EditorCommand {
 /* ------------------------------------------------------------------ */
 
 export class ReparentCommand implements EditorCommand {
+  readonly doc: DocId = 'scene'
   constructor(
     readonly label: string,
     private readonly uuid: string,
@@ -313,6 +349,7 @@ export class ReparentCommand implements EditorCommand {
 /* ------------------------------------------------------------------ */
 
 export class UpsertMaterialCommand implements EditorCommand {
+  readonly doc: DocId = 'material'
   private existedBefore = false
   private prevDef: MaterialDefinition | null = null
 
@@ -349,6 +386,7 @@ export class UpsertMaterialCommand implements EditorCommand {
 /* ------------------------------------------------------------------ */
 
 export class TransformDragCommand implements EditorCommand {
+  readonly doc: DocId = 'scene'
   constructor(
     readonly label: string,
     private readonly uuid: string,
@@ -364,6 +402,56 @@ export class TransformDragCommand implements EditorCommand {
   undo(): void {
     const entity = findEntityByUuid(world(), this.uuid)
     if (entity) applyPatch(entity, 'core.transform', this.before)
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Document lists — prefabs, controllers, clips, particle effects      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Full-list snapshot command for document arrays (prefabs, controllers,
+ * clips, particle effects). Lists stay small (tens of entries), so a
+ * before/after snapshot is exact and trivially correct — including add,
+ * edit, and delete in one uniform command.
+ */
+export class SetDocumentListCommand<T> implements EditorCommand {
+  constructor(
+    readonly label: string,
+    readonly doc: DocId,
+    private readonly key: 'prefabs' | 'controllers' | 'animations' | 'particleEffects' | 'materials',
+    private readonly before: T[],
+    private readonly after: T[]
+  ) {}
+
+  private apply(list: T[]): void {
+    const store = useEditorStore.getState()
+    switch (this.key) {
+      case 'prefabs':
+        store.setPrefabs(list as never)
+        break
+      case 'controllers':
+        store.setControllers(list as never)
+        break
+      case 'animations':
+        store.setAnimations(list as never)
+        break
+      case 'particleEffects':
+        store.setParticleEffects(list as never)
+        break
+      case 'materials':
+        store.setMaterials(list as never)
+        for (const def of list as unknown as { id: string }[]) materialService.update(def.id)
+        break
+    }
+  }
+
+  execute(): void {
+    this.apply(this.after)
+  }
+
+  undo(): void {
+    this.apply(this.before)
   }
 }
 

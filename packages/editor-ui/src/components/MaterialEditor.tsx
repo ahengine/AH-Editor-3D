@@ -189,18 +189,52 @@ export function MaterialEditor() {
               ).map(([key, label]) => (
                 <div className="ah-field" key={key} style={{ marginBottom: 4 }}>
                   <label>{label}</label>
-                  <select
-                    className="ah-input"
-                    value={material.properties[key] ?? ''}
-                    onChange={(event) => update({ [key]: event.target.value || null } as Partial<MaterialDefinition['properties']>)}
+                  <div
+                    className={`ah-drop-socket ${material.properties[key] ? 'filled' : ''}`}
+                    title={`Drop a texture asset here to assign ${label}`}
+                    onDragOver={(event) => {
+                      if (event.dataTransfer.types.includes('ah/asset')) {
+                        event.preventDefault()
+                        event.dataTransfer.dropEffect = 'copy'
+                        event.currentTarget.classList.add('over')
+                      }
+                    }}
+                    onDragLeave={(event) => event.currentTarget.classList.remove('over')}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      event.currentTarget.classList.remove('over')
+                      const assetId = event.dataTransfer.getData('ah/asset')
+                      const asset = assets.find((a) => a.id === assetId)
+                      if (!asset || asset.type !== 'texture') {
+                        useEditorStore.getState().notify('error', 'Only texture assets can fill map sockets')
+                        return
+                      }
+                      update({ [key]: assetId } as Partial<MaterialDefinition['properties']>)
+                    }}
                   >
-                    <option value="">— none —</option>
-                    {textures.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
+                    <select
+                      className="ah-input"
+                      style={{ flex: 1 }}
+                      value={material.properties[key] ?? ''}
+                      onChange={(event) => update({ [key]: event.target.value || null } as Partial<MaterialDefinition['properties']>)}
+                    >
+                      <option value="">— none —</option>
+                      {textures.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                    {material.properties[key] && (
+                      <button
+                        className="ah-socket-clear"
+                        title="Clear map"
+                        onClick={() => update({ [key]: null } as Partial<MaterialDefinition['properties']>)}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

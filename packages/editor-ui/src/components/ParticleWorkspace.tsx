@@ -7,7 +7,7 @@ import { Play, Pause, Square, RotateCcw, Plus, Trash2, Zap } from 'lucide-react'
 import type { ParticleEffectData } from '@ahengine/project-schema'
 import { createFireEffect, sampleCurve } from '@ahengine/project-schema'
 import { ParticleSystemInstance } from '@ahengine/ecs-runtime'
-import { useEditorStore } from '@ahengine/editor-core'
+import { runCommand, SetDocumentListCommand, useEditorStore } from '@ahengine/editor-core'
 import { IconButton, InspectorSection } from '../ui/primitives.js'
 
 /**
@@ -18,26 +18,43 @@ import { IconButton, InspectorSection } from '../ui/primitives.js'
 
 export function ParticleWorkspace() {
   const effects = useEditorStore((s) => s.particleEffects)
-  const [activeId, setActiveId] = useState<string | null>(null)
+  const activeParticleId = useEditorStore((s) => s.activeParticleId)
+  const setActiveParticleId = useEditorStore((s) => s.setActiveParticleId)
   const [selectedModule, setSelectedModule] = useState<string>('emission')
   const [playing, setPlaying] = useState(true)
   const [simSpeed, setSimSpeed] = useState(1)
 
   // Auto-select the first effect when none is selected
-  const effectiveActiveId = activeId ?? effects[0]?.id ?? null
+  const effectiveActiveId = activeParticleId ?? effects[0]?.id ?? null
   const effect = effects.find((e) => e.id === effectiveActiveId) ?? null
 
   const updateEffect = useCallback((next: ParticleEffectData) => {
     const s = useEditorStore.getState()
-    s.setParticleEffects(s.particleEffects.map((e) => (e.id === next.id ? next : e))
-      .map((e) => e as ParticleEffectData))
+    runCommand(
+      new SetDocumentListCommand(
+        `Edit ${next.name}`,
+        'particle',
+        'particleEffects',
+        s.particleEffects,
+        s.particleEffects.map((e) => (e.id === next.id ? next : e))
+      )
+    )
   }, [])
 
   const createEffect = () => {
     const id = `fx-${crypto.randomUUID().slice(0, 8)}`
     const s = useEditorStore.getState()
-    s.setParticleEffects([...s.particleEffects, createFireEffect(id)])
-    setActiveId(id)
+    const effect = createFireEffect(id)
+    runCommand(
+      new SetDocumentListCommand(
+        `Create ${effect.name}`,
+        'particle',
+        'particleEffects',
+        s.particleEffects,
+        [...s.particleEffects, effect]
+      )
+    )
+    setActiveParticleId(id)
   }
 
   return (
@@ -51,8 +68,14 @@ export function ParticleWorkspace() {
           </div>
           <div className="ah-panel-body">
             {effects.map((e) => (
-              <div key={e.id} className={`ah-list-row ${e.id === activeId ? 'focused' : ''}`}
-                onClick={() => setActiveId(e.id)}>
+              <div
+                key={e.id}
+                className={`ah-list-row ${e.id === effectiveActiveId ? 'focused' : ''}`}
+                draggable
+                onDragStart={(event) => event.dataTransfer.setData('ah/particle', e.id)}
+                onClick={() => setActiveParticleId(e.id)}
+                title={`${e.name} — drag into the viewport to place an emitter`}
+              >
                 <span className="ah-list-icon"><Zap size={13} /></span>
                 <span className="ah-list-name">{e.name}</span>
               </div>

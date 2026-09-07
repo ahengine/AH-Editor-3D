@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Entity } from 'koota'
-import { ChevronDown, ChevronRight, ClipboardPaste, Copy, Eye, EyeOff, Lightbulb, Package, Play, Plus, RotateCcw, Settings2, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, ClipboardPaste, Copy, Eye, EyeOff, Lightbulb, Package, PenLine, Play, Plus, RotateCcw, Settings2, Trash2 } from 'lucide-react'
 import {
   EntityMeta,
   Light as LightTrait,
@@ -12,6 +12,7 @@ import {
 } from '@ahengine/ecs-runtime'
 import {
   editComponentField,
+  openAsset,
   removeComponentFrom,
   renameEntity,
   setComponentFieldLive,
@@ -378,6 +379,14 @@ function MaterialSection({
           <option value="physical">Physical</option>
           <option value="unlit">Unlit</option>
         </select>
+        {materialId && (
+          <IconButton
+            small
+            icon={<PenLine size={13} />}
+            label="Open in Material editor"
+            onClick={() => openAsset({ kind: 'material', id: materialId })}
+          />
+        )}
       </div>
 
       {material && (
@@ -511,12 +520,14 @@ function AnimatorSection({ entity, uuid }: { entity: Entity; uuid: string }) {
     <InspectorSection
       title="Animator"
       actions={
-        <IconButton
-          small
-          icon={<Play size={13} />}
-          label="Open controller"
-          onClick={() => useEditorStore.getState().setTimelineTab('controller')}
-        />
+        controller ? (
+          <IconButton
+            small
+            icon={<PenLine size={13} />}
+            label="Open controller in Animator workspace"
+            onClick={() => openAsset({ kind: 'controller', id: controller.id })}
+          />
+        ) : undefined
       }
     >
       <div className="ah-field">

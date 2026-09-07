@@ -18,6 +18,51 @@ export type TimelineTab = 'timeline' | 'controller'
 /** Authoring workspaces (product navigation). Lighting lives in Scene; Animator lives in Animation. */
 export type WorkspaceId = 'scene' | 'prefab' | 'material' | 'animation' | 'particle'
 
+/**
+ * Undo / dirty documents. Each authoring surface owns its own history so
+ * editing a material never pushes onto the scene's undo stack.
+ */
+export type DocId = 'scene' | 'prefab' | 'material' | 'animation' | 'particle'
+
+export function docForWorkspace(workspace: WorkspaceId): DocId {
+  switch (workspace) {
+    case 'prefab':
+      return 'prefab'
+    case 'material':
+      return 'material'
+    case 'animation':
+      return 'animation'
+    case 'particle':
+      return 'particle'
+    default:
+      return 'scene'
+  }
+}
+
+/** Typed selection so any surface (viewport, problems panel, search) can focus any document object. */
+export type SelectionKind =
+  | 'entity'
+  | 'asset'
+  | 'material'
+  | 'prefab'
+  | 'clip'
+  | 'controller'
+  | 'particleEffect'
+
+export interface EditorSelection {
+  kind: SelectionKind
+  id: string
+}
+
+export interface EditorProblem {
+  id: string
+  severity: 'error' | 'warning'
+  message: string
+  doc: DocId
+  /** Navigation target when the problem can be focused. */
+  target?: EditorSelection
+}
+
 export interface EditorNotification {
   id: number
   kind: 'error' | 'info' | 'success'
@@ -38,6 +83,8 @@ export interface EditorStore {
   sceneName: string
   sceneSettings: SceneSettings
   dirty: boolean
+  /** Which documents have unsaved changes (drives per-document indicators). */
+  dirtyDocs: Record<DocId, boolean>
   /** Derived save indicator: 'saved' | 'saving' | 'unsaved' */
   saveState: 'saved' | 'saving' | 'unsaved'
 
@@ -49,6 +96,8 @@ export interface EditorStore {
   particleEffects: import('@ahengine/project-schema').ParticleEffectData[]
 
   selection: string[]
+  /** Typed global selection (which document object is "open"), independent of multi-select. */
+  selectionFocus: EditorSelection | null
   hovered: string | null
   tool: ToolMode
   space: TransformSpace
@@ -63,6 +112,18 @@ export interface EditorStore {
   diagnosticsOpen: boolean
   /** animator transport targets the selected entity */
   animatorPreviewUuid: string | null
+  /** Per-workspace document being edited (prefab workspace context). */
+  activePrefabId: string | null
+  /** Active clip in the animation workspace. */
+  activeClipId: string | null
+  /** Active effect in the particle workspace. */
+  activeParticleId: string | null
+  /** Workspace to return to when leaving a document opened via openAsset. */
+  returnWorkspace: WorkspaceId | null
+
+  problems: EditorProblem[]
+  problemsOpen: boolean
+  paletteOpen: boolean
 
   sidebarTab: SidebarTab
   inspectorTab: InspectorTab
@@ -95,8 +156,11 @@ export interface EditorStore {
   setAnimations(animations: AnimationClipData[]): void
   setParticleEffects(effects: import('@ahengine/project-schema').ParticleEffectData[]): void
   setDirty(dirty: boolean): void
+  /** Mark one document dirty (autosave + per-document indicators). */
+  markDocDirty(doc: DocId): void
   setSaveState(state: 'saved' | 'saving' | 'unsaved'): void
   select(uuids: string[]): void
+  setSelectionFocus(focus: EditorSelection | null): void
   setHovered(uuid: string | null): void
   setTool(tool: ToolMode): void
   setSpace(space: TransformSpace): void
@@ -106,6 +170,13 @@ export interface EditorStore {
   setEditingController(id: string | null): void
   setDiagnosticsOpen(open: boolean): void
   setAnimatorPreview(uuid: string | null): void
+  setActivePrefabId(id: string | null): void
+  setActiveClipId(id: string | null): void
+  setActiveParticleId(id: string | null): void
+  setReturnWorkspace(workspace: WorkspaceId | null): void
+  setProblems(problems: EditorProblem[]): void
+  setProblemsOpen(open: boolean): void
+  setPaletteOpen(open: boolean): void
   setSidebarTab(tab: SidebarTab): void
   setInspectorTab(tab: InspectorTab): void
   setTimelineTab(tab: TimelineTab): void
@@ -122,6 +193,50 @@ export interface EditorStore {
   dismissNotification(id: number): void
 }
 
+/* ------------------------------------------------------------------ */
+/* Editor preferences — localStorage, never project data. Declared     */
+/* before the store because initial state reads them.                  */
+/* ------------------------------------------------------------------ */
+
+const PREFS_KEY = 'ahengine.prefs.v1'
+
+interface EditorPreferences {
+  snapEnabled: boolean
+  snapTranslate: number
+  snapRotateDeg: number
+  snapScale: number
+  gridVisible: boolean
+  viewportScale: number
+}
+
+const DEFAULT_PREFS: EditorPreferences = {
+  snapEnabled: false,
+  snapTranslate: 0.5,
+  snapRotateDeg: 15,
+  snapScale: 0.1,
+  gridVisible: true,
+  viewportScale: 1,
+}
+
+export function loadPreferences(): EditorPreferences {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY)
+    if (!raw) return { ...DEFAULT_PREFS }
+    return { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<EditorPreferences>) }
+  } catch {
+    return { ...DEFAULT_PREFS }
+  }
+}
+
+export function savePreferences(prefs: Partial<EditorPreferences>): void {
+  try {
+    const next = { ...loadPreferences(), ...prefs }
+    localStorage.setItem(PREFS_KEY, JSON.stringify(next))
+  } catch {
+    /* storage unavailable — preferences stay session-only */
+  }
+}
+
 export const useEditorStore = create<EditorStore>((set) => ({
   world: createWorld(),
   playWorld: null,
@@ -135,6 +250,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   sceneName: 'Main Scene',
   sceneSettings: defaultSceneSettings(),
   dirty: false,
+  dirtyDocs: { scene: false, prefab: false, material: false, animation: false, particle: false },
   saveState: 'saved',
 
   assets: [],
@@ -145,27 +261,30 @@ export const useEditorStore = create<EditorStore>((set) => ({
   particleEffects: [],
 
   selection: [],
+  selectionFocus: null,
   hovered: null,
   tool: 'translate',
   space: 'local',
-  snapEnabled: false,
-  snapTranslate: 0.5,
-  snapRotateDeg: 15,
-  snapScale: 0.1,
 
   bottomPanelOpen: true,
   editingMaterialId: null,
   editingControllerId: null,
   diagnosticsOpen: false,
   animatorPreviewUuid: null,
+  activePrefabId: null,
+  activeClipId: null,
+  activeParticleId: null,
+  returnWorkspace: null,
+
+  problems: [],
+  problemsOpen: false,
+  paletteOpen: false,
 
   sidebarTab: 'scene',
   inspectorTab: 'inspector',
   timelineTab: 'timeline',
   workspace: 'scene',
   bottomTab: { scene: 'assets', prefab: 'structure', material: 'graph', animation: 'timeline', particle: 'curves' },
-  gridVisible: true,
-  viewportScale: 1,
 
   clipboardEntity: null,
   clipboardComponent: null,
@@ -175,24 +294,46 @@ export const useEditorStore = create<EditorStore>((set) => ({
   redoDepth: 0,
   notifications: [],
 
+  ...loadPreferences(),
+
   setBackend: (backend) => set({ backend }),
   setProjectMeta: (projectId, projectName, sceneId, sceneName) =>
     set({ projectId, projectName, sceneId, sceneName, dirty: true }),
   setProjectCreatedAt: (projectCreatedAt) => set({ projectCreatedAt }),
-  setSceneSettings: (sceneSettings) => set({ sceneSettings, dirty: true }),
-  setAssets: (assets) => set({ assets, dirty: true }),
-  setMaterials: (materials) => set({ materials, dirty: true }),
-  setPrefabs: (prefabs) => set({ prefabs, dirty: true }),
-  setControllers: (controllers) => set({ controllers, dirty: true }),
-  setAnimations: (animations) => set({ animations, dirty: true }),
-  setParticleEffects: (particleEffects) => set({ particleEffects, dirty: true }),
-  setDirty: (dirty) => set({ dirty, saveState: dirty ? 'unsaved' : 'saved' }),
+  setSceneSettings: (sceneSettings) => set((state) => ({ sceneSettings, ...dirtyPatch(state, 'scene') })),
+  setAssets: (assets) => set((state) => ({ assets, ...dirtyPatch(state, 'scene') })),
+  setMaterials: (materials) => set((state) => ({ materials, ...dirtyPatch(state, 'material') })),
+  setPrefabs: (prefabs) => set((state) => ({ prefabs, ...dirtyPatch(state, 'prefab') })),
+  setControllers: (controllers) => set((state) => ({ controllers, ...dirtyPatch(state, 'animation') })),
+  setAnimations: (animations) => set((state) => ({ animations, ...dirtyPatch(state, 'animation') })),
+  setParticleEffects: (particleEffects) =>
+    set((state) => ({ particleEffects, ...dirtyPatch(state, 'particle') })),
+  setDirty: (dirty) =>
+    set(
+      dirty
+        ? { dirty, saveState: 'unsaved' }
+        : {
+            dirty: false,
+            saveState: 'saved',
+            dirtyDocs: { scene: false, prefab: false, material: false, animation: false, particle: false },
+          }
+    ),
+  markDocDirty: (doc) => set((state) => dirtyPatch(state, doc)),
   setSaveState: (saveState) => set({ saveState }),
-  select: (selection) => set({ selection }),
+  select: (selection) =>
+    set({
+      selection,
+      // Single entity selection is the canonical focus; multi/clear yields none.
+      selectionFocus: selection.length === 1 ? { kind: 'entity' as const, id: selection[0] } : null,
+    }),
+  setSelectionFocus: (selectionFocus) => set({ selectionFocus }),
   setHovered: (hovered) => set({ hovered }),
   setTool: (tool) => set({ tool }),
   setSpace: (space) => set({ space }),
-  setSnap: (snapEnabled) => set({ snapEnabled }),
+  setSnap: (snapEnabled) => {
+    savePreferences({ snapEnabled })
+    set({ snapEnabled })
+  },
   setBottomPanelOpen: (bottomPanelOpen) => set({ bottomPanelOpen }),
   setEditingMaterial: (editingMaterialId) =>
     set({ editingMaterialId, inspectorTab: 'library' }),
@@ -200,17 +341,30 @@ export const useEditorStore = create<EditorStore>((set) => ({
     set({ editingControllerId, workspace: 'animation', timelineTab: 'controller' }),
   setDiagnosticsOpen: (diagnosticsOpen) => set({ diagnosticsOpen }),
   setAnimatorPreview: (animatorPreviewUuid) => set({ animatorPreviewUuid }),
+  setActivePrefabId: (activePrefabId) => set({ activePrefabId }),
+  setActiveClipId: (activeClipId) => set({ activeClipId }),
+  setActiveParticleId: (activeParticleId) => set({ activeParticleId }),
+  setReturnWorkspace: (returnWorkspace) => set({ returnWorkspace }),
+  setProblems: (problems) => set({ problems }),
+  setProblemsOpen: (problemsOpen) => set({ problemsOpen }),
+  setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
   setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   setInspectorTab: (inspectorTab) => set({ inspectorTab }),
   setTimelineTab: (timelineTab) => set({ timelineTab }),
   setWorkspace: (workspace) => set({ workspace }),
   setBottomTab: (workspace, tab) => set((state) => ({ bottomTab: { ...state.bottomTab, [workspace]: tab } })),
-  setGridVisible: (gridVisible) => set({ gridVisible }),
-  setViewportScale: (viewportScale) => set({ viewportScale }),
+  setGridVisible: (gridVisible) => {
+    savePreferences({ gridVisible })
+    set({ gridVisible })
+  },
+  setViewportScale: (viewportScale) => {
+    savePreferences({ viewportScale })
+    set({ viewportScale })
+  },
   setPlayMode: (playMode, playWorld) => set({ playMode, playWorld }),
   setClipboardEntity: (clipboardEntity) => set({ clipboardEntity }),
   setClipboardComponent: (clipboardComponent) => set({ clipboardComponent }),
-  bumpWorld: () => set((state) => ({ worldVersion: state.worldVersion + 1, dirty: true })),
+  bumpWorld: () => set((state) => ({ worldVersion: state.worldVersion + 1, dirty: true, dirtyDocs: { ...state.dirtyDocs, scene: true } })),
   setCommandDepths: (undoDepth, redoDepth) => set({ undoDepth, redoDepth }),
   notify: (kind, message) =>
     set((state) => ({
@@ -235,6 +389,14 @@ export function defaultSceneSettings(): SceneSettings {
     shadowEnabled: true,
     defaultCameraId: null,
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Per-document dirty state                                            */
+/* ------------------------------------------------------------------ */
+
+function dirtyPatch(state: EditorStore, doc: DocId): Pick<EditorStore, 'dirty' | 'saveState' | 'dirtyDocs'> {
+  return { dirty: true, saveState: 'unsaved', dirtyDocs: { ...state.dirtyDocs, [doc]: true } }
 }
 
 /** Wire koota world events → store version bumps for React structural reactivity. */

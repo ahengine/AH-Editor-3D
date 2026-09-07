@@ -37,8 +37,8 @@ import {
   stopPlayMode,
   useEditorStore,
 } from '@ahengine/editor-core'
-import { createEntity, instantiatePrefabAction } from '@ahengine/editor-core'
-import { commandStack } from '@ahengine/editor-core'
+import { createEntity, editComponentField, instantiatePrefabAction } from '@ahengine/editor-core'
+import { commandStack, savePreferences } from '@ahengine/editor-core'
 import { getComponentDef, applyPatch } from '@ahengine/ecs-runtime'
 import { IconButton, Popover } from '../ui/primitives.js'
 import { MenuList } from '../hooks.js'
@@ -71,6 +71,7 @@ export function Viewport({ dpr = 1 }: { dpr?: number }) {
   const playMode = useEditorStore((s) => s.playMode)
   const playWorld = useEditorStore((s) => s.playWorld)
   const diagnosticsOpen = useEditorStore((s) => s.diagnosticsOpen)
+  const [dragState, setDragState] = useState('')
 
   const gl = useMemo(
     () =>
@@ -97,9 +98,12 @@ export function Viewport({ dpr = 1 }: { dpr?: number }) {
 
   return (
     <div
-      className="ah-viewport-wrap"
+      className={`ah-viewport-wrap ${dragState}`}
       onDrop={onDropAsset}
-      onDragOver={(event) => event.preventDefault()}
+      onDragOver={onDragOverAsset}
+      onDragLeave={(event) => {
+        if (event.currentTarget === event.target) setDragState('')
+      }}
     >
       <Canvas
         gl={gl}
@@ -695,15 +699,38 @@ function AxisWidget() {
 /* Asset drag & drop into viewport                                     */
 /* ------------------------------------------------------------------ */
 
+function onDragOverAsset(event: React.DragEvent): void {
+  const types = event.dataTransfer.types
+  const known = ['ah/asset', 'ah/prefab', 'ah/material', 'ah/particle'].some((type) =>
+    types.includes(type)
+  )
+  event.preventDefault()
+  event.dataTransfer.dropEffect = known ? 'copy' : 'none'
+  const wrap = event.currentTarget as HTMLElement
+  wrap.classList.toggle('drop-deny', !known && types.length > 0)
+  wrap.classList.toggle('drop-ok', known)
+}
+
 function onDropAsset(event: React.DragEvent): void {
   event.preventDefault()
+  const wrap = event.currentTarget as HTMLElement
+  wrap.classList.remove('drop-ok', 'drop-deny')
   const assetId = event.dataTransfer.getData('ah/asset')
   const prefabId = event.dataTransfer.getData('ah/prefab')
   const materialId = event.dataTransfer.getData('ah/material')
+  const particleId = event.dataTransfer.getData('ah/particle')
   const store = useEditorStore.getState()
 
   if (prefabId) {
     instantiatePrefabAction(prefabId)
+    return
+  }
+  if (materialId) {
+    assignDroppedMaterial(store, materialId)
+    return
+  }
+  if (particleId) {
+    createParticleEmitter(store, particleId)
     return
   }
   if (assetId) {
@@ -728,7 +755,42 @@ function onDropAsset(event: React.DragEvent): void {
       store.notify('info', 'Textures are assigned inside the Material editor')
       return
     }
+    store.notify('error', `"${asset?.name ?? assetId}" can't be placed in the scene`)
+    return
   }
+}
+
+/** Material drop: assign to the selected entity (or notify how to target one). */
+function assignDroppedMaterial(
+  store: ReturnType<typeof useEditorStore.getState>,
+  materialId: string
+): void {
+  const material = store.materials.find((m) => m.id === materialId)
+  if (!material) return
+  const uuid = store.selection[0]
+  if (!uuid) {
+    store.notify('info', `Select an entity first, then drop "${material.name}" to assign it`)
+    return
+  }
+  editComponentField(uuid, 'render.material', { slots: [{ materialId }] })
+  store.notify('success', `"${material.name}" assigned to selection`)
+}
+
+/** Particle effect drop (from the particle workspace list or asset browser). */
+function createParticleEmitter(
+  store: ReturnType<typeof useEditorStore.getState>,
+  effectId: string
+): void {
+  const effect = store.particleEffects.find((e) => e.id === effectId)
+  const name = effect?.name ?? 'Particle Effect'
+  createEntity({
+    name,
+    components: {
+      'core.transform': {},
+      'particle.emitter': { effectId },
+    },
+  })
+  useEditorStore.getState().notify('success', `Emitter "${name}" placed in scene`)
 }
 
 
@@ -776,6 +838,7 @@ function SnapSettings({ onClose }: { onClose: () => void }) {
 
 function setPref(key: 'snapTranslate' | 'snapRotateDeg' | 'snapScale', value: number): void {
   useEditorStore.setState({ [key]: value } as never)
+  savePreferences({ [key]: value })
 }
 
 

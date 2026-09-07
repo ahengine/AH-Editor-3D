@@ -922,3 +922,368 @@ select.ah-input {
   opacity: 1;
   transition: opacity 120ms ease 350ms;
 }
+
+/* ================================================================
+   Phase 12 — cross-editor surfaces: command palette, problems
+   panel, per-document chips, drop feedback, prefab structure table.
+   ================================================================ */
+
+/* ---- command palette (Ctrl+K) ---- */
+.ah-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 20, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 900;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+}
+.ah-palette {
+  width: 560px;
+  max-width: calc(100vw - 48px);
+  background: var(--panel-bg-raised);
+  border: 1px solid var(--border-visible);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-float), 0 18px 50px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+.ah-palette-input {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+}
+.ah-palette-input input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: var(--font-ui);
+}
+.ah-palette-esc {
+  font-size: var(--fs-tiny);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-small);
+  padding: 1px 6px;
+}
+.ah-palette-list {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 6px;
+}
+.ah-palette-empty {
+  padding: 22px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--fs-secondary);
+}
+.ah-palette-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: var(--fs-ui);
+  font-family: var(--font-ui);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  text-align: left;
+}
+.ah-palette-item.active {
+  background: var(--surface-active);
+}
+.ah-palette-icon {
+  color: var(--text-tertiary);
+  display: flex;
+  flex: none;
+}
+.ah-palette-item.active .ah-palette-icon {
+  color: var(--accent);
+}
+.ah-palette-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ah-palette-hint {
+  font-size: var(--fs-meta);
+  color: var(--text-tertiary);
+  flex: none;
+}
+
+/* ---- problems panel ---- */
+.ah-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 850;
+}
+.ah-problems {
+  position: absolute;
+  top: calc(var(--topbar-height) + 14px);
+  right: 150px;
+  width: 520px;
+  max-width: calc(100vw - 40px);
+  max-height: 60vh;
+  background: var(--panel-bg-raised);
+  border: 1px solid var(--border-visible);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-float), 0 18px 50px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ah-problems-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.ah-problems-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--fs-panel-heading);
+}
+.ah-problems-count {
+  font-size: var(--fs-meta);
+  color: var(--text-tertiary);
+  flex: 1;
+}
+.ah-problems-count .error { color: var(--error); }
+.ah-problems-count .warning { color: var(--warning); }
+.ah-problems-count .clean { color: var(--success); }
+.ah-problems-refresh {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--fs-tiny);
+  padding: 3px 8px;
+  border-radius: var(--radius-small);
+  cursor: pointer;
+}
+.ah-problems-close {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  padding: 2px;
+}
+.ah-problems-list {
+  overflow-y: auto;
+  padding: 6px;
+}
+.ah-problems-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 30px;
+  color: var(--text-tertiary);
+  font-size: var(--fs-secondary);
+}
+.ah-problem-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: var(--fs-secondary);
+  font-family: var(--font-ui);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  text-align: left;
+}
+.ah-problem-row:hover {
+  background: var(--surface-hover);
+}
+.ah-problem-row .icon-error { color: var(--error); flex: none; }
+.ah-problem-row .icon-warning { color: var(--warning); flex: none; }
+.ah-problem-doc {
+  font-size: var(--fs-tiny);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-small);
+  padding: 1px 6px;
+  flex: none;
+  min-width: 52px;
+  text-align: center;
+}
+.ah-problem-message {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ah-problem-goto {
+  font-size: var(--fs-meta);
+  color: var(--accent);
+  flex: none;
+  opacity: 0;
+}
+.ah-problem-row:hover .ah-problem-goto { opacity: 1; }
+
+.ah-topbar-chip.problems { cursor: pointer; color: var(--text-secondary); }
+.ah-topbar-chip.problems.open { border-color: var(--accent); color: var(--accent); }
+.ah-topbar-chip.problems.has-errors { color: var(--error); border-color: rgba(226, 87, 76, 0.45); }
+.ah-topbar-chip.problems.has-errors .dot, .ah-topbar-chip.problems.has-errors svg { color: var(--error); }
+
+/* ---- topbar: search button + kbd hint ---- */
+.ah-search-btn .ah-kbd {
+  font-size: var(--fs-tiny);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-small);
+  padding: 0 5px;
+  margin-left: 2px;
+}
+
+/* ---- topbar: per-document dirty chips ---- */
+.ah-doc-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.ah-doc-dot {
+  font-size: var(--fs-tiny);
+  color: var(--warning);
+  background: var(--warning-soft);
+  border-radius: var(--radius-small);
+  padding: 1px 6px;
+}
+
+/* ---- topbar: back navigation + document crumb ---- */
+.ah-back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 0 9px 0 5px;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-button);
+  color: var(--text-secondary);
+  font-size: var(--fs-secondary);
+  font-family: var(--font-ui);
+  cursor: pointer;
+  margin-right: var(--sp-3);
+}
+.ah-back-nav:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.ah-doc-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--sp-4);
+  font-size: var(--fs-secondary);
+  color: var(--text-primary);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ah-doc-crumb-kind {
+  font-size: var(--fs-tiny);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+
+/* ---- viewport drop feedback ---- */
+.ah-viewport-wrap.drop-ok {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.ah-viewport-wrap.drop-deny {
+  outline: 2px solid var(--error);
+  outline-offset: -2px;
+}
+
+/* ---- material texture sockets ---- */
+.ah-drop-socket {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  border: 1px dashed transparent;
+  border-radius: var(--radius-input);
+  padding: 1px;
+}
+.ah-drop-socket.over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ah-drop-socket.filled {
+  border-style: solid;
+  border-color: var(--border-subtle);
+}
+.ah-socket-clear {
+  flex: none;
+  width: 20px;
+  height: 22px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: var(--radius-small);
+}
+.ah-socket-clear:hover {
+  color: var(--error);
+  background: var(--error-soft);
+}
+
+/* ---- prefab structure table ---- */
+.ah-table-head {
+  font-size: var(--fs-tiny);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--sp-2);
+}
+.ah-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-secondary);
+}
+.ah-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-size: var(--fs-tiny);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.ah-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.ah-table td.mono { font-family: ui-monospace, monospace; font-size: var(--fs-tiny); }
+.ah-table td.dim { color: var(--text-tertiary); }
+
+/* ---- list rows: active state (typed selection) ---- */
+.ah-list-row.active {
+  background: var(--surface-active);
+  color: var(--text-primary);
+}
