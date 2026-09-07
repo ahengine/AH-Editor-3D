@@ -2,20 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { WebGPURenderer } from 'three/webgpu'
 import { Canvas, useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
 import { createWorld, type World } from 'koota'
-import {
-  EntityMeta,
-  Animator as AnimatorTrait,
-  ParticleEmitter,
-  ThreeObject,
-  loadScene,
-  MaterialService,
-  AnimatorRuntime,
-  UrlAssetResolver,
-  ParticleSystemInstance,
-  type RuntimeSceneHandle,
-} from '@ahengine/ecs-runtime'
+import { EntityMeta, PrefabInstance, loadScene, MaterialService, AnimatorRuntime, UrlAssetResolver, type RuntimeSceneHandle } from '@ahengine/ecs-runtime'
 import { KootaScene } from '@ahengine/ecs-runtime/react'
 import type { AssetRecord, ProjectData } from '@ahengine/project-schema'
 
@@ -27,7 +15,19 @@ import type { AssetRecord, ProjectData } from '@ahengine/project-schema'
  * editor-ui, no command stack, no asset browser, no panels).
  */
 
-const DATA_URL = './basic-scene.koota-project.json'
+// Showcase: authored by tests/showcase.e2e.test.ts (environment, sun,
+// model, node material, nested A→B→C prefab, clip, animator, particles).
+const DEFAULT_DATA_URL = './showcase.koota-project.json'
+const dataUrl = () =>
+  new URLSearchParams(window.location.search).get('project') ?? DEFAULT_DATA_URL
+
+interface LoadedStats {
+  materials: number
+  graphMaterials: number
+  prefabInstances: number
+  particleEffects: number
+  controllers: number
+}
 
 function RuntimeApp() {
   const [status, setStatus] = useState('Loading scene…')
@@ -37,16 +37,18 @@ function RuntimeApp() {
   const [assets, setAssets] = useState<AssetRecord[]>([])
   const [settings, setSettings] = useState<ProjectData['scene']['settings'] | undefined>()
   const [backend, setBackend] = useState('initializing')
-  const [reloadCount, setReloadCount] = useState(0)
+  const [reloadCount] = useState(0)
   const [entityCount, setEntityCount] = useState(0)
+  const [stats, setStats] = useState<LoadedStats | null>(null)
 
   // Load scene from exported JSON
   useEffect(() => {
     let cancelled = false
     void (async () => {
       try {
-        const response = await fetch(DATA_URL)
-        if (!response.ok) throw new Error(`fetch ${DATA_URL}: HTTP ${response.status}`)
+        const url = dataUrl()
+        const response = await fetch(url)
+        if (!response.ok) throw new Error(`fetch ${url}: HTTP ${response.status}`)
         const data = (await response.json()) as ProjectData
 
         const resolver = new UrlAssetResolver('./assets')
@@ -57,6 +59,13 @@ function RuntimeApp() {
         setSettings(data.scene.settings)
         setHandle(result)
         setEntityCount(result.entitiesById.size)
+        setStats({
+          materials: data.materials.length,
+          graphMaterials: data.materials.filter((m) => m.graph).length,
+          prefabInstances: world.query(PrefabInstance).length,
+          particleEffects: (data.particleEffects ?? []).length,
+          controllers: (data.animatorControllers ?? []).length,
+        })
         setStatus(`Loaded ${result.entitiesById.size} entities from exported JSON`)
       } catch (caught) {
         if (!cancelled) {
@@ -105,7 +114,12 @@ function RuntimeApp() {
         <div>Status: {status}</div>
         <div>Backend: <b style={{ color: backend === 'webgpu' ? '#7df17d' : '#6ba8ff' }}>{backend}</b></div>
         <div>Entities: {entityCount}</div>
-        <div>Assets: {assets.length} | Materials from graph ✓ | Prefabs nested ✓ | Animator ✓</div>
+        {stats && (
+          <div>
+            Assets: {assets.length} | Materials: {stats.materials} ({stats.graphMaterials} graph) | Prefab
+            instances: {stats.prefabInstances} | Controllers: {stats.controllers} | Effects: {stats.particleEffects}
+          </div>
+        )}
         <div style={{ marginTop: 4, color: '#8b94a0', fontSize: 11 }}>
           Editor packages imported: <b style={{ color: '#e2574c' }}>NONE</b> — pure runtime
         </div>

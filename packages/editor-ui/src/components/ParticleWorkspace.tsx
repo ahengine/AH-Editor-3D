@@ -2,13 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { WebGPURenderer } from 'three/webgpu'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { Play, Pause, Square, RotateCcw, Plus, Trash2, Zap } from 'lucide-react'
+import { Play, Pause, RotateCcw, Plus, Zap } from 'lucide-react'
 import type { ParticleEffectData } from '@ahengine/project-schema'
-import { createFireEffect, sampleCurve } from '@ahengine/project-schema'
+import { createFireEffect } from '@ahengine/project-schema'
 import { ParticleSystemInstance } from '@ahengine/ecs-runtime'
 import { runCommand, SetDocumentListCommand, useEditorStore } from '@ahengine/editor-core'
-import { IconButton, InspectorSection } from '../ui/primitives.js'
+import { IconButton } from '../ui/primitives.js'
 
 /**
  * Particle Effect Authoring workspace.
@@ -309,7 +308,7 @@ function ParticleModuleInspector({
 /* Curve Editor — SVG visualization + key manipulation                 */
 /* ------------------------------------------------------------------ */
 
-function CurveEditor({ effect, moduleKey, onChange }: { effect: ParticleEffectData; moduleKey: string; onChange: (e: ParticleEffectData) => void }) {
+function CurveEditor({ effect, moduleKey }: { effect: ParticleEffectData; moduleKey: string; onChange?: (e: ParticleEffectData) => void }) {
   const curve = moduleKey === 'size'
     ? (effect.size?.sizeOverLifetime as { keys: { time: number; value: number }[] } | undefined)
     : undefined

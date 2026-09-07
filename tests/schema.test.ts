@@ -1,14 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  CURRENT_SCHEMA_VERSION,
-  parseProject,
-  parseScene,
-  validateSceneIntegrity,
-  ValidationError,
-  migrateProject,
-  migrateScene,
-  UnsupportedSchemaVersionError,
-} from '@ahengine/project-schema'
+import { CURRENT_SCHEMA_VERSION, parseProject, parseScene, validateSceneIntegrity, migrateProject, migrateScene, UnsupportedSchemaVersionError } from '@ahengine/project-schema'
 import { createDefaultProject, buildProjectData, loadProject } from '@ahengine/editor-core'
 import { validateSceneComponents } from '@ahengine/ecs-runtime'
 

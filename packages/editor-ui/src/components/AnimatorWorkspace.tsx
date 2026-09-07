@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Play, Pause, Square, Plus, Trash2, Zap, ChevronRight, Circle } from 'lucide-react'
-import type {
-  AnimatorControllerV2, AnimatorState, AnimatorTransition, AnimatorParameter,
-  AnimatorConditionOperator,
-} from '@ahengine/project-schema'
+import { useCallback, useRef, useState } from 'react'
+import { Play, Plus, Trash2, Zap, Circle } from 'lucide-react'
+import type { AnimatorControllerV2, AnimatorState, AnimatorTransition, AnimatorConditionOperator } from '@ahengine/project-schema'
 import { validOperatorsFor } from '@ahengine/project-schema'
 import { useEditorStore, runCommand, SetDocumentListCommand } from '@ahengine/editor-core'
 import { IconButton } from '../ui/primitives.js'

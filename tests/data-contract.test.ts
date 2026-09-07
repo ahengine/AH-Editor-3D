@@ -362,7 +362,6 @@ function sortEntities(entities: SerializedEntity[]): SerializedEntity[] {
 
 function validProject(): ProjectData {
   const { scene } = acceptanceScene()
-  const prefabCubeId = '1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d'
   return {
     format: 'koota-3d-project',
     schemaVersion: 1,

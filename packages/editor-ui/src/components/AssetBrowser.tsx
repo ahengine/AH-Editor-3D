@@ -31,7 +31,7 @@ const TYPE_ORDER: { value: AssetType | 'all'; label: string }[] = [
   { value: 'prefab', label: 'Prefabs' },
 ]
 
-export function AssetBrowser({ compact = false }: { compact?: boolean }) {
+export function AssetBrowser({ compact: _compact = false }: { compact?: boolean }) {
   const assets = useEditorStore((s) => s.assets)
   const prefabs = useEditorStore((s) => s.prefabs)
   const sceneSettings = useEditorStore((s) => s.sceneSettings)

@@ -1,4 +1,3 @@
-import * as THREE from 'three'
 import type { AnimationClipData, AnimationTrack, AnimationKeyframe } from '@ahengine/project-schema'
 
 /**
@@ -32,8 +31,7 @@ export interface ClipSample {
 function interpolate(
   from: AnimationKeyframe,
   to: AnimationKeyframe | null,
-  t: number,
-  valueType: string
+  t: number
 ): ResolvedValue {
   // Beyond last keyframe → hold last value
   if (!to) return from.value as ResolvedValue
@@ -68,7 +66,7 @@ export function sampleTrack(track: AnimationTrack, t: number): ResolvedValue {
     const from = sorted[i]
     const to = sorted[i + 1]
     if (t >= from.time && t < to.time) {
-      return interpolate(from, to, t, track.valueType)
+      return interpolate(from, to, t)
     }
   }
   // Past last keyframe → hold

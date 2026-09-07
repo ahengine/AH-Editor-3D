@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { hexColor } from './common.js'
 
 /**
  * Material Graph domain — node-based authoring for TSL/Node Materials.

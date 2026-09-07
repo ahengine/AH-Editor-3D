@@ -111,6 +111,8 @@ export function IconButton({
       className={`ah-icon-btn ${active ? 'active' : ''} ${small ? 'small' : ''}`}
       data-tip={label}
       title={label}
+      aria-label={label}
+      aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
     >

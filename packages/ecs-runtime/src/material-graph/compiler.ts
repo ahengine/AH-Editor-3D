@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { MeshStandardNodeMaterial } from 'three/webgpu'
 import * as TSL from 'three/tsl'
-import type { MaterialGraph, MaterialGraphNode, SocketType } from '@ahengine/project-schema'
+import type { MaterialGraph, MaterialGraphNode } from '@ahengine/project-schema'
 import { validateGraphIntegrity } from '@ahengine/project-schema'
 import { getNodeTypeDef } from './node-catalog.js'
 

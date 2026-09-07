@@ -163,16 +163,32 @@ export async function openSavedProject(): Promise<boolean> {
     return false
   }
   if (!saved) return false
-  try {
-    const project = parseProject(saved)
+
+  const tryLoad = (candidate: ProjectData, source: string): boolean => {
+    const project = parseProject(candidate)
     validateSceneIntegrity(project.scene, { validateComponentData: validateComponentEntry })
     assertProjectIntegrity(project, { validateComponentData: validateComponentEntry })
     loadProject(project)
+    if (source === 'backup') {
+      useEditorStore.getState().notify('info', 'Recovered the previous valid project snapshot')
+    }
     return true
-  } catch (error) {
+  }
+
+  try {
+    return tryLoad(saved, 'active')
+  } catch {
+    // The active entry is unreadable/corrupt — fall back to the last valid
+    // snapshot the backend rotated on the previous successful save.
+    try {
+      const backup = (await projectBackend.loadBackup?.()) ?? null
+      if (backup) return tryLoad(backup, 'backup')
+    } catch {
+      /* no backup available */
+    }
     useEditorStore
       .getState()
-      .notify('error', `Saved project failed to load: ${(error as Error).message}`)
+      .notify('error', 'Saved project failed to load and no valid backup exists')
     return false
   }
 }

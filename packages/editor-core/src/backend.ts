@@ -1,5 +1,5 @@
 import type { ProjectData } from '@ahengine/project-schema'
-import { idbDeleteBlob, idbGetBlob, idbGetProject, idbPutBlob, idbPutProject } from './idb.js'
+import { idbDeleteBlob, idbGetProject, idbPutBlob, idbPutProject } from './idb.js'
 
 /**
  * Project storage backend.
@@ -34,6 +34,12 @@ export function getHostConfig(): HostConfig | null {
 export interface ProjectBackend {
   readonly mode: 'standalone' | 'host'
   load(): Promise<ProjectData | null>
+  /**
+   * The previously saved valid project, one generation back. Autosave
+   * rotates it on every successful save so a corrupt 'active' entry can
+   * never destroy the last good state.
+   */
+  loadBackup?(): Promise<ProjectData | null>
   save(data: ProjectData): Promise<void>
   /** Stores a binary asset and returns its infrastructure-agnostic uri. */
   importAsset(file: File): Promise<string>
@@ -52,7 +58,15 @@ export class IndexedDbBackend implements ProjectBackend {
     return saved ?? null
   }
 
+  async loadBackup(): Promise<ProjectData | null> {
+    const saved = await idbGetProject<ProjectData>('active.backup')
+    return saved ?? null
+  }
+
   async save(data: ProjectData): Promise<void> {
+    // Keep one generation of the previously valid project before replacing.
+    const previous = await idbGetProject<ProjectData>('active')
+    if (previous) await idbPutProject('active.backup', previous)
     await idbPutProject('active', data)
   }
 

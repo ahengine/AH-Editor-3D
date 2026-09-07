@@ -167,7 +167,6 @@ export class AnimatorRuntime {
 
   pause(entity: Entity): void {
     const state = this.getStateFor(entity)
-    state?.mixer.timeScale === 0
     if (state) state.mixer.timeScale = 0
   }
 

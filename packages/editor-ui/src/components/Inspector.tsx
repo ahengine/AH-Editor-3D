@@ -63,8 +63,6 @@ function InspectorBody() {
   const selection = useEditorStore((s) => s.selection)
   const materials = useEditorStore((s) => s.materials)
   const [adding, setAdding] = useState(false)
-  const [sceneOpen, setSceneOpen] = useState(false)
-  const [lightOpen, setLightOpen] = useState(false)
   const contextMenu = useContextMenu()
   void worldVersion
 
@@ -366,7 +364,7 @@ function MaterialSection({
           style={{ width: 86 }}
           value={material?.type ?? 'standard'}
           disabled={!material}
-          onChange={(event) => material && update({}) /* type changes rebuild below */}
+          onChange={() => material && update({}) /* type changes rebuild below */}
           onInput={(event) => {
             if (!material) return
             const type = (event.target as HTMLSelectElement).value as typeof material.type
@@ -515,7 +513,6 @@ function AnimatorSection({ entity, uuid }: { entity: Entity; uuid: string }) {
   const controllers = useEditorStore((s) => s.controllers)
   const data = entity.get(Animator)
   const controller = controllers.find((c) => c.id === data?.controllerId) ?? null
-  const entry = controller?.states.find((s) => s.id === (data?.initialState || controller?.entryStateId))
   return (
     <InspectorSection
       title="Animator"
@@ -753,40 +750,6 @@ function RegistryField({
     default:
       return null
   }
-}
-
-function LightSettingsSection({ open, onToggle }: { open: boolean; onToggle: () => void }) {
-  const world = useEditorStore((s) => s.world)
-  const worldVersion = useEditorStore((s) => s.worldVersion)
-  void worldVersion
-  const lights = useMemo(() => world.query(LightTrait), [world, worldVersion])
-  return (
-    <InspectorSection title="Light Settings" open={open} onToggle={onToggle}>
-      {lights.length === 0 && <div className="ah-empty" style={{ padding: 8 }}>No lights in scene</div>}
-      {lights.map((light) => {
-        const meta = light.get(EntityMeta)
-        const data = light.get(LightTrait)
-        const uuid = meta?.uuid
-        if (!uuid || !data) return null
-        return (
-          <div className="ah-field" key={uuid}>
-            <label title={data.type}>{meta?.name}</label>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <EditorSlider
-                value={data.intensity}
-                min={0}
-                max={20}
-                step={0.05}
-                onLiveChange={(next) => uuid && setComponentFieldLive(uuid, 'render.light', { intensity: next })}
-                onCommit={(next) => uuid && editComponentField(uuid, 'render.light', { intensity: next })}
-              />
-              <span className="ah-slider-value">{data.intensity.toFixed(2)}</span>
-            </div>
-          </div>
-        )
-      })}
-    </InspectorSection>
-  )
 }
 
 function resetComponent(uuid: string, componentId: string): void {

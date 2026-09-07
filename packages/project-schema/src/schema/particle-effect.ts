@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { hexColor } from './common.js'
 import { CurveSchema, GradientSchema } from './curve.js'
 
 /**

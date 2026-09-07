@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
+import { Canvas } from '@react-three/fiber'
 import { WebGPURenderer, MeshStandardNodeMaterial } from 'three/webgpu'
-import { Plus, Search, Trash2, Copy, X } from 'lucide-react'
+import { Plus, Search, X } from 'lucide-react'
 import type { MaterialGraph, MaterialGraphNode, MaterialGraphConnection, SocketType } from '@ahengine/project-schema'
-import { getNodeTypeDef, nodesByCategory, compileMaterialGraphAsync, type NodeTypeDef } from '@ahengine/ecs-runtime'
-import { useEditorStore, materialService, runCommand, UpsertMaterialCommand } from '@ahengine/editor-core'
-import { IconButton } from '../ui/primitives.js'
+import { getNodeTypeDef, nodesByCategory, compileMaterialGraphAsync } from '@ahengine/ecs-runtime'
+import { useEditorStore, runCommand, UpsertMaterialCommand } from '@ahengine/editor-core'
 
 /**
  * Material Graph Editor — node-based TSL material authoring.
@@ -33,7 +31,6 @@ export function MaterialGraphWorkspace() {
   const materials = useEditorStore((s) => s.materials)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const activeId = selectedId ?? materials[0]?.id ?? null
-  const material = materials.find((m) => m.id === activeId)
 
   return (
     <div className="ah-panel-body" style={{ flexDirection: 'row' }}>
@@ -165,14 +162,34 @@ export function MaterialGraphEditor({ graphId }: { graphId: string }) {
     s.setMaterials(s.materials.map(m => m.id === material.id ? updated : m))
   }, [nodes, connections, outputNode, material])
 
-  // Debounced compile (not during node drag)
+  /**
+   * Semantic fingerprint of the graph: everything the compiled shader
+   * depends on (node identity, type, values; edges), excluding visual-only
+   * state (node positions, selection). Moving a node or selecting it must
+   * never trigger a recompile.
+   */
+  const graphSemantics = useMemo(() =>
+    JSON.stringify({
+      n: nodes
+        .map((n) => ({ id: n.id, type: n.type, v: n.values ?? {} }))
+        .sort((a, b) => a.id.localeCompare(b.id)),
+      c: [...connections].sort(
+        (a, b) =>
+          (a.fromNode + a.fromSocket + a.toNode + a.toSocket).localeCompare(
+            b.fromNode + b.fromSocket + b.toNode + b.toSocket
+          )
+      ),
+    })
+  , [nodes, connections])
+
+  // Debounced compile — fires only when the graph's SEMANTICS changed
+  // (positions/selection intentionally excluded from the dependency value).
   const compileTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const scheduleCompile = useCallback(() => {
+  useEffect(() => {
     if (compileTimer.current) clearTimeout(compileTimer.current)
     compileTimer.current = setTimeout(() => void compileNow(), 500)
-  }, [compileNow])
-
-  useEffect(() => { scheduleCompile() }, [nodes, connections])
+    return () => { if (compileTimer.current) clearTimeout(compileTimer.current) }
+  }, [graphSemantics, compileNow])
 
   /* ---- Keyboard ---- */
   useEffect(() => {

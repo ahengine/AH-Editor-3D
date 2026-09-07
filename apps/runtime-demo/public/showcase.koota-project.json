@@ -1,0 +1,816 @@
+{
+  "format": "koota-3d-project",
+  "schemaVersion": 1,
+  "project": {
+    "id": "project-showcase",
+    "name": "Showcase",
+    "createdAt": "2026-09-07T22:12:07.367Z",
+    "updatedAt": "2026-09-07T22:12:07.368Z"
+  },
+  "assets": [
+    {
+      "id": "asset-animated-box",
+      "type": "model",
+      "name": "animated-box.glb",
+      "uri": "assets/animated-box.glb",
+      "metadata": {
+        "animations": [
+          "SpinBounce"
+        ]
+      }
+    }
+  ],
+  "materials": [
+    {
+      "id": "mat-sand",
+      "name": "Sand",
+      "type": "standard",
+      "properties": {
+        "baseColor": "#e3c69d",
+        "roughness": 0.95,
+        "metalness": 0
+      }
+    },
+    {
+      "id": "mat-grass",
+      "name": "Forest Green",
+      "type": "standard",
+      "properties": {
+        "baseColor": "#4a8a5c",
+        "roughness": 0.9,
+        "metalness": 0
+      }
+    },
+    {
+      "id": "mat-terracotta",
+      "name": "Terracotta",
+      "type": "standard",
+      "properties": {
+        "baseColor": "#c05b4d",
+        "roughness": 0.8,
+        "metalness": 0
+      }
+    },
+    {
+      "id": "mat-graph-copper",
+      "name": "Copper Graph",
+      "type": "standard",
+      "properties": {
+        "baseColor": "#b87333",
+        "roughness": 0.25,
+        "metalness": 0.9
+      },
+      "graph": {
+        "format": "koota-3d-material-graph",
+        "schemaVersion": 1,
+        "id": "graph-copper",
+        "name": "Copper Graph",
+        "nodes": [
+          {
+            "id": "color",
+            "type": "input.color",
+            "position": [
+              80,
+              140
+            ],
+            "values": {
+              "color": "#c97b43"
+            }
+          },
+          {
+            "id": "rough",
+            "type": "input.float",
+            "position": [
+              80,
+              260
+            ],
+            "values": {
+              "value": 0.22
+            }
+          },
+          {
+            "id": "metal",
+            "type": "input.float",
+            "position": [
+              80,
+              360
+            ],
+            "values": {
+              "value": 0.95
+            }
+          },
+          {
+            "id": "output",
+            "type": "output.material",
+            "position": [
+              420,
+              220
+            ],
+            "values": {}
+          }
+        ],
+        "connections": [
+          {
+            "fromNode": "color",
+            "fromSocket": "out",
+            "toNode": "output",
+            "toSocket": "baseColor"
+          },
+          {
+            "fromNode": "rough",
+            "fromSocket": "out",
+            "toNode": "output",
+            "toSocket": "roughness"
+          },
+          {
+            "fromNode": "metal",
+            "fromSocket": "out",
+            "toNode": "output",
+            "toSocket": "metalness"
+          }
+        ],
+        "outputNodeId": "output",
+        "settings": {}
+      }
+    }
+  ],
+  "prefabs": [
+    {
+      "format": "koota-3d-prefab",
+      "schemaVersion": 1,
+      "id": "pfx-c",
+      "name": "Crystal C",
+      "rootLocalEntityId": "c-root",
+      "entities": [
+        {
+          "localId": "c-root",
+          "parentLocalId": null,
+          "name": "Crystal C",
+          "enabled": true,
+          "components": {
+            "core.transform": {
+              "position": [
+                0,
+                0.6,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                0.5,
+                0.9,
+                0.5
+              ]
+            },
+            "render.mesh": {
+              "shape": "sphere",
+              "size": 0.9
+            },
+            "render.material": {
+              "slots": [
+                {
+                  "materialId": "mat-graph-copper"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "nestedInstances": []
+    },
+    {
+      "format": "koota-3d-prefab",
+      "schemaVersion": 1,
+      "id": "pfx-b",
+      "name": "Podium B",
+      "rootLocalEntityId": "b-root",
+      "entities": [
+        {
+          "localId": "b-root",
+          "parentLocalId": null,
+          "name": "Podium B",
+          "enabled": true,
+          "components": {
+            "core.transform": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                1.6,
+                0.4,
+                1.6
+              ]
+            },
+            "render.mesh": {
+              "shape": "box",
+              "size": 1
+            },
+            "render.material": {
+              "slots": [
+                {
+                  "materialId": "mat-terracotta"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "localId": "b-topper",
+          "parentLocalId": "b-root",
+          "name": "Podium Topper",
+          "enabled": true,
+          "components": {
+            "core.transform": {
+              "position": [
+                0,
+                0.9,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                0.7,
+                0.7,
+                0.7
+              ]
+            },
+            "render.mesh": {
+              "shape": "box",
+              "size": 1
+            },
+            "render.material": {
+              "slots": [
+                {
+                  "materialId": "mat-sand"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "nestedInstances": [
+        {
+          "instanceId": "b-crystal",
+          "prefabId": "pfx-c",
+          "parentLocalId": "b-root",
+          "overrides": {}
+        }
+      ]
+    },
+    {
+      "format": "koota-3d-prefab",
+      "schemaVersion": 1,
+      "id": "pfx-a",
+      "name": "Shrine A",
+      "rootLocalEntityId": "a-root",
+      "entities": [
+        {
+          "localId": "a-root",
+          "parentLocalId": null,
+          "name": "Shrine A",
+          "enabled": true,
+          "components": {
+            "core.transform": {
+              "position": [
+                0,
+                0,
+                0
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                2.4,
+                0.3,
+                2.4
+              ]
+            },
+            "render.mesh": {
+              "shape": "box",
+              "size": 1
+            },
+            "render.material": {
+              "slots": [
+                {
+                  "materialId": "mat-sand"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "localId": "a-pillar",
+          "parentLocalId": "a-root",
+          "name": "Shrine Pillar",
+          "enabled": true,
+          "components": {
+            "core.transform": {
+              "position": [
+                0.9,
+                0.8,
+                0.9
+              ],
+              "rotation": [
+                0,
+                0,
+                0
+              ],
+              "scale": [
+                0.25,
+                1.4,
+                0.25
+              ]
+            },
+            "render.mesh": {
+              "shape": "cylinder",
+              "size": 0.5
+            },
+            "render.material": {
+              "slots": [
+                {
+                  "materialId": "mat-terracotta"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "nestedInstances": [
+        {
+          "instanceId": "a-podium",
+          "prefabId": "pfx-b",
+          "parentLocalId": "a-root",
+          "overrides": {}
+        },
+        {
+          "instanceId": "a-podium-2",
+          "prefabId": "pfx-b",
+          "parentLocalId": "a-root",
+          "overrides": {}
+        }
+      ]
+    }
+  ],
+  "animations": [
+    {
+      "format": "koota-3d-animation-clip",
+      "schemaVersion": 1,
+      "id": "clip-orbit",
+      "name": "Orbit",
+      "duration": 4,
+      "fps": 30,
+      "tracks": [
+        {
+          "id": "track-orbit-y",
+          "target": "20481fb2-c3fe-473e-890d-0bcf607b3fa6",
+          "targetName": "Shrine A",
+          "component": "core.transform",
+          "property": "rotation.y",
+          "valueType": "number",
+          "keyframes": [
+            {
+              "id": "kf-1",
+              "time": 0,
+              "value": 0,
+              "interpolation": "linear"
+            },
+            {
+              "id": "kf-2",
+              "time": 4,
+              "value": 360,
+              "interpolation": "linear"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "animatorControllers": [
+    {
+      "format": "koota-3d-animator",
+      "schemaVersion": 1,
+      "id": "ac-orbit",
+      "name": "Orbit Controller",
+      "parameters": [
+        {
+          "id": "param-speed",
+          "name": "speed",
+          "type": "float",
+          "defaultValue": 1
+        }
+      ],
+      "states": [
+        {
+          "id": "state-orbit",
+          "name": "Orbit",
+          "clipId": "clip-orbit",
+          "speed": 1,
+          "loop": true,
+          "position": [
+            280,
+            160
+          ]
+        }
+      ],
+      "transitions": [],
+      "entryStateId": "state-orbit"
+    }
+  ],
+  "particleEffects": [
+    {
+      "format": "koota-3d-particle-effect",
+      "schemaVersion": 1,
+      "id": "fx-shrine",
+      "name": "Fire",
+      "duration": 5,
+      "loop": true,
+      "emission": {
+        "enabled": true,
+        "rate": 50,
+        "burst": 0,
+        "burstDelay": 0,
+        "maxParticles": 2000
+      },
+      "shape": {
+        "enabled": true,
+        "shape": "cone",
+        "radius": 0.3,
+        "boxSize": [
+          1,
+          1,
+          1
+        ],
+        "coneHeight": 0.5,
+        "coneAngle": 0.4,
+        "surfaceOnly": false
+      },
+      "velocity": {
+        "enabled": true,
+        "speedMin": 1.5,
+        "speedMax": 3,
+        "direction": [
+          0,
+          1,
+          0
+        ],
+        "spread": 0.2
+      },
+      "lifetime": {
+        "enabled": true,
+        "min": 0.5,
+        "max": 1.5
+      },
+      "forces": {
+        "enabled": true,
+        "gravity": [
+          0,
+          0.5,
+          0
+        ],
+        "drag": 0.5
+      },
+      "size": {
+        "enabled": true,
+        "size": 0.15,
+        "sizeOverLifetime": {
+          "keys": [
+            {
+              "time": 0,
+              "value": 0.3
+            },
+            {
+              "time": 0.2,
+              "value": 1
+            },
+            {
+              "time": 1,
+              "value": 0
+            }
+          ]
+        }
+      },
+      "color": {
+        "enabled": true,
+        "colorOverLifetime": {
+          "colorStops": [
+            {
+              "time": 0,
+              "color": "#fff3c4"
+            },
+            {
+              "time": 0.3,
+              "color": "#ff9e2c"
+            },
+            {
+              "time": 0.7,
+              "color": "#e5341a"
+            },
+            {
+              "time": 1,
+              "color": "#331105"
+            }
+          ],
+          "alphaStops": [
+            {
+              "time": 0,
+              "alpha": 0.9
+            },
+            {
+              "time": 0.6,
+              "alpha": 0.6
+            },
+            {
+              "time": 1,
+              "alpha": 0
+            }
+          ]
+        }
+      },
+      "rotation": {
+        "enabled": true,
+        "initialMin": 0,
+        "initialMax": 360,
+        "speedMin": -60,
+        "speedMax": 60
+      },
+      "renderer": {
+        "enabled": true,
+        "mode": "billboard",
+        "textureAssetId": null,
+        "blendMode": "additive",
+        "depthWrite": false
+      }
+    }
+  ],
+  "scene": {
+    "format": "koota-3d-scene",
+    "schemaVersion": 1,
+    "id": "scene-showcase",
+    "name": "Showcase Scene",
+    "settings": {
+      "background": "#cfd8e4",
+      "environmentAssetId": null,
+      "environmentIntensity": 1,
+      "environmentRotation": 0,
+      "environmentBackground": true,
+      "ambientIntensity": 0.35,
+      "ambientColor": "#c8d4e0",
+      "fog": {
+        "enabled": true,
+        "type": "linear",
+        "color": "#cfd8e4",
+        "near": 26,
+        "far": 90,
+        "density": 0.02
+      },
+      "toneMapping": "aces",
+      "toneMappingExposure": 1,
+      "shadowEnabled": true,
+      "defaultCameraId": null
+    },
+    "entities": [
+      {
+        "id": "3f70759f-28ef-44a2-a2d9-3bae0d3975ad",
+        "name": "Main Camera",
+        "enabled": true,
+        "parentId": null,
+        "components": {
+          "core.transform": {
+            "position": [
+              -6,
+              4,
+              9
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "render.camera": {}
+        }
+      },
+      {
+        "id": "9c973127-4908-4719-abb9-308121e4e1ff",
+        "name": "Sun",
+        "enabled": true,
+        "parentId": null,
+        "components": {
+          "core.transform": {
+            "position": [
+              6,
+              10,
+              4
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "render.light": {
+            "type": "directional",
+            "intensity": 2.2
+          }
+        }
+      },
+      {
+        "id": "bb6434c1-2863-445a-a0a5-e11efc47ec17",
+        "name": "Hemisphere Fill",
+        "enabled": true,
+        "parentId": null,
+        "components": {
+          "core.transform": {
+            "position": [
+              0,
+              0,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "render.light": {
+            "type": "hemisphere",
+            "intensity": 0.5
+          }
+        }
+      },
+      {
+        "id": "acc00990-c594-4f5d-abaa-e8c8aa176121",
+        "name": "Ground",
+        "enabled": true,
+        "parentId": null,
+        "components": {
+          "core.transform": {
+            "position": [
+              0,
+              -0.5,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              24,
+              1,
+              24
+            ]
+          },
+          "render.mesh": {
+            "shape": "box",
+            "size": 1
+          },
+          "render.material": {
+            "slots": [
+              {
+                "materialId": "mat-grass"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "d455fe16-80f1-4408-aefc-22623248a156",
+        "name": "Imported Model (animated-box.glb)",
+        "enabled": true,
+        "parentId": null,
+        "components": {
+          "core.transform": {
+            "position": [
+              -3.5,
+              0.5,
+              1.5
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1.2,
+              1.2,
+              1.2
+            ]
+          },
+          "render.model": {
+            "assetId": "asset-animated-box",
+            "visible": true,
+            "castShadow": true,
+            "receiveShadow": true
+          },
+          "render.material": {
+            "slots": [
+              {
+                "materialId": "mat-graph-copper"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "20481fb2-c3fe-473e-890d-0bcf607b3fa6",
+        "name": "Shrine A (nested prefab instance)",
+        "enabled": true,
+        "parentId": null,
+        "components": {
+          "core.transform": {
+            "position": [
+              3,
+              0,
+              -1
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "prefab.instance": {
+            "prefabId": "pfx-a"
+          }
+        }
+      },
+      {
+        "id": "db9fce4a-15f8-432e-b299-f685bae2cf09",
+        "name": "Shrine Animator",
+        "enabled": true,
+        "parentId": "20481fb2-c3fe-473e-890d-0bcf607b3fa6",
+        "components": {
+          "animation.animator": {
+            "controllerId": "ac-orbit",
+            "playing": true,
+            "speed": 1
+          }
+        }
+      },
+      {
+        "id": "4807b4b6-d758-4869-a5b6-ec07107cc3a8",
+        "name": "Shrine Flame",
+        "enabled": true,
+        "parentId": "20481fb2-c3fe-473e-890d-0bcf607b3fa6",
+        "components": {
+          "core.transform": {
+            "position": [
+              0,
+              1.6,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "particle.emitter": {
+            "effectId": "fx-shrine"
+          }
+        }
+      }
+    ]
+  }
+}

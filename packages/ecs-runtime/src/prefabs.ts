@@ -1,13 +1,8 @@
 import type { Entity, World } from 'koota'
-import type {
-  PrefabDefinition,
-  PrefabEntity,
-  PrefabOverrides,
-  NestedPrefabInstance,
-} from '@ahengine/project-schema'
-import { canNestPrefab, type PrefabGraphContext } from '@ahengine/project-schema'
+import type { PrefabDefinition, PrefabEntity, PrefabOverrides } from '@ahengine/project-schema'
+import { canNestPrefab } from '@ahengine/project-schema'
 import { ChildOf } from './relations.js'
-import { EntityMeta, InstanceMember, PrefabInstance, ThreeObject } from './traits.js'
+import { EntityMeta, InstanceMember, PrefabInstance } from './traits.js'
 import { getComponentDef, serializableDefs } from './registry.js'
 
 /**
@@ -206,12 +201,6 @@ export function createPrefabFromEntity(
 /* Override diff/revert/apply                                          */
 /* ------------------------------------------------------------------ */
 
-function componentDataFor(entity: Entity, componentId: string): Record<string, unknown> | undefined {
-  const def = getComponentDef(componentId)
-  if (!def || !entity.has(def.trait)) return undefined
-  return def.serialize(entity.get(def.trait) as Record<string, unknown>)
-}
-
 function sourceDataFor(prefab: PrefabDefinition, localId: string, componentId: string): Record<string, unknown> | undefined {
   const entity = prefab.entities.find((e) => e.localId === localId)
   return entity?.components?.[componentId]
@@ -288,7 +277,7 @@ export function applyOverridesToPrefab(
   world: World,
   instanceRoot: Entity,
   prefab: PrefabDefinition,
-  allPrefabs: Map<string, PrefabDefinition>
+  _allPrefabs: Map<string, PrefabDefinition>
 ): PrefabDefinition {
   const overrides = computeInstanceOverrides(world, instanceRoot, prefab)
   const updated: PrefabDefinition = {

@@ -11,7 +11,7 @@ import {
   PrimitiveMesh,
   Transform,
 } from './traits.js'
-import { ChildOf, getParent } from './relations.js'
+import { ChildOf } from './relations.js'
 import { ThreeObject } from './traits.js'
 import type { PrimitiveShape, LightType } from './traits.js'
 
@@ -111,7 +111,6 @@ function define<T>(def: Omit<ComponentDefinition<T>, 'displayName' | 'kind' | 'e
 /* ------------------------------------------------------------------ */
 
 const hexColor = z.string().regex(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/)
-const vec3Obj = z.object({ x: z.number(), y: z.number(), z: z.number() })
 const vec3Arr = z.tuple([z.number(), z.number(), z.number()])
 
 function toVec3Array(v: unknown): [number, number, number] {
@@ -583,6 +582,24 @@ export function findEntityByUuid(world: World, uuid: string): Entity | undefined
 }
 
 /**
+ * 'prefab.instance' is a structural marker consumed by deserializeScene's
+ * prefab-instantiate path — it is not a registry component. Returns its
+ * shape issues, or null when componentId is not a structural marker.
+ */
+function structuralMarkerIssues(
+  componentId: string,
+  data: unknown,
+  path: string
+): { path: string; message: string }[] | null {
+  if (componentId !== 'prefab.instance') return null
+  const record = (data ?? {}) as { prefabId?: unknown }
+  if (typeof record.prefabId !== 'string' || !record.prefabId) {
+    return [{ path, message: 'prefab.instance requires a string prefabId' }]
+  }
+  return []
+}
+
+/**
  * Per-component validator matching @ahengine/project-schema's
  * ComponentValidator contract (engine-free integrity checking).
  */
@@ -591,6 +608,8 @@ export function validateComponentEntry(
   data: unknown,
   path: string
 ): { path: string; message: string }[] {
+  const marker = structuralMarkerIssues(componentId, data, path)
+  if (marker) return marker
   const def = getComponentDef(componentId)
   if (!def) {
     return [{ path, message: `Unknown component id "${componentId}"` }]
@@ -614,6 +633,11 @@ export function validateSceneComponents(
   const issues: { path: string; message: string }[] = []
   for (const entity of entities) {
     for (const [componentId, data] of Object.entries(entity.components ?? {})) {
+      const marker = structuralMarkerIssues(componentId, data, `${entity.name} → ${componentId}`)
+      if (marker) {
+        issues.push(...marker)
+        continue
+      }
       const def = getComponentDef(componentId)
       if (!def) {
         issues.push({

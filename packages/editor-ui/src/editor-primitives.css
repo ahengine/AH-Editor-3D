@@ -1287,3 +1287,45 @@ select.ah-input {
   background: var(--surface-active);
   color: var(--text-primary);
 }
+
+/* ---- viewport fatal error state (no GPU backend) ---- */
+.ah-viewport-fatal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-6);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--fs-secondary);
+  background: var(--panel-bg-deep);
+}
+.ah-viewport-fatal-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--error);
+}
+.ah-viewport-fatal ul {
+  margin: var(--sp-2) 0;
+  padding-left: 18px;
+  text-align: left;
+  color: var(--text-tertiary);
+}
+
+/* ---- accessibility: visible keyboard focus on all controls ---- */
+button:focus-visible,
+.ah-icon-btn:focus-visible,
+.ah-list-row:focus-visible,
+.ah-palette-item:focus-visible,
+.ah-problem-row:focus-visible,
+.ah-asset-card:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+button:focus:not(:focus-visible) {
+  outline: none;
+}

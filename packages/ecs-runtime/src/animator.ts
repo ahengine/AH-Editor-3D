@@ -1,8 +1,4 @@
-import type {
-  AnimatorControllerV2,
-  AnimatorParameter,
-  AnimatorCondition,
-} from '@ahengine/project-schema'
+import type { AnimatorControllerV2, AnimatorCondition } from '@ahengine/project-schema'
 import type { AnimationClipData } from '@ahengine/project-schema'
 import { sampleClip, type ClipSample } from './animation-clip.js'
 

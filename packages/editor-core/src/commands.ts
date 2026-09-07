@@ -1,21 +1,17 @@
-import type { Entity, World } from 'koota'
+import type { Entity, World as KootaWorld } from 'koota'
 import type { MaterialDefinition, SerializedEntity } from '@ahengine/project-schema'
 import {
   EntityMeta,
-  PrimitiveMesh,
   ThreeObject,
-  deserializeEntity,
   deserializeScene,
   findEntityByUuid,
   getComponentDef,
-  setComponentValue,
   applyPatch,
   serializeSubtree,
 } from '@ahengine/ecs-runtime'
 import { ChildOf, getParent, setParent } from '@ahengine/ecs-runtime'
 import { docForWorkspace, useEditorStore, type DocId } from './store.js'
 import { materialService } from './services.js'
-import type { World as KootaWorld } from 'koota'
 
 /**
  * Command system. Every meaningful editor action is a command with do/undo.
@@ -155,7 +151,7 @@ export class AddEntitiesCommand implements EditorCommand {
   private roots: Entity[] = []
 
   execute(): void {
-    const { entitiesById, rootEntities } = deserializeScene(world(), this.data)
+    const { rootEntities } = deserializeScene(world(), this.data)
     // Re-link to original parents when re-doing (parents stored per data row).
     this.roots = rootEntities
     if (this.selectRoot && rootEntities[0]) {
@@ -220,13 +216,11 @@ function destroySubtree(world: KootaWorld, root: Entity): void {
   }
   walk(root)
   root.destroy() // ChildOf autoDestroy:'orphan' cascades
-  for (const object of objects) {
-    object.traverse((child) => {
-      const mesh = child as import('three').Mesh
-      if (mesh.isMesh && mesh.name === 'mesh') mesh.geometry?.dispose?.()
-    })
-    object.removeFromParent()
-  }
+  // Geometries (shared primitive cache), materials (MaterialService) and
+  // textures (sharedAssetCache) all outlive individual entities — removing
+  // the objects is the whole cleanup. Disposing here would break every
+  // other entity sharing those GPU resources.
+  for (const object of objects) object.removeFromParent()
 }
 
 /* ------------------------------------------------------------------ */
@@ -455,4 +449,4 @@ export class SetDocumentListCommand<T> implements EditorCommand {
   }
 }
 
-export { serializeSubtree, setComponentValue }
+export { serializeSubtree }

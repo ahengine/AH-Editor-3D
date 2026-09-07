@@ -1,18 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createWorld } from 'koota'
-import {
-  EntityMeta,
-  InstanceMember,
-  PrefabInstance,
-  Transform,
-  MaterialReference,
-  deserializeScene,
-  getChildren,
-  instantiatePrefabDetailed,
-  createPrefabFromEntity,
-  computeInstanceOverrides,
-  validateNesting,
-} from '@ahengine/ecs-runtime'
+import { EntityMeta, PrefabInstance, MaterialReference, getChildren, instantiatePrefabDetailed, validateNesting } from '@ahengine/ecs-runtime'
 import type { PrefabDefinition, PrefabEntity, NestedPrefabInstance } from '@ahengine/project-schema'
 import { detectPrefabCycle } from '@ahengine/project-schema'
 
@@ -130,7 +118,7 @@ describe('nested prefab instances (NOT flattened)', () => {
     // Re-instantiate with updated wheel
     for (const e of result.allEntities) if (e.isAlive()) e.destroy()
     const context2 = new Map<string, PrefabDefinition>([['p-wheel', updatedWheel], ['p-car', car]])
-    const result2 = instantiatePrefabDetailed(world, car, { prefabContext: context2 })
+    instantiatePrefabDetailed(world, car, { prefabContext: context2 })
     const wheels2 = world.query(PrefabInstance).filter(e => e.get(PrefabInstance)!.prefabId === 'p-wheel')
     expect(wheels2.length).toBe(2)
     for (const w of wheels2) {

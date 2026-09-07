@@ -54,7 +54,7 @@ const MIME: Record<string, string> = {
   '.exr': 'application/octet-stream',
 }
 
-function assetsMiddleware(assetsDir: string, assetsUrlBase: string): Connect.NextHandleFunction {
+function assetsMiddleware(assetsDir: string, _assetsUrlBase: string): Connect.NextHandleFunction {
   // Mounted via `middlewares.use(base, fn)` — req.url has the prefix stripped.
   return (request, response, next) => {
     const url = request.url ?? '/'
@@ -94,7 +94,7 @@ export function ahengineEditor(options: AhengineEditorOptions = {}): Plugin {
   const assetsDir = options.assetsDir ?? 'game-assets'
   const assetsUrlBase = (options.assetsUrlBase ?? '/game-assets').replace(/\/+$/, '') || '/game-assets'
 
-  let pluginName = 'ahengine-editor'
+  const pluginName = 'ahengine-editor'
 
   return {
     name: pluginName,

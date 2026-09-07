@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createWorld } from 'koota'
-import {
-  EntityMeta,
-  MaterialReference,
-  ModelRenderer,
-  deserializeScene,
-  findEntityByUuid,
-  serializeSceneEntities,
-} from '@ahengine/ecs-runtime'
+import { ModelRenderer, deserializeScene, serializeSceneEntities } from '@ahengine/ecs-runtime'
 import { createDefaultProject, loadProject, buildProjectData } from '@ahengine/editor-core'
 import type { AssetRecord, ProjectData } from '@ahengine/project-schema'
 import { assertProjectIntegrity, validateProjectIntegrity, parseProject } from '@ahengine/project-schema'

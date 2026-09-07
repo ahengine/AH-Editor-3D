@@ -1,4 +1,3 @@
-import * as THREE from 'three'
 import * as TSL from 'three/tsl'
 import type { MaterialGraphNode, SocketType } from '@ahengine/project-schema'
 
@@ -10,9 +9,8 @@ import type { MaterialGraphNode, SocketType } from '@ahengine/project-schema'
 const {
   color, float, vec2, vec3, vec4,
   uv, normalLocal, normalWorld, time,
-  mix, clamp, min, max, pow, add, sub, mul, div,
+  mix, clamp, min, max, pow, mul,
   oneMinus, dot,
-  texture, normalMap,
   mx_noise_float,
   oscSine,
   positionLocal,

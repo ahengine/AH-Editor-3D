@@ -3,18 +3,8 @@ import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import type { Entity, World } from 'koota'
 import type { SceneSettings } from '@ahengine/project-schema'
-import {
-  Animator,
-  Camera as CameraTrait,
-  EntityMeta,
-  Light as LightTrait,
-  MaterialReference,
-  ModelRenderer,
-  PrimitiveMesh,
-  ThreeObject,
-  Transform,
-} from '../traits.js'
-import { ChildOf, getParent } from '../relations.js'
+import { Camera as CameraTrait, EntityMeta, Light as LightTrait, MaterialReference, ModelRenderer, PrimitiveMesh, ThreeObject, Transform } from '../traits.js'
+import { getParent } from '../relations.js'
 import { fallbackMaterial, type MaterialService } from '../materials.js'
 import type { AnimatorRuntime } from '../animation.js'
 import { sharedAssetCache } from '../asset-cache.js'
@@ -252,11 +242,10 @@ function syncVisuals(
 }
 
 function removeChild(visual: EntityVisual, key: string) {
-  const child = visual.object.getObjectByName(key)
-  child?.removeFromParent()
-  if (child && (child as THREE.Mesh).isMesh) {
-    ;(child as THREE.Mesh).geometry?.dispose?.()
-  }
+  // Primitive geometries are shared through the module-level geometryCache
+  // and materials through MaterialService — neither is owned by the visual,
+  // so removal must never dispose them.
+  visual.object.getObjectByName(key)?.removeFromParent()
 }
 
 const geometryCache = new Map<string, THREE.BufferGeometry>()

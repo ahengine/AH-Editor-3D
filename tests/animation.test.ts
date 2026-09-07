@@ -68,7 +68,7 @@ function setup() {
 
 describe('animator runtime', () => {
   it('creates a mixer and advances the clip over time', () => {
-    const { world, entity, mesh, runtime } = setup()
+    const { world, mesh, runtime } = setup()
     const yStart = mesh.position.y
     runtime.update(world, 0)
     runtime.update(world, 0.5) // half-way through the 1s clip → y ≈ 1

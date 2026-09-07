@@ -4,7 +4,6 @@ import { WebGPURenderer } from 'three/webgpu'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
-import type { Entity } from 'koota'
 import {
   Activity,
   ChevronDown,
@@ -18,13 +17,7 @@ import {
   Scale3d,
   Sun,
 } from 'lucide-react'
-import {
-  Light,
-  EntityMeta,
-  ThreeObject,
-  Transform,
-  findEntityByUuid,
-} from '@ahengine/ecs-runtime'
+import { Light, EntityMeta, ThreeObject, findEntityByUuid } from '@ahengine/ecs-runtime'
 import { KootaScene, gizmoDragTargets } from '@ahengine/ecs-runtime/react'
 import {
   animator as editorAnimator,
@@ -67,11 +60,27 @@ function isInSceneGraph(object: THREE.Object3D): boolean {
   return false
 }
 
+/** GPU capability preflight — never pretend a backend is active. */
+function detectBackendSupport(): 'webgpu' | 'webgl2' | 'none' {
+  try {
+    if (typeof navigator !== 'undefined' && 'gpu' in navigator && navigator.gpu) return 'webgpu'
+  } catch {
+    /* navigator.gpu access threw — treat as absent */
+  }
+  try {
+    const canvas = document.createElement('canvas')
+    if (canvas.getContext('webgl2')) return 'webgl2'
+  } catch {
+    /* WebGL2 probe threw */
+  }
+  return 'none'
+}
+
 export function Viewport({ dpr = 1 }: { dpr?: number }) {
   const playMode = useEditorStore((s) => s.playMode)
-  const playWorld = useEditorStore((s) => s.playWorld)
   const diagnosticsOpen = useEditorStore((s) => s.diagnosticsOpen)
   const [dragState, setDragState] = useState('')
+  const [support] = useState(detectBackendSupport)
 
   const gl = useMemo(
     () =>
@@ -105,25 +114,44 @@ export function Viewport({ dpr = 1 }: { dpr?: number }) {
         if (event.currentTarget === event.target) setDragState('')
       }}
     >
-      <Canvas
-        gl={gl}
-        dpr={dpr}
-        camera={{ fov: 50, near: 0.1, far: 600, position: [9, 6, 12] }}
-        shadows
-        onCreated={({ gl, camera }) => {
-          viewportState.camera = camera as THREE.PerspectiveCamera
-          void gl
-        }}
-      >
-        <ViewportScene />
-      </Canvas>
+      {support === 'none' ? (
+        <div className="ah-viewport-fatal" role="alert">
+          <div className="ah-viewport-fatal-title">No GPU backend available</div>
+          <div>
+            This editor requires WebGPU (preferred) or WebGL2. Neither could be
+            initialized in this browser.
+          </div>
+          <ul>
+            <li>Use a Chromium-based browser (Chrome/Edge 113+) for WebGPU</li>
+            <li>Enable hardware acceleration in browser settings</li>
+            <li>WebGPU requires a secure context (https or localhost)</li>
+          </ul>
+          <div>
+            All authoring tools (hierarchy, inspector, materials, animation,
+            prefabs, particles) still work — only the 3D preview is unavailable.
+          </div>
+        </div>
+      ) : (
+        <Canvas
+          gl={gl}
+          dpr={dpr}
+          camera={{ fov: 50, near: 0.1, far: 600, position: [9, 6, 12] }}
+          shadows
+          onCreated={({ gl, camera }) => {
+            viewportState.camera = camera as THREE.PerspectiveCamera
+            void gl
+          }}
+        >
+          <ViewportScene />
+        </Canvas>
+      )}
 
       <ViewportToolbar />
       <ViewportRail />
       <ViewportStatus />
       {playMode !== 'edit' && <PlayModeBanner mode={playMode} />}
       {diagnosticsOpen && <DiagnosticsPanel />}
-      <AxisWidget />
+      {support !== 'none' && <AxisWidget />}
     </div>
   )
 }
@@ -187,7 +215,7 @@ function EditorRig({
   const dragStart = useRef<{ position: THREE.Vector3; rotation: THREE.Euler; scale: THREE.Vector3 } | null>(null)
   const pointerDown = useRef<{ x: number; y: number; gizmoDragging: boolean } | null>(null)
   const raycaster = useMemo(() => new THREE.Raycaster(), [])
-  const fpsAccum = useRef({ frames: 0, time: 0 })
+  const fpsAccum = useRef({ frames: 0, time: 0, lastCalls: 0, lastTriangles: 0 })
 
   /* Orbit controls */
   useEffect(() => {
@@ -415,7 +443,8 @@ function EditorRig({
       }
     }
 
-    // Stats
+    // Stats — render counters on the WebGPU renderer are cumulative across
+    // frames, so report the delta over this interval (per-frame values).
     const stats = fpsAccum.current
     stats.frames += 1
     stats.time += delta
@@ -423,8 +452,16 @@ function EditorRig({
       viewportState.stats.fps = Math.round(stats.frames / stats.time)
       viewportState.stats.frameMs = Number(((stats.time / stats.frames) * 1000).toFixed(1))
       const renderer = gl as unknown as { info?: { render: { calls: number; triangles: number } } }
-      viewportState.stats.calls = renderer.info?.render.calls ?? 0
-      viewportState.stats.triangles = renderer.info?.render.triangles ?? 0
+      const info = renderer.info?.render
+      if (info) {
+        const dCalls = info.calls - stats.lastCalls
+        const dTris = info.triangles - stats.lastTriangles
+        const interval = stats.frames || 1
+        viewportState.stats.calls = dCalls >= 0 ? Math.round(dCalls / interval) : info.calls
+        viewportState.stats.triangles = dTris >= 0 ? Math.round(dTris / interval) : info.triangles
+        stats.lastCalls = info.calls
+        stats.lastTriangles = info.triangles
+      }
       stats.frames = 0
       stats.time = 0
     }
@@ -599,82 +636,82 @@ function DiagnosticsPanel() {
   const assets = useEditorStore((s) => s.assets)
   const ref = useRef<HTMLDivElement>(null)
 
+  // Entity count changes only on structural edits — never query per frame.
+  const entityCount = useMemo(() => world.query(EntityMeta).length, [world, worldVersion])
+
   useEffect(() => {
     let raf = 0
     const tick = () => {
       const node = ref.current
       if (node) {
-        const entities = world.query(EntityMeta).length
         const ui = {
           backend: node.querySelector<HTMLElement>('[data-k="backend"] b'),
           fps: node.querySelector<HTMLElement>('[data-k="fps"] b'),
           frame: node.querySelector<HTMLElement>('[data-k="frame"] b'),
           calls: node.querySelector<HTMLElement>('[data-k="calls"] b'),
           tris: node.querySelector<HTMLElement>('[data-k="tris"] b'),
-          entities: node.querySelector<HTMLElement>('[data-k="entities"] b'),
         }
         if (ui.backend) ui.backend.textContent = backend.toUpperCase()
         if (ui.fps) ui.fps.textContent = String(viewportState.stats.fps)
         if (ui.frame) ui.frame.textContent = `${viewportState.stats.frameMs} ms`
         if (ui.calls) ui.calls.textContent = String(viewportState.stats.calls)
         if (ui.tris) ui.tris.textContent = viewportState.stats.triangles.toLocaleString()
-        if (ui.entities) ui.entities.textContent = String(entities)
       }
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [world, backend, worldVersion])
+  }, [backend])
 
   return (
     <div className="ah-diagnostics" ref={ref}>
       <div data-k="backend">Renderer Backend <b /></div>
       <div data-k="fps">FPS <b /></div>
       <div data-k="frame">Frame Time <b /></div>
-      <div data-k="calls">Draw Calls <b /></div>
-      <div data-k="tris">Triangles <b /></div>
-      <div data-k="entities">Entities <b /></div>
+      <div data-k="calls">Draw Calls / frame <b /></div>
+      <div data-k="tris">Triangles / frame <b /></div>
+      <div data-k="entities">Entities <b>{entityCount}</b></div>
       <div>Loaded Assets <b>{assets.length}</b></div>
     </div>
   )
 }
 
 /** Orientation gizmo rendered as projected SVG axes (bottom-right). */
+const AXIS_DIRS: ReadonlyArray<readonly [string, THREE.Vector3, string]> = [
+  ['X', new THREE.Vector3(1, 0, 0), '#ff6b6b'],
+  ['Y', new THREE.Vector3(0, 1, 0), '#7df17d'],
+  ['Z', new THREE.Vector3(0, 0, 1), '#6ba8ff'],
+]
+const axisTmpVec = new THREE.Vector3()
+const axisTmpQuat = new THREE.Quaternion()
+
 function AxisWidget() {
   const svgRef = useRef<SVGSVGElement>(null)
   useEffect(() => {
     let raf = 0
     const camera = () => viewportState.camera
-    const project = (axis: THREE.Vector3) => {
-      const cam = camera()
-      if (!cam) return { x: 0, y: 0, z: 0 }
-      const quaternion = cam.quaternion.clone().invert()
-      const v = axis.clone().applyQuaternion(quaternion)
-      return { x: v.x, y: -v.y, z: v.z }
-    }
     const tick = () => {
       const svg = svgRef.current
       if (svg) {
-        const axes: [string, THREE.Vector3, string][] = [
-          ['X', new THREE.Vector3(1, 0, 0), '#ff6b6b'],
-          ['Y', new THREE.Vector3(0, 1, 0), '#7df17d'],
-          ['Z', new THREE.Vector3(0, 0, 1), '#6ba8ff'],
-        ]
-        for (const [name, dir, color] of axes) {
-          const line = svg.querySelector<SVGLineElement>(`[data-axis="${name}"]`)
-          const label = svg.querySelector<SVGTextElement>(`[data-axis-label="${name}"]`)
-          if (!line || !label) continue
-          const p = project(dir)
-          const x2 = 34 + p.x * 24
-          const y2 = 34 - p.y * 24
-          line.setAttribute('x1', '34')
-          line.setAttribute('y1', '34')
-          line.setAttribute('x2', String(x2))
-          line.setAttribute('y2', String(y2))
-          label.setAttribute('x', String(34 + p.x * 33))
-          label.setAttribute('y', String(34 - p.y * 33 + 3))
-          label.setAttribute('fill', color)
-          line.setAttribute('stroke', color)
+        const cam = camera()
+        if (cam) {
+          axisTmpQuat.copy(cam.quaternion).invert()
+          for (const [name, dir, color] of AXIS_DIRS) {
+            const line = svg.querySelector<SVGLineElement>(`[data-axis="${name}"]`)
+            const label = svg.querySelector<SVGTextElement>(`[data-axis-label="${name}"]`)
+            if (!line || !label) continue
+            const v = axisTmpVec.copy(dir).applyQuaternion(axisTmpQuat)
+            const x2 = 34 + v.x * 24
+            const y2 = 34 - v.y * 24
+            line.setAttribute('x1', '34')
+            line.setAttribute('y1', '34')
+            line.setAttribute('x2', String(x2))
+            line.setAttribute('y2', String(y2))
+            label.setAttribute('x', String(34 + v.x * 33))
+            label.setAttribute('y', String(34 - v.y * 33 + 3))
+            label.setAttribute('fill', color)
+            line.setAttribute('stroke', color)
+          }
         }
       }
       raf = requestAnimationFrame(tick)
@@ -793,7 +830,6 @@ function createParticleEmitter(
   useEditorStore.getState().notify('success', `Emitter "${name}" placed in scene`)
 }
 
-
 /* ------------------------------------------------------------------ */
 /* Snap settings — editor preferences, never scene data                */
 /* ------------------------------------------------------------------ */
@@ -840,7 +876,6 @@ function setPref(key: 'snapTranslate' | 'snapRotateDeg' | 'snapScale', value: nu
   useEditorStore.setState({ [key]: value } as never)
   savePreferences({ [key]: value })
 }
-
 
 /* ------------------------------------------------------------------ */
 /* Light gizmos — editor-only visual helpers, never serialized         */

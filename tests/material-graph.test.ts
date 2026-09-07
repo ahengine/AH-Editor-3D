@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { MaterialGraph, MaterialGraphNode, MaterialGraphConnection } from '@ahengine/project-schema'
+import type { MaterialGraph } from '@ahengine/project-schema'
 import { MaterialGraphSchema, validateGraphIntegrity } from '@ahengine/project-schema'
 import { getNodeTypeDef, nodesByCategory, NODE_TYPES } from '@ahengine/ecs-runtime'
 
@@ -136,7 +136,7 @@ describe('no runtime objects in exported JSON', () => {
     // All values are primitives
     const parsed = JSON.parse(json)
     for (const node of parsed.nodes) {
-      for (const [key, value] of Object.entries(node.values ?? {})) {
+      for (const [, value] of Object.entries(node.values ?? {})) {
         expect(['string', 'number', 'boolean']).toContain(typeof value)
       }
     }

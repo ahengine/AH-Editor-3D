@@ -80,15 +80,17 @@ of choice or install straight from the `.tgz` files.
 pnpm install
 pnpm dev            # standalone editor      → http://localhost:5173
 pnpm dev:runtime    # runtime demo           → http://localhost:5174
-pnpm test           # 29 vitest tests
+pnpm test           # 117 vitest tests (schema, runtime, editor, stress, e2e)
+pnpm lint           # ESLint (typescript-eslint, flat config)
 pnpm typecheck      # strict TS across all packages
-pnpm generate:example   # regenerate examples/*.json through the real serializer
+pnpm build          # production build of every package + both apps
 ```
 
 The standalone editor boots into a stylized test scene (camera, sun, ground,
 water, trees, test cube) and persists to IndexedDB. The runtime demo loads
-`examples/basic-scene.koota-project.json` (including an animated GLB +
-animator controller) **without importing any editor package**.
+`showcase.koota-project.json` — environment, imported model, a TSL node
+material, a nested A→B→C prefab, an animation clip + animator controller and
+a particle effect — **without importing any editor package**.
 
 ## Workspace
 
@@ -115,26 +117,38 @@ animator controller) **without importing any editor package**.
   color / enum / slider / asset fields, add/remove/copy/paste/reset).
 - **Persistent UUIDs** — Koota entity ids never leave the session; all
   references (hierarchy, cameras, prefabs) use authored UUIDs.
-- **Prefabs with overrides** — instances store only field-level diffs;
-  revert / unpack / apply-override-to-prefab included.
-- **Materials as project assets** — data-only `MaterialDefinition`s built into
-  Node Materials (`MeshStandardNodeMaterial` …), live preview sphere,
-  texture maps, future TSL-graph compatible.
-- **Animator** — Unity-style controllers (states, transitions, conditions,
-  parameters) with a functional node graph, timeline preview and an
-  `AnimationMixer` runtime covered by unit tests.
-- **Undo/redo everywhere** — command stack; gizmo drags commit exactly one
+- **Nested prefabs with overrides** — A→B→C nesting with cycle protection;
+  instances store only field-level diffs; revert / unpack / apply included.
+- **Node materials** — data-only definitions with a TSL node-graph editor
+  (25-node catalog), live preview, texture sockets, debounced recompiles that
+  react to semantics, not node drags.
+- **Animation + Animator** — authored clips with keyframes and timeline
+  scrub; Unity-style controllers (states, transitions, typed parameters,
+  conditions, crossfades) over `AnimationMixer`.
+- **Particles** — 9-module effect stacks (emission/shape/velocity/lifetime/
+  forces/size/color/rotation/renderer) with curve + gradient editing and a
+  live preview.
+- **One product** — typed selection with deep links between every workspace,
+  command palette (Ctrl+K), problems panel with validation, per-document
+  undo stacks and dirty indicators, persisted preferences.
+- **Undo/redo per document** — scene, prefab, material, animation and
+  particle edits keep independent histories; gizmo drags commit exactly one
   command on release.
 - **Play Mode** — serializes the authored world into a temporary runtime world;
   stopping discards it, authored data is never mutated.
-- **Persistence** — IndexedDB (project JSON + binary asset blobs), autosave,
-  import/export of `.koota-project.json` / `.koota-scene.json`.
+- **Persistence** — IndexedDB (project JSON + binary asset blobs) with a
+  one-generation corruption-recovery snapshot; imports run parse → migrate →
+  validate before replacing state; per-domain export
+  (`.koota-project.json`, `.koota-scene.json`, prefabs, materials,
+  controllers, effects).
 
 ## Docs
 
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — layers, data flow, performance rules
-- [`PROJECT_FORMAT.md`](./PROJECT_FORMAT.md) — serialized data reference
-- [`KOOTA_RUNTIME.md`](./KOOTA_RUNTIME.md) — loading editor output in your app
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — layers, data flow, versions, limitations
+- [`docs/EDITOR_SCOPE.md`](./docs/EDITOR_SCOPE.md) — what this is (and is not)
+- [`docs/PROJECT_FORMAT.md`](./docs/PROJECT_FORMAT.md) · [`SCENE_FORMAT.md`](./docs/SCENE_FORMAT.md) · [`MATERIAL_FORMAT.md`](./docs/MATERIAL_FORMAT.md) · [`PREFAB_FORMAT.md`](./docs/PREFAB_FORMAT.md) · [`ANIMATION_FORMAT.md`](./docs/ANIMATION_FORMAT.md) · [`ANIMATOR_FORMAT.md`](./docs/ANIMATOR_FORMAT.md) · [`PARTICLE_FORMAT.md`](./docs/PARTICLE_FORMAT.md) — serialized data reference, one file per domain
+- [`docs/RUNTIME_INTEGRATION.md`](./docs/RUNTIME_INTEGRATION.md) — loading editor output in your app
+- [`docs/CONTRIBUTING.md`](./docs/CONTRIBUTING.md) — setup, commands, data-contract checklist
 
 ## Dev-only automation harness
 

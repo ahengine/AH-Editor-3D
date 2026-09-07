@@ -6,8 +6,12 @@
  * walks the chain until the data reaches `currentVersion`.
  */
 
-export type Migration = (data: any) => any
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- migrations inherently operate on unknown historical shapes
+/**
+ * A migration receives the parsed JSON of one schema version and returns the
+ * same document upgraded by exactly one version. Bodies are untyped by
+ * design: they operate on historical shapes only this function knows.
+ */
+export type Migration = (data: Record<string, unknown>) => Record<string, unknown>
 
 export class UnsupportedSchemaVersionError extends Error {
   constructor(
@@ -34,7 +38,7 @@ export function runMigrations<T extends { schemaVersion: number }>(
     if (!step) {
       throw new UnsupportedSchemaVersionError(current.schemaVersion, currentVersion, domain)
     }
-    current = step(structuredClone(current))
+    current = step(structuredClone(current) as unknown as Record<string, unknown>) as unknown as T
     current.schemaVersion = current.schemaVersion + 1
   }
   if (current.schemaVersion > currentVersion) {

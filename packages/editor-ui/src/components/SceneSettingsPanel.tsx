@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import { Mountain } from 'lucide-react'
 import { useEditorStore } from '@ahengine/editor-core'
 import type { SceneSettings } from '@ahengine/project-schema'
 import { InspectorSection } from '../ui/primitives.js'
@@ -9,7 +7,7 @@ import { InspectorSection } from '../ui/primitives.js'
  * Light entity settings remain in the Entity Inspector.
  */
 
-export function SceneSettingsPanel({ embedded = false }: { embedded?: boolean }) {
+export function SceneSettingsPanel({ embedded: _embedded = false }: { embedded?: boolean }) {
   const settings = useEditorStore((s) => s.sceneSettings)
   const assets = useEditorStore((s) => s.assets)
   const set = useEditorStore((s) => s.setSceneSettings)

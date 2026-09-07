@@ -1,4 +1,4 @@
-import type { ProjectData, SceneData, SerializedEntity, PrefabDefinition, PrefabEntity } from '../schema/index.js'
+import type { ProjectData, SceneData, SerializedEntity, PrefabDefinition } from '../schema/index.js'
 import { isValidUUID } from '../schema/common.js'
 import { ValidationIssue, ValidationError } from './errors.js'
 
@@ -125,7 +125,6 @@ export function validateProjectIntegrity(
   const materialIds = new Set(project.materials.map((material) => material.id))
   const prefabIds = new Set(project.prefabs.map((prefab) => prefab.id))
   const controllerIds = new Set(project.animatorControllers.map((controller) => controller.id))
-  const clipIds = new Set((project.animations ?? []).map((clip) => clip.id))
   const particleIds = new Set((project.particleEffects ?? []).map((effect) => effect.id))
 
   validateSceneEntities(project.scene.entities, 'scene', options?.validateComponentData, issues)

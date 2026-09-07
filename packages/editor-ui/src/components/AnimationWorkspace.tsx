@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  ChevronRight, Play, Pause, Square, SkipBack, SkipForward,
-  Repeat, Diamond, Plus, Trash2, Copy, ClipboardPaste, CircleDot,
-} from 'lucide-react'
+import { Play, Pause, Square, SkipBack, SkipForward, Repeat, Plus, Trash2, CircleDot } from 'lucide-react'
 import type { AnimationClipData, AnimationTrack, AnimationKeyframe } from '@ahengine/project-schema'
 import { sampleClip, sampleTrack } from '@ahengine/ecs-runtime'
 import { runCommand, SetDocumentListCommand, useEditorStore } from '@ahengine/editor-core'
@@ -19,7 +16,6 @@ const kfId = () => `kf-${crypto.randomUUID().slice(0, 8)}`
 
 export function AnimationWorkspace() {
   const animations = useEditorStore((s) => s.animations)
-  const selection = useEditorStore((s) => s.selection)
   const [activeClipId, setActiveClipId] = useState<string | null>(null)
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   const [selectedKeyframeIds, setSelectedKeyframeIds] = useState<Set<string>>(new Set())
@@ -167,7 +163,7 @@ function TimelinePanel({
   const [time, setTime] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [loop, setLoop] = useState(true)
-  const [pxPerSecond, setPxPerSecond] = useState(80)
+  const [pxPerSecond] = useState(80)
   const rafRef = useRef(0)
   const scrollRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ keyframeId: string; startX: number; origTime: number } | null>(null)
@@ -201,7 +197,6 @@ function TimelinePanel({
   }, [time, playing, clip])
 
   const trackHeight = 28
-  const rulerHeight = 26
   const timelineWidth = clip.duration * pxPerSecond + 20
 
   const scrub = useCallback((ratio: number) => {

@@ -160,11 +160,15 @@ export function deserializeScene(
       | undefined
     if (instanceData?.prefabId && prefabById.has(instanceData.prefabId)) {
       const prefab = prefabById.get(instanceData.prefabId)!
+      // Pass the FULL prefab table as context so nested instances
+      // (A contains B contains C) resolve and expand instead of being
+      // silently skipped.
       const root = instantiatePrefab(world, prefab, {
         instanceId: instanceData.instanceId,
         overrides: instanceData.overrides ?? {},
         name: data.name,
         enabled: data.enabled !== false,
+        prefabContext: prefabById,
       })
       entitiesById.set(data.id, root)
       deferredPrefabs.push({ entity: root, data })

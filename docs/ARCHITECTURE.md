@@ -17,8 +17,8 @@
 | zod | 4.5.4 |
 | zustand | 5.0.15 |
 | vite | 8.2.2 |
-| Lint | **not configured** (no ESLint config in repo) |
-| Tests | vitest, 5 files / 29 tests, all passing |
+| Lint | ESLint 9 + typescript-eslint (flat config, `pnpm lint`, 0 errors) |
+| Tests | vitest, 16 files / 117 tests, all passing |
 | Source size | ~9.9k LOC TS/TSX (excl. node_modules/dist/.d.ts) across 6 workspace packages |
 
 ### Koota API surface actually used (all verified against installed 0.6.6)
@@ -155,41 +155,38 @@ never serialized.
   writes `src/game/game.koota-project.json` into the host product; assets
   `POST/DELETE /api/asset`; both dev servers serve `/game-assets/*`.
 
-## 9. Existing Problems & Technical Debt (editor-relevant)
+## 9. Known Limitations (final stabilization pass)
 
-1. **No lint** — no ESLint config; only `tsc --strict` guards quality.
-2. **findEntityByUuid is O(n)** — uuid→entity lookup walks `query(EntityMeta)`
-   per call (editor hot paths: gizmo attach, inspector, picking). Fine at
-   current scale; needs an index before thousands of entities.
-3. **Two animation edit surfaces** — timeline tracks (TimelinePanel) and the
-   controller node graph (AnimatorPanel) share data but not selection state;
-   the state-machine editor is basic (no condition editor UI wiring for
-   parameters beyond first parameter).
-4. **Material system is property-list only** — Node Materials are built from
-   fixed properties; no node graph yet (schema is designed to extend, TSL
-   available, nothing built).
-5. **Prefabs: no nested prefab authoring** — data model reserves it, editor
-   only supports flat instances; user-added children under an instance root are
-   dropped on save.
-6. **Particles: absent** — no trait, no UI (in scope, not started).
-7. **GLB import via file dialog only** — no drag-from-OS; GLTF node→entity
-   explosion intentionally deferred.
-8. **Play-mode pause UI** exists but play-mode systems are minimal (no authored
-   gameplay behaviour — by design, out of scope).
-9. **Editor bundle duplication** — MaterialEditor preview creates a second
-   WebGPU context; acceptable but worth a shared preview renderer later.
-10. **`window.__ahDebug` / `?harness=1`** debug affordances ship in dev bundles
-    (gated by query param; not active in normal use).
-11. **Tests cover data layer only** — 29 tests for schema/serialize/prefab/
-    loader/animator-runtime; zero component/UI tests.
+1. **findEntityByUuid is O(n) with a lazy index** — a WeakMap index caches
+   uuid→entity per world and rebuilds on miss; stress tests show 5k-entity
+   queries at ~2ms, so no eager index is warranted yet.
+2. **Sub-object selection is workspace-local** — graph nodes, keyframes,
+   animator states and particle modules track selection in their workspace
+   component; the typed global selection covers document objects
+   (entity/asset/material/prefab/clip/controller/effect).
+3. **Single-project persistence** — "save active document" saves all
+   documents (one JSON file); per-doc dirty chips indicate what changed.
+4. **Particle simulation is CPU V1** — batched TypedArrays with a
+   GPU-compute-ready structure; no compute pass yet.
+5. **GLB import via file dialog only** — no drag-from-OS import.
+6. **THREE.Clock deprecation warnings** originate inside R3F 9.7.0
+   internals (not our code); harmless until R3F upgrades.
+7. **MaterialEditor preview canvas** uses its own WebGL2 renderer
+   (WebGPURenderer depth-stencil resize bug in three 0.185.1); shared
+   preview renderer is a future optimization.
+8. **`?harness=1` debug affordances** ship in dev bundles only, gated by
+   query param.
 
-## 10. Baseline Status (end of audit)
+## 10. Release Status (final)
 
-- `pnpm install --frozen-lockfile` — OK
-- `tsc -b` (whole workspace, strict) — exit 0
-- `vitest` — 29/29 passing
-- Production builds: editor-dev ✓, runtime-demo ✓, @ahengine/editor ✓ (tarball)
-- Browser run: WebGPU backend active, `navigator.gpu` present, **0 console
-  errors** across selection/inspect/timeline/material flows
-- Dead code removed during audit: stale `editor-ui/src/index.ts` placeholder,
-  unused `Toolbar.tsx`
+- `tsc --noEmit` across all packages — exit 0
+- `pnpm lint` (ESLint 9 + typescript-eslint) — 0 errors
+- `vitest` — 117/117 passing (schema, data-contract, ecs, prefabs, nested
+  prefabs, loader, animation, material graph, assets, lighting, scene
+  editor, cross-editor, stress, stabilization, showcase e2e)
+- Production builds: editor-dev, runtime-demo, @ahengine/editor tarball — green
+- Browser: WebGPU backend active, 0 console errors; 59 FPS / ~17ms frames at
+  the reference 1672×941 viewport with the showcase scene
+- End-to-end proof: showcase project (environment, sun, imported model,
+  node material, nested A→B→C prefab, clip, animator, particles) authored →
+  exported → loaded by the zero-editor-imports runtime demo

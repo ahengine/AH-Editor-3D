@@ -2,9 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronRight, Package, PackageOpen, ArrowLeft } from 'lucide-react'
 import type { PrefabDefinition } from '@ahengine/project-schema'
 import { EntityMeta, PrefabInstance } from '@ahengine/ecs-runtime'
-import { openAsset, useEditorStore, createPrefabFromSelection, instantiatePrefabAction } from '@ahengine/editor-core'
-import { HierarchyPanel } from './HierarchyPanel.js'
-import { Inspector } from './Inspector.js'
+import { openAsset, useEditorStore, instantiatePrefabAction } from '@ahengine/editor-core'
 
 /**
  * Prefab Workspace — breadcrumb navigation, prefab list, isolated edit context.

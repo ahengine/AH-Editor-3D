@@ -20,9 +20,12 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/three": "0.185.1",
+    "eslint": "^9.39.5",
+    "fake-indexeddb": "^6.2.5",
     "koota": "^0.6.6",
     "three": "^0.185.1",
     "typescript": "^5.9.0",
+    "typescript-eslint": "^8.69.0",
     "vitest": "^5.0.0"
   },
   "dependencies": {
