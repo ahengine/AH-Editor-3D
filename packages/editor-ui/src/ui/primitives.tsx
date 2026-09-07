@@ -364,3 +364,57 @@ export function TimelineClip({
 }
 
 export { ChevronDown, ChevronRight }
+
+
+/* ------------------------------------------------------------------ */
+/* Popover — click-anchored floating surface                           */
+/* ------------------------------------------------------------------ */
+
+export function Popover({
+  trigger,
+  children,
+  align = 'start',
+  width = 220,
+}: {
+  trigger: (props: { onClick: () => void; open: boolean }) => ReactNode
+  children: ReactNode | ((close: () => void) => ReactNode)
+  align?: 'start' | 'end'
+  width?: number
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const handler = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+  return (
+    <div className="ah-popover-host" ref={ref}>
+      {trigger({ onClick: () => setOpen(!open), open })}
+      {open && (
+        <div className={`ah-popover ${align === 'end' ? 'align-end' : ''}`} style={{ width }}>
+          {typeof children === 'function' ? children(() => setOpen(false)) : children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Tooltip — delayed hover hint (pure CSS delay via wrapper)           */
+/* ------------------------------------------------------------------ */
+
+export function Tooltip({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <span className="ah-tooltip-host" data-tip={label}>
+      {children}
+    </span>
+  )
+}
+
+/* ContextMenu primitive lives in hooks.tsx (useContextMenu + MenuList); the
+ * editor consumes it through this re-export so all primitives share one home. */
+export { useContextMenu, MenuList } from '../hooks.js'

@@ -866,3 +866,59 @@ select.ah-input {
   border-radius: 4px;
   padding: 1px 5px;
 }
+
+/* ---------------------------------------------------------------- */
+/* Popover                                                           */
+/* ---------------------------------------------------------------- */
+
+.ah-popover-host {
+  position: relative;
+  display: inline-flex;
+}
+.ah-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 350;
+  background: rgba(26, 33, 42, 0.98);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
+  padding: var(--sp-1);
+  backdrop-filter: blur(24px) saturate(120%);
+}
+.ah-popover.align-end {
+  left: auto;
+  right: 0;
+}
+
+/* ---------------------------------------------------------------- */
+/* Tooltip                                                           */
+/* ---------------------------------------------------------------- */
+
+.ah-tooltip-host {
+  position: relative;
+  display: inline-flex;
+}
+.ah-tooltip-host::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 24, 32, 0.97);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  font-size: var(--fs-meta);
+  padding: 4px 8px;
+  border-radius: var(--radius-small);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 400ms ease 0ms;
+  z-index: 500;
+}
+.ah-tooltip-host:hover::after {
+  opacity: 1;
+  transition: opacity 120ms ease 350ms;
+}

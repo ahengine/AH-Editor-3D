@@ -1000,3 +1000,65 @@
   flex-direction: column;
   gap: var(--sp-2);
 }
+
+/* ---------------------------------------------------------------- */
+/* Workspace list rows (Prefab/Material/Particle left panels)        */
+/* ---------------------------------------------------------------- */
+
+.ah-list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: var(--row-height);
+  padding: 0 var(--sp-3);
+  margin: 0 var(--sp-2);
+  border-radius: var(--radius-small);
+  color: var(--text-secondary);
+  font-size: var(--fs-ui);
+  text-align: left;
+  width: calc(100% - var(--sp-4));
+  cursor: pointer;
+  transition: background var(--motion-hover);
+}
+.ah-list-row:hover {
+  background: var(--surface-hover);
+}
+.ah-list-icon {
+  display: inline-flex;
+  color: var(--accent);
+  opacity: 0.85;
+  flex: none;
+}
+.ah-list-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ah-list-meta {
+  font-size: var(--fs-meta);
+  color: var(--text-tertiary);
+  flex: none;
+}
+.ah-list-count {
+  margin-left: auto;
+  font-size: var(--fs-meta);
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9px;
+  padding: 1px 7px;
+}
+
+/* Clearly-incomplete phase shells (honest, disabled) */
+.ah-incomplete {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--fs-secondary);
+  padding: var(--sp-5);
+}

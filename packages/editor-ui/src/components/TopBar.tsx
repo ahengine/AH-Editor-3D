@@ -30,6 +30,7 @@ import {
 } from '@ahengine/editor-core'
 import { createCamera, createLight, createPrimitive } from '@ahengine/editor-core'
 import { SegmentedControl, IconButton } from '../ui/primitives.js'
+import { workspaceConfigs } from './BottomContextPanel.js'
 import { MenuList, type MenuItemSpec } from '../hooks.js'
 
 const icon13 = { size: 13, strokeWidth: 1.7 }
@@ -39,7 +40,7 @@ const icon13 = { size: 13, strokeWidth: 1.7 }
  * right: Share (export), Play, zoom, overflow menu (File/Edit/Create).
  */
 export function TopBar() {
-  const editorMode = useEditorStore((s) => s.editorMode)
+  const workspace = useEditorStore((s) => s.workspace)
   const playMode = useEditorStore((s) => s.playMode)
   const projectName = useEditorStore((s) => s.projectName)
   const dirty = useEditorStore((s) => s.dirty)
@@ -100,17 +101,14 @@ export function TopBar() {
       <div className="ah-topbar-center">
         <SegmentedControl
           size="top"
-          value={editorMode}
-          onChange={(mode) => {
-            store().setEditorMode(mode)
-            // Animate focuses animation tooling; Scene returns to the layout view.
-            store().setTimelineTab(mode === 'animate' ? 'controller' : 'timeline')
+          value={workspace}
+          onChange={(next) => {
+            store().setWorkspace(next)
+            // Workspaces own their inspector focus (Material → Library).
+            const config = workspaceConfigs.find((entry) => entry.id === next)
+            if (config) store().setInspectorTab(config.inspectorTab)
           }}
-          options={[
-            { value: 'scene', label: 'Scene' },
-            { value: 'animate', label: 'Animate' },
-            { value: 'render', label: 'Render' },
-          ]}
+          options={workspaceConfigs.map((config) => ({ value: config.id, label: config.label }))}
         />
       </div>
 

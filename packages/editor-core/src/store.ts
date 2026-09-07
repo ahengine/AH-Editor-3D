@@ -17,9 +17,8 @@ export type PlayMode = 'edit' | 'play' | 'paused'
 export type SidebarTab = 'scene' | 'assets'
 export type InspectorTab = 'inspector' | 'library'
 export type TimelineTab = 'timeline' | 'controller'
-export type EditorMode = 'scene' | 'animate' | 'render'
-/** @deprecated legacy bottom dock tab (Materials/Animator moved into Inspector/Timeline) */
-export type BottomTab = 'assets' | 'materials' | 'animator'
+/** Authoring workspaces (product navigation). Lighting lives in Scene; Animator lives in Animation. */
+export type WorkspaceId = 'scene' | 'prefab' | 'material' | 'animation' | 'particle'
 
 export interface EditorNotification {
   id: number
@@ -57,7 +56,6 @@ export interface EditorStore {
   snapTranslate: number
   snapRotateDeg: number
 
-  bottomTab: BottomTab
   bottomPanelOpen: boolean
   editingMaterialId: string | null
   editingControllerId: string | null
@@ -68,7 +66,9 @@ export interface EditorStore {
   sidebarTab: SidebarTab
   inspectorTab: InspectorTab
   timelineTab: TimelineTab
-  editorMode: EditorMode
+  workspace: WorkspaceId
+  /** Active bottom context-panel tab per workspace (editor-only). */
+  bottomTab: Record<WorkspaceId, string>
   gridVisible: boolean
   /** Canvas resolution scale (1 = 100%). */
   viewportScale: number
@@ -99,7 +99,6 @@ export interface EditorStore {
   setTool(tool: ToolMode): void
   setSpace(space: TransformSpace): void
   setSnap(enabled: boolean): void
-  setBottomTab(tab: BottomTab): void
   setBottomPanelOpen(open: boolean): void
   setEditingMaterial(id: string | null): void
   setEditingController(id: string | null): void
@@ -108,7 +107,8 @@ export interface EditorStore {
   setSidebarTab(tab: SidebarTab): void
   setInspectorTab(tab: InspectorTab): void
   setTimelineTab(tab: TimelineTab): void
-  setEditorMode(mode: EditorMode): void
+  setWorkspace(workspace: WorkspaceId): void
+  setBottomTab(workspace: WorkspaceId, tab: string): void
   setGridVisible(visible: boolean): void
   setViewportScale(scale: number): void
   setPlayMode(mode: PlayMode, playWorld: World | null): void
@@ -149,7 +149,6 @@ export const useEditorStore = create<EditorStore>((set) => ({
   snapTranslate: 0.5,
   snapRotateDeg: 15,
 
-  bottomTab: 'assets',
   bottomPanelOpen: true,
   editingMaterialId: null,
   editingControllerId: null,
@@ -159,7 +158,8 @@ export const useEditorStore = create<EditorStore>((set) => ({
   sidebarTab: 'scene',
   inspectorTab: 'inspector',
   timelineTab: 'timeline',
-  editorMode: 'scene',
+  workspace: 'scene',
+  bottomTab: { scene: 'assets', prefab: 'structure', material: 'graph', animation: 'timeline', particle: 'curves' },
   gridVisible: true,
   viewportScale: 1,
 
@@ -188,18 +188,18 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setTool: (tool) => set({ tool }),
   setSpace: (space) => set({ space }),
   setSnap: (snapEnabled) => set({ snapEnabled }),
-  setBottomTab: (bottomTab) => set({ bottomTab, bottomPanelOpen: true }),
   setBottomPanelOpen: (bottomPanelOpen) => set({ bottomPanelOpen }),
   setEditingMaterial: (editingMaterialId) =>
-    set({ editingMaterialId, bottomTab: 'materials', bottomPanelOpen: true }),
+    set({ editingMaterialId, inspectorTab: 'library' }),
   setEditingController: (editingControllerId) =>
-    set({ editingControllerId, bottomTab: 'animator', bottomPanelOpen: true }),
+    set({ editingControllerId, workspace: 'animation', timelineTab: 'controller' }),
   setDiagnosticsOpen: (diagnosticsOpen) => set({ diagnosticsOpen }),
   setAnimatorPreview: (animatorPreviewUuid) => set({ animatorPreviewUuid }),
   setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   setInspectorTab: (inspectorTab) => set({ inspectorTab }),
   setTimelineTab: (timelineTab) => set({ timelineTab }),
-  setEditorMode: (editorMode) => set({ editorMode }),
+  setWorkspace: (workspace) => set({ workspace }),
+  setBottomTab: (workspace, tab) => set((state) => ({ bottomTab: { ...state.bottomTab, [workspace]: tab } })),
   setGridVisible: (gridVisible) => set({ gridVisible }),
   setViewportScale: (viewportScale) => set({ viewportScale }),
   setPlayMode: (playMode, playWorld) => set({ playMode, playWorld }),

@@ -13,10 +13,9 @@ import {
 } from '@ahengine/editor-core'
 import { viewportState } from './components/Viewport.js'
 import { TopBar } from './components/TopBar.js'
-import { HierarchyPanel } from './components/HierarchyPanel.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
-import { TimelinePanel } from './components/TimelinePanel.js'
+import { BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
 
 /**
  * Editor shell — pixel-locked to Design/Editor Concept.png (1672×941):
@@ -27,9 +26,8 @@ import { TimelinePanel } from './components/TimelinePanel.js'
  */
 export function EditorApp() {
   const [booted, setBooted] = useState(false)
-  const editorMode = useEditorStore((s) => s.editorMode)
+  const workspace = useEditorStore((s) => s.workspace)
   const viewportScale = useEditorStore((s) => s.viewportScale)
-  void editorMode // layout emphasis handled by TopBar mode switching (timeline tab)
 
   useEffect(() => {
     void (async () => {
@@ -42,32 +40,41 @@ export function EditorApp() {
   useGlobalShortcuts(booted)
   useAutosave(booted)
 
-  // Animate mode gives the timeline more room (Render keeps scene default).
-  const timelineDefault = 246
+  const config = workspaceConfigs.find((entry) => entry.id === workspace) ?? workspaceConfigs[0]
+  // Animation keeps the reference's larger timeline; other workspaces start compact.
+  const bottomDefault = workspace === 'animation' ? 246 : 200
 
   return (
     <div className="ah-page">
       <div className="ah-shell">
         <TopBar />
         <div className="ah-workspace">
-          <Group orientation="horizontal" className="ah-group-h">
-            <Panel defaultSize={292} minSize={240} maxSize={360}>
-              <HierarchyPanel />
+          <Group
+            orientation="horizontal"
+            className="ah-group-h"
+            onLayoutChange={(layout) => saveLayout('main', layout)}
+          >
+            <Panel id="left" defaultSize={292} minSize={240} maxSize={360}>
+              {config.left}
             </Panel>
             <Separator className="ah-resize-handle" />
-            <Panel minSize={400}>
-              <Group orientation="vertical" className="ah-group-v">
-                <Panel minSize={200}>
+            <Panel id="center" minSize={400}>
+              <Group
+                orientation="vertical"
+                className="ah-group-v"
+                onLayoutChange={(layout) => saveLayout('center', layout)}
+              >
+                <Panel id="viewport" minSize={200}>
                   <Viewport dpr={viewportScale} />
                 </Panel>
                 <Separator className="ah-resize-handle" />
-                <Panel defaultSize={timelineDefault} minSize={120} maxSize={520}>
-                  <TimelinePanel />
+                <Panel id="bottom" defaultSize={bottomDefault} minSize={120} maxSize={520}>
+                  <BottomContextPanel workspace={workspace} />
                 </Panel>
               </Group>
             </Panel>
             <Separator className="ah-resize-handle" />
-            <Panel defaultSize={352} minSize={290} maxSize={430}>
+            <Panel id="right" defaultSize={352} minSize={290} maxSize={430}>
               <Inspector />
             </Panel>
           </Group>
@@ -76,6 +83,35 @@ export function EditorApp() {
       <Notifications />
     </div>
   )
+}
+
+/* ------------------------------------------------------------------ */
+/* Panel layout persistence — editor-only (localStorage, never scene   */
+/* data). Groups restore via defaultLayout on next mount.              */
+/* ------------------------------------------------------------------ */
+
+const LAYOUT_KEY = 'ahengine.layout.v1'
+
+function saveLayout(group: string, layout: Record<string, number>): void {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY)
+    const all = raw ? (JSON.parse(raw) as Record<string, Record<string, number>>) : {}
+    all[group] = layout
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(all))
+  } catch {
+    /* storage unavailable — sizes stay session-only */
+  }
+}
+
+export function loadLayout(group: string): Record<string, number> | undefined {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY)
+    if (!raw) return undefined
+    const all = JSON.parse(raw) as Record<string, Record<string, number>>
+    return all[group]
+  } catch {
+    return undefined
+  }
 }
 
 /* ------------------------------------------------------------------ */
