@@ -6,7 +6,7 @@ import type {
   PrefabDefinition,
   MaterialAsset,
   AnimationClipAsset,
-  AnimatorController,
+  AnimatorControllerV2 as AnimatorController,
   ParticleEffectAsset,
 } from '../schema/index.js'
 

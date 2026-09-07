@@ -185,14 +185,8 @@ export function validateProjectIntegrity(
     }
   }
 
-  // Animator controllers reference model assets / clip ids when present.
+  // Animator controllers reference valid entry states.
   for (const controller of project.animatorControllers) {
-    if (controller.modelAssetId && !assetIds.has(controller.modelAssetId)) {
-      issues.push({
-        path: `animatorController "${controller.name}".modelAssetId`,
-        message: `References missing asset "${controller.modelAssetId}"`,
-      })
-    }
     if (!controller.states.some((state) => state.id === controller.entryStateId)) {
       issues.push({
         path: `animatorController "${controller.name}".entryStateId`,

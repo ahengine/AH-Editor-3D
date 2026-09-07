@@ -67,7 +67,7 @@ export class AnimatorRuntime {
         actions.set(clip.name, action)
       }
       const parameters = new Map<string, number | boolean>()
-      for (const param of controller.parameters) parameters.set(param.id, param.default)
+      for (const param of controller.parameters) parameters.set(param.id, param.defaultValue)
       const stateId =
         controller.states.find((s) => s.id === initialState)?.id ??
         controller.states.find((s) => s.id === controller.entryStateId)?.id ??
@@ -84,7 +84,7 @@ export class AnimatorRuntime {
     if (stateId === null || stateId === state.currentStateId) return
     const next = controller.states.find((s) => s.id === stateId)
     if (!next) return
-    const action = next.clip ? state.actions.get(next.clip) : null
+    const action = next.clipId ? state.actions.get(next.clipId) : null
     if (action) {
       action.reset()
       action.setLoop(next.loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity)
@@ -150,7 +150,7 @@ export class AnimatorRuntime {
         actions: new Map<string, THREE.AnimationAction>(),
         currentAction: null,
         currentStateId: null,
-        parameters: new Map(controller.parameters.map((p) => [p.id, p.default] as const)),
+        parameters: new Map(controller.parameters.map((p) => [p.id, p.defaultValue] as const)),
         time: 0,
       }
       this.states.set(object.uuid, state)

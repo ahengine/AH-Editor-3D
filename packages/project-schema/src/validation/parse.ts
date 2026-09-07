@@ -1,6 +1,6 @@
 import type { ZodType } from 'zod'
 import {
-  AnimatorControllerSchema,
+  AnimatorControllerV2Schema,
   MaterialAssetSchema,
   MaterialDefinitionSchema,
   PrefabDefinitionSchema,
@@ -10,7 +10,7 @@ import {
   ParticleEffectAssetSchema,
 } from '../schema/index.js'
 import type {
-  AnimatorController,
+  AnimatorControllerV2 as AnimatorController,
   MaterialAsset,
   MaterialDefinition,
   PrefabDefinition,
@@ -68,7 +68,7 @@ export function parseMaterial(data: unknown): MaterialDefinition {
 }
 
 export function parseAnimatorController(data: unknown): AnimatorController {
-  return run(AnimatorControllerSchema, data, 'animator-controller', migrateAnimator)
+  return run(AnimatorControllerV2Schema, data, 'animator-controller', migrateAnimator)
 }
 
 export function parseAnimationClip(data: unknown): AnimationClipAsset {

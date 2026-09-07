@@ -403,7 +403,7 @@ function validProject(): ProjectData {
         name: 'Ctrl',
         modelAssetId: 'asset-cube-gltf',
         parameters: [],
-        states: [{ id: 's1', name: 'Spin', clip: 'Spin', loop: true, speed: 1 }],
+        states: [{ id: 's1', name: 'Spin', clipId: 'Spin', loop: true, speed: 1 }],
         transitions: [],
         entryStateId: 's1',
         schemaVersion: 1,

@@ -21,8 +21,8 @@ function controllerFixture(): AnimatorController {
     modelAssetId: 'asset-1',
     parameters: [],
     states: [
-      { id: 'spin', name: 'Spin', clip: 'Spin', loop: true, speed: 1 },
-      { id: 'hold', name: 'Hold', clip: null, loop: false, speed: 1 },
+      { id: 'spin', name: 'Spin', clipId: 'Spin', loop: true, speed: 1 },
+      { id: 'hold', name: 'Hold', clipId: null, loop: false, speed: 1 },
     ],
     transitions: [
       { id: 'tr-1', from: 'spin', to: 'hold', duration: 0.1, exitTime: 0, conditions: [] },

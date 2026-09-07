@@ -4,7 +4,7 @@ import { SceneDataSchema } from './scene.js'
 import { MaterialDefinitionSchema } from './material.js'
 import { PrefabDefinitionSchema } from './prefab.js'
 import { AnimationClipDataSchema } from './animation-clip.js'
-import { AnimatorControllerSchema } from './animator.js'
+import { AnimatorControllerV2Schema as AnimatorControllerSchema } from './animator-v2.js'
 import { ParticleEffectAssetSchema } from './particle.js'
 
 /** Project domain — the full authoring document. Single scene in V1. */

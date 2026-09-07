@@ -62,7 +62,7 @@ export function AnimatorPanel({ hideTimeline = false }: { hideTimeline?: boolean
       modelAssetId: modelAssetId || null,
       parameters: [],
       states: [
-        { id: 'state-entry', name: 'Idle', clip: null, loop: true, speed: 1 },
+        { id: 'state-entry', name: 'Idle', clipId: null, loop: true, speed: 1 },
       ],
       transitions: [],
       entryStateId: 'state-entry',
@@ -75,7 +75,7 @@ export function AnimatorPanel({ hideTimeline = false }: { hideTimeline?: boolean
   const addState = () => {
     if (!controller) return
     const id = `state-${crypto.randomUUID().slice(0, 6)}`
-    const state: AnimatorState = { id, name: `State ${controller.states.length + 1}`, clip: null, loop: true, speed: 1 }
+    const state: AnimatorState = { id, name: `State ${controller.states.length + 1}`, clipId: null, loop: true, speed: 1 }
     setController({ ...controller, states: [...controller.states, state] })
     setPositions((prev) => ({ ...prev, [id]: { x: 160 + controller.states.length * 190, y: 200 } }))
     setSelectedStateId(id)
@@ -218,7 +218,7 @@ export function AnimatorPanel({ hideTimeline = false }: { hideTimeline?: boolean
                     )}
                   </div>
                   <div className="ah-node-meta">
-                    <span>{state.clip ? `▸ ${state.clip}` : 'no clip'}</span>
+                    <span>{state.clipId ? `▸ ${state.clipId}` : 'no clip'}</span>
                     <span>
                       {state.speed.toFixed(2)}× {state.loop ? '· loop' : ''}
                     </span>
@@ -327,7 +327,7 @@ function StateInspector({
       </div>
       <div className="ah-field">
         <label>Clip</label>
-        <select className="ah-input" style={{ height: 24 }} value={state.clip ?? ''} onChange={(e) => patch({ clip: e.target.value || null })}>
+        <select className="ah-input" style={{ height: 24 }} value={state.clipId ?? ''} onChange={(e) => patch({ clipId: e.target.value || null })}>
           <option value="">— none —</option>
           {clips.map((clip) => (
             <option key={clip} value={clip}>
@@ -438,7 +438,7 @@ function TransitionInspector({
             patch({
               conditions: [
                 ...transition.conditions,
-                { parameterId: parameter.id, operator: parameter.type === 'trigger' ? 'trigger' : '>', value: 0.5 },
+                { parameterId: parameter.id, operator: parameter.type === 'activated' ? 'activated' : '>', value: 0.5 },
               ],
             })
           }}
