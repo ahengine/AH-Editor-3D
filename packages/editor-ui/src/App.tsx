@@ -28,6 +28,8 @@ import { TimelinePanel } from './components/TimelinePanel.js'
 export function EditorApp() {
   const [booted, setBooted] = useState(false)
   const editorMode = useEditorStore((s) => s.editorMode)
+  const viewportScale = useEditorStore((s) => s.viewportScale)
+  void editorMode // layout emphasis handled by TopBar mode switching (timeline tab)
 
   useEffect(() => {
     void (async () => {
@@ -41,7 +43,7 @@ export function EditorApp() {
   useAutosave(booted)
 
   // Animate mode gives the timeline more room (Render keeps scene default).
-  const timelineDefault = editorMode === 'animate' ? 340 : 246
+  const timelineDefault = 246
 
   return (
     <div className="ah-page">
@@ -56,7 +58,7 @@ export function EditorApp() {
             <Panel minSize={400}>
               <Group orientation="vertical" className="ah-group-v">
                 <Panel minSize={200}>
-                  <Viewport />
+                  <Viewport dpr={viewportScale} />
                 </Panel>
                 <Separator className="ah-resize-handle" />
                 <Panel defaultSize={timelineDefault} minSize={120} maxSize={520}>
@@ -99,6 +101,15 @@ function useGlobalShortcuts(enabled: boolean): void {
         event.preventDefault()
         if (event.shiftKey) redo()
         else undo()
+        return
+      }
+      if (mod && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        const store2 = useEditorStore.getState()
+        store2.setSidebarTab('scene')
+        requestAnimationFrame(() => {
+          document.getElementById('ah-hierarchy-search')?.focus()
+        })
         return
       }
       if (mod && event.key.toLowerCase() === 'd') {

@@ -8,9 +8,8 @@ import {
   findEntityByUuid,
   modelAnimationRegistry,
 } from '@ahengine/ecs-runtime'
-import { animator, useEditorStore } from '@ahengine/editor-core'
-import { editComponentField } from '@ahengine/editor-core'
-import { Play, Pause, Square, Plus, Trash2, Link2 } from 'lucide-react'
+import { useEditorStore } from '@ahengine/editor-core'
+import { Plus, Trash2, Link2 } from 'lucide-react'
 
 /**
  * Animator tab: state machine graph + preview timeline.
@@ -294,24 +293,6 @@ export function AnimatorPanel({ hideTimeline = false }: { hideTimeline?: boolean
       )}
 
       {/* Timeline preview (only in standalone mode — the docked Timeline has its own transport) */}
-      {!hideTimeline && (
-      <PreviewTimeline
-        entity={previewEntity ?? null}
-        controller={controller}
-        modelAssetName={modelAsset?.name ?? null}
-        onAssignController={() => {
-          if (controller && previewEntity) {
-            const uuid = previewEntity.get(EntityMeta)?.uuid
-            if (uuid) {
-              editComponentField(uuid, 'animation.animator', {
-                controllerId: controller.id,
-                initialState: controller.entryStateId,
-              })
-            }
-          }
-        }}
-      />
-      )}
     </div>
   )
 }
@@ -477,157 +458,3 @@ function modelClipNames(controller: AnimatorController): string[] {
   return clips?.map((clip) => clip.name) ?? []
 }
 
-/* ------------------------------------------------------------------ */
-/* Preview timeline                                                    */
-/* ------------------------------------------------------------------ */
-
-function PreviewTimeline({
-  entity,
-  controller,
-  modelAssetName,
-  onAssignController,
-}: {
-  entity: Entity | null
-  controller: AnimatorController | null
-  modelAssetName: string | null
-  onAssignController: () => void
-}) {
-  const [playing, setPlaying] = useState(false)
-  const [speed, setSpeed] = useState(1)
-  const [time, setTime] = useState(0)
-  const rafRef = useRef(0)
-
-  const clipName =
-    controller?.states.find((s) => s.id === controller.entryStateId)?.clip ?? null
-  const modelAssetId = entity?.get(ModelRenderer)?.assetId ?? ''
-  const clips = modelAnimationRegistry.get(modelAssetId) ?? []
-  const clip = clips.find((c) => c.name === clipName) ?? clips[0] ?? null
-  const duration = clip?.duration ?? 3
-
-  useEffect(() => {
-    return () => {
-      cancelAnimationFrame(rafRef.current)
-      if (entity) animator.stop(entity)
-    }
-  }, [entity])
-
-  useEffect(() => {
-    if (!playing || !entity || !controller || !clip) return
-    let last = performance.now()
-    const tick = (now: number) => {
-      const delta = ((now - last) / 1000) * speed
-      last = now
-      setTime((prev) => (prev + delta) % duration)
-      rafRef.current = requestAnimationFrame(tick)
-    }
-    rafRef.current = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(rafRef.current)
-  }, [playing, entity, controller, clip, speed, duration])
-
-  const play = () => {
-    if (!entity || !controller) return
-    animator.play(entity, controller, clipName ?? '', true, speed)
-    setPlaying(true)
-  }
-
-  const stop = () => {
-    if (entity) animator.stop(entity)
-    setPlaying(false)
-    setTime(0)
-  }
-
-  const entityName = entity?.get(EntityMeta)?.name ?? null
-
-  return (
-    <div className="ah-timeline" style={{ position: 'absolute', inset: 'auto 0 0 0', height: 118 }}>
-      <div className="ah-timeline-ruler">
-        <div style={{ display: 'flex', gap: 2, marginRight: 10, flex: 'none' }}>
-          <button className="ah-icon-btn" style={{ width: 24, height: 18 }} title="Play" onClick={play} disabled={!entity || !clip}>
-            <Play size={12} />
-          </button>
-          <button className="ah-icon-btn" style={{ width: 24, height: 18 }} title="Pause" onClick={() => setPlaying(false)} disabled={!playing}>
-            <Pause size={12} />
-          </button>
-          <button className="ah-icon-btn" style={{ width: 24, height: 18 }} title="Stop" onClick={stop} disabled={!entity}>
-            <Square size={10} />
-          </button>
-        </div>
-        <input
-          className="ah-input"
-          style={{ width: 52, height: 18, flex: 'none' }}
-          type="number"
-          step={0.1}
-          min={0}
-          value={speed}
-          onChange={(e) => {
-            const next = parseFloat(e.target.value) || 1
-            setSpeed(next)
-            if (entity && playing) animator.resume(entity, next)
-          }}
-        />
-        <span style={{ marginLeft: 10, flex: 'none' }}>
-          {entityName ? `${entityName} · ${clip?.name ?? 'no clip'}` : 'select an animated entity'}
-        </span>
-        <div style={{ flex: 1 }} />
-        {controller && modelAssetName && (
-          <span style={{ marginRight: 8 }}>{modelAssetName}</span>
-        )}
-        {controller && entity && (
-          <button className="ah-btn" style={{ height: 18, padding: '0 8px' }} onClick={onAssignController}>
-            Assign to Entity
-          </button>
-        )}
-        {/* Tick marks */}
-        {Array.from({ length: 9 }).map((_, index) => (
-          <span key={index} style={{ position: 'absolute', left: `${8 + index * 12}%`, top: 4 }}>
-            |
-          </span>
-        ))}
-      </div>
-      <div className="ah-timeline-track" style={{ margin: '8px 10px' }}>
-        {clip ? (
-          <div
-            className={`ah-clip ${clip.name?.includes('alk') || clip.name?.includes('un') ? 'green' : 'violet'}`}
-            style={{ left: 0, width: '100%' }}
-          >
-            {clip.name}
-            <span style={{ marginLeft: 'auto', opacity: 0.8 }}>{duration.toFixed(1)}s</span>
-          </div>
-        ) : (
-          <div className="ah-empty" style={{ padding: 8 }}>
-            No animation clip — import a GLB with animations
-          </div>
-        )}
-        {controller?.states.filter((s) => s.clip).slice(0, 4).map((state, index) => (
-          <div
-            key={state.id}
-            className="ah-clip blue"
-            style={{ top: 4 + index * 22, height: 18, left: 0, width: `${60 + index * 10}%`, fontSize: 9.5 }}
-            title={`${state.name}: ${state.clip}`}
-          >
-            {state.name}
-          </div>
-        ))}
-        <div className="ah-playhead" style={{ left: `${(time / duration) * 100}%` }} />
-        <div
-          style={{ position: 'absolute', inset: 0, cursor: 'pointer' }}
-          onMouseDown={(event) => {
-            const rect = event.currentTarget.getBoundingClientRect()
-            const move = (e: MouseEvent) => {
-              const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width))
-              setTime(ratio * duration)
-              if (entity && clip) animator.scrub(entity, clip.name ?? '', ratio * duration)
-            }
-            const up = () => {
-              window.removeEventListener('mousemove', move)
-              window.removeEventListener('mouseup', up)
-            }
-            window.addEventListener('mousemove', move)
-            window.addEventListener('mouseup', up)
-            move(event.nativeEvent)
-          }}
-        />
-      </div>
-    </div>
-  )
-}

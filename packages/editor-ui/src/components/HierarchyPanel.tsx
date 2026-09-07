@@ -42,6 +42,7 @@ import {
   useEditorStore,
 } from '@ahengine/editor-core'
 import { SegmentedControl, SearchInput } from '../ui/primitives.js'
+import { TreeItem } from '../ui/primitives.js'
 import { useContextMenu } from '../hooks.js'
 import { AssetBrowser } from './AssetBrowser.js'
 
@@ -198,6 +199,7 @@ function SceneTree() {
     <div className="ah-panel-body">
       <div className="ah-hierarchy-tools">
         <SearchInput
+          id="ah-hierarchy-search"
           placeholder="Search objects, materials…"
           value={query}
           onChange={setQuery}
@@ -209,20 +211,44 @@ function SceneTree() {
         {rows.map((info) => {
           const selected = selection.includes(info.uuid)
           return (
-            <div
+            <TreeItem
               key={info.uuid}
-              className={[
-                'ah-tree-row',
-                selected ? 'selected' : '',
-                !info.enabled ? 'disabled-entity' : '',
-                dragOver === info.uuid && dragMode === 'inside' ? 'drop-inside' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              style={{ paddingLeft: 6 + info.depth * 17 }}
+              depth={query ? 0 : info.depth}
+              selected={selected}
+              enabled={info.enabled}
+              dropInside={dragOver === info.uuid && dragMode === 'inside'}
+              icon={<EntityIcon info={info} />}
+              caret={
+                info.hasChildren ? (
+                  info.expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />
+                ) : undefined
+              }
+              name={info.name}
+              renaming={renaming === info.uuid}
+              onRename={(name) => { renameEntity(info.uuid, name); setRenaming(null) }}
+              onRenameCancel={() => setRenaming(null)}
+              onToggleExpand={() => toggleExpand(info.uuid)}
               onClick={(event) => onRowClick(event, info.uuid)}
               onDoubleClick={() => setRenaming(info.uuid)}
               onContextMenu={(event) => rowContextMenu(event, info)}
+              trailing={
+                <>
+                  {info.isPrefabRoot && (
+                    <span title="Prefab instance" style={{ color: 'var(--accent)', display: 'flex' }}>
+                      <Package size={12} />
+                    </span>
+                  )}
+                  <span className="ah-tree-actions">
+                    <button
+                      className="ah-icon-btn small"
+                      title={info.enabled ? 'Disable' : 'Enable'}
+                      onClick={(e) => { e.stopPropagation(); setEnabled(info.uuid, !info.enabled) }}
+                    >
+                      {info.enabled ? <Eye size={13} /> : <EyeOff size={13} />}
+                    </button>
+                  </span>
+                </>
+              }
               draggable
               onDragStart={(event) => event.dataTransfer.setData('ah/entity', info.uuid)}
               onDragOver={(event) => {
@@ -248,43 +274,7 @@ function SceneTree() {
                   reparent(draggedUuid, parentUuid)
                 }
               }}
-            >
-              {info.hasChildren ? (
-                <span className="ah-tree-caret" onClick={(e) => { e.stopPropagation(); toggleExpand(info.uuid) }}>
-                  {info.expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-                </span>
-              ) : (
-                <span style={{ width: 16, flex: 'none' }} />
-              )}
-              <EntityIcon info={info} />
-              {renaming === info.uuid ? (
-                <input
-                  autoFocus
-                  defaultValue={info.name}
-                  onBlur={(e) => { renameEntity(info.uuid, e.target.value.trim() || info.name); setRenaming(null) }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                    if (e.key === 'Escape') setRenaming(null)
-                  }}
-                />
-              ) : (
-                <span className="ah-tree-name">{info.name}</span>
-              )}
-              {info.isPrefabRoot && (
-                <span title="Prefab instance" style={{ color: 'var(--accent)', display: 'flex' }}>
-                  <Package size={12} />
-                </span>
-              )}
-              <span className="ah-tree-actions">
-                <button
-                  className="ah-icon-btn small"
-                  title={info.enabled ? 'Disable' : 'Enable'}
-                  onClick={(e) => { e.stopPropagation(); setEnabled(info.uuid, !info.enabled) }}
-                >
-                  {info.enabled ? <Eye size={13} /> : <EyeOff size={13} />}
-                </button>
-              </span>
-            </div>
+            />
           )
         })}
       </div>

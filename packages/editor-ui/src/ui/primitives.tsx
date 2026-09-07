@@ -6,6 +6,77 @@ import { ChevronDown, ChevronRight, Search } from 'lucide-react'
  * Panels compose these; they never re-style from scratch.
  */
 
+export interface TreeItemProps {
+  depth: number
+  selected?: boolean
+  enabled?: boolean
+  dropInside?: boolean
+  icon?: ReactNode
+  caret?: ReactNode
+  name: string
+  renaming?: boolean
+  onRename?: (name: string) => void
+  onRenameCancel?: () => void
+  onClick?: (event: React.MouseEvent) => void
+  onDoubleClick?: () => void
+  onContextMenu?: (event: React.MouseEvent) => void
+  onToggleExpand?: () => void
+  trailing?: ReactNode
+  draggable?: boolean
+  onDragStart?: (event: React.DragEvent) => void
+  onDragOver?: (event: React.DragEvent) => void
+  onDragLeave?: () => void
+  onDrop?: (event: React.DragEvent) => void
+}
+
+/** Compact 28px hierarchy row with 17px-per-level indentation. */
+export function TreeItem(props: TreeItemProps) {
+  return (
+    <div
+      className={[
+        'ah-tree-row',
+        props.selected ? 'selected' : '',
+        props.enabled === false ? 'disabled-entity' : '',
+        props.dropInside ? 'drop-inside' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={{ paddingLeft: 6 + props.depth * 17 }}
+      onClick={props.onClick}
+      onDoubleClick={props.onDoubleClick}
+      onContextMenu={props.onContextMenu}
+      draggable={props.draggable}
+      onDragStart={props.onDragStart}
+      onDragOver={props.onDragOver}
+      onDragLeave={props.onDragLeave}
+      onDrop={props.onDrop}
+    >
+      {props.caret !== undefined ? (
+        <span className="ah-tree-caret" onClick={(event) => { event.stopPropagation(); props.onToggleExpand?.() }}>
+          {props.caret}
+        </span>
+      ) : (
+        <span style={{ width: 16, flex: 'none' }} />
+      )}
+      <span className="ah-tree-icon">{props.icon}</span>
+      {props.renaming ? (
+        <input
+          autoFocus
+          defaultValue={props.name}
+          onBlur={(event) => props.onRename?.(event.target.value.trim() || props.name)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') (event.target as HTMLInputElement).blur()
+            if (event.key === 'Escape') props.onRenameCancel?.()
+          }}
+        />
+      ) : (
+        <span className="ah-tree-name">{props.name}</span>
+      )}
+      {props.trailing}
+    </div>
+  )
+}
+
 export function EditorPanel({
   children,
   className,
@@ -80,16 +151,18 @@ export function SearchInput({
   value,
   onChange,
   shortcut,
+  id,
 }: {
   placeholder: string
   value: string
   onChange: (value: string) => void
   shortcut?: string
+  id?: string
 }) {
   return (
     <div className="ah-search">
       <Search size={13} />
-      <input placeholder={placeholder} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input id={id} placeholder={placeholder} value={value} onChange={(event) => onChange(event.target.value)} />
       {shortcut && <kbd>{shortcut}</kbd>}
     </div>
   )
@@ -253,6 +326,40 @@ export function AssetField({
       )}
       <ChevronDown size={12} style={{ marginLeft: 'auto', opacity: 0.5 }} />
     </button>
+  )
+}
+
+/** Timeline track row (30px) hosting clips/keyframes. */
+export function TimelineTrack({ children }: { children?: ReactNode }) {
+  return <div className="ah-tl-track">{children}</div>
+}
+
+/** Timeline clip block (24px tall, reference color palette). */
+export function TimelineClip({
+  color,
+  label,
+  left = 0,
+  width,
+  title,
+  onClick,
+}: {
+  color: 'blue' | 'violet' | 'green'
+  label: string
+  left?: number
+  width: number
+  title?: string
+  onClick?: () => void
+}) {
+  return (
+    <div
+      className={`ah-tl-clip ${color}`}
+      style={{ left, width }}
+      onClick={onClick}
+      title={title}
+    >
+      {label}
+      <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{title?.split('·')[1]?.trim() ?? ''}</span>
+    </div>
   )
 }
 

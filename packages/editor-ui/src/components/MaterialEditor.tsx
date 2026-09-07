@@ -29,9 +29,9 @@ export function MaterialEditor() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', minHeight: 0 }}>
-      {/* List */}
-      <div className="ah-mat-list">
+    <div className="ah-lib">
+      {/* List — wrapping chips (fits the 352px inspector) */}
+      <div className="ah-lib-list">
         <button
           className="ah-btn"
           style={{ justifyContent: 'center' }}
@@ -69,11 +69,12 @@ export function MaterialEditor() {
       {/* Editor */}
       {material ? (
         <div className="ah-mat-editor">
-          <div style={{ width: 190, flex: 'none', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
-            <MaterialPreview materialId={material.id} />
+          <div style={{ flex: 'none', display: 'flex', gap: 10, alignItems: 'center' }}>
+            <MaterialPreview materialId={material.id} size={96} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <input
               className="ah-input"
-              style={{ width: '100%', textAlign: 'center', fontWeight: 600 }}
+              style={{ width: '100%', fontWeight: 600 }}
               defaultValue={material.name}
               key={material.id}
               onBlur={(event) => {
@@ -83,7 +84,7 @@ export function MaterialEditor() {
                 }
               }}
             />
-            <div style={{ display: 'flex', gap: 6, width: '100%' }}>
+            <div style={{ display: 'flex', gap: 6 }}>
               <select
                 className="ah-input"
                 style={{ flex: 1 }}
@@ -113,15 +114,16 @@ export function MaterialEditor() {
             {selection[0] && (
               <button
                 className="ah-btn"
-                style={{ width: '100%', justifyContent: 'center' }}
+                style={{ justifyContent: 'center' }}
                 onClick={() => editComponentField(selection[0], 'render.material', { slot0: material.id })}
               >
                 Assign to Selection
               </button>
             )}
+            </div>
           </div>
 
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 420 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
             <div className="ah-field">
               <label>Base Color</label>
               <div style={{ display: 'flex', gap: 6 }}>
@@ -261,7 +263,7 @@ function EditorSliderLazy(props: {
 }
 
 /** Live preview sphere rendering the actual material service instance. */
-function MaterialPreview({ materialId }: { materialId: string }) {
+function MaterialPreview({ materialId, size = 190 }: { materialId: string; size?: number }) {
   const gl = useMemo(
     () => async (props: unknown) => {
       const renderer = new WebGPURenderer({ ...(props as object), antialias: true })
@@ -278,7 +280,7 @@ function MaterialPreview({ materialId }: { materialId: string }) {
     []
   )
   return (
-    <div style={{ width: 190, height: 150, border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-card)', overflow: 'hidden', background: '#131820' }}>
+    <div style={{ width: size, height: size, flex: 'none', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-card)', overflow: 'hidden', background: '#131820' }}>
       <Canvas dpr={[1, 2]} camera={{ position: [0, 0.6, 2.6], fov: 40 }} gl={gl}>
         <ambientLight intensity={1.2} />
         <directionalLight position={[3, 4, 2]} intensity={2.2} />

@@ -18,7 +18,7 @@ import {
   modelAnimationRegistry,
 } from '@ahengine/ecs-runtime'
 import { animator, useEditorStore } from '@ahengine/editor-core'
-import { IconButton, SegmentedControl } from '../ui/primitives.js'
+import { IconButton, SegmentedControl, TimelineClip, TimelineTrack } from '../ui/primitives.js'
 import { AnimatorPanel } from './AnimatorPanel.js'
 
 /**
@@ -298,21 +298,19 @@ function TimelineBody({ tabs }: { tabs: React.ReactNode }) {
             </div>
             <div className="ah-tl-tracks">
               {rows.map((row) => (
-                <div className="ah-tl-track" key={row.id}>
+                <TimelineTrack key={row.id}>
                   {row.duration > 0 ? (
-                    <div
-                      className={`ah-tl-clip ${row.color}`}
-                      style={{ left: 0, width: Math.max(row.duration * pxPerSecond, 24) }}
-                      onClick={() => playClip(row.clipName)}
+                    <TimelineClip
+                      color={row.color}
+                      label={row.label}
+                      width={Math.max(row.duration * pxPerSecond, 24)}
                       title={`${row.label} · ${row.duration.toFixed(1)}s`}
-                    >
-                      {row.label}
-                      <span style={{ marginLeft: 'auto', opacity: 0.7 }}>{row.duration.toFixed(1)}s</span>
-                    </div>
+                      onClick={() => playClip(row.clipName)}
+                    />
                   ) : (
                     <span className="ah-tl-noclip">no clip</span>
                   )}
-                </div>
+                </TimelineTrack>
               ))}
               <div className="ah-tl-playhead" style={{ left: time * pxPerSecond }} />
             </div>

@@ -7,7 +7,6 @@ import {
   Cylinder,
   Disc,
   Download,
-  Ellipsis,
   FilePlus2,
   FolderOpen,
   Globe,
@@ -48,6 +47,7 @@ export function TopBar() {
   const undoDepth = useEditorStore((s) => s.undoDepth)
   const redoDepth = useEditorStore((s) => s.redoDepth)
   const diagnosticsOpen = useEditorStore((s) => s.diagnosticsOpen)
+  const viewportScale = useEditorStore((s) => s.viewportScale)
   const [menuOpen, setMenuOpen] = useState(false)
   const store = useEditorStore.getState
 
@@ -101,7 +101,11 @@ export function TopBar() {
         <SegmentedControl
           size="top"
           value={editorMode}
-          onChange={(mode) => store().setEditorMode(mode)}
+          onChange={(mode) => {
+            store().setEditorMode(mode)
+            // Animate focuses animation tooling; Scene returns to the layout view.
+            store().setTimelineTab(mode === 'animate' ? 'controller' : 'timeline')
+          }}
           options={[
             { value: 'scene', label: 'Scene' },
             { value: 'animate', label: 'Animate' },
@@ -121,6 +125,19 @@ export function TopBar() {
           disabled={playMode === 'play'}
           onClick={playMode === 'edit' ? enterPlayMode : stopPlayMode}
         />
+        <select
+          className="ah-input"
+          style={{ width: 64, height: 28 }}
+          title="Viewport resolution scale"
+          value={String(viewportScale)}
+          onChange={(event) => store().setViewportScale(parseFloat(event.target.value) || 1)}
+        >
+          {[0.5, 0.75, 1, 1.5, 2].map((scale) => (
+            <option key={scale} value={scale}>
+              {Math.round(scale * 100)}%
+            </option>
+          ))}
+        </select>
         <span className={`ah-topbar-chip ${backend === 'webgpu' ? 'gpu' : ''}`} title="Renderer backend">
           <span className="dot" />
           {backend === 'webgpu' ? 'WebGPU' : backend === 'webgl2' ? 'WebGL2' : '…'}

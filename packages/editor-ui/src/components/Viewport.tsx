@@ -30,7 +30,9 @@ import {
   environmentLookup,
   getPlayHandle,
   materialService,
+  pausePlayMode,
   resolveAssetUri,
+  resumePlayMode,
   stopPlayMode,
   useEditorStore,
 } from '@ahengine/editor-core'
@@ -50,6 +52,7 @@ import { MenuList } from '../hooks.js'
 export const viewportState = {
   camera: null as THREE.PerspectiveCamera | null,
   focusRequests: 0,
+  viewResetRequests: 0,
   cameraPreset: 'perspective' as 'perspective' | 'top' | 'front' | 'side',
   stats: { fps: 0, frameMs: 0, calls: 0, triangles: 0 },
 }
@@ -63,7 +66,7 @@ function isInSceneGraph(object: THREE.Object3D): boolean {
   return false
 }
 
-export function Viewport() {
+export function Viewport({ dpr = 1 }: { dpr?: number }) {
   const playMode = useEditorStore((s) => s.playMode)
   const playWorld = useEditorStore((s) => s.playWorld)
   const diagnosticsOpen = useEditorStore((s) => s.diagnosticsOpen)
@@ -99,7 +102,7 @@ export function Viewport() {
     >
       <Canvas
         gl={gl}
-        dpr={[1, 2]}
+        dpr={dpr}
         camera={{ fov: 50, near: 0.1, far: 600, position: [9, 6, 12] }}
         shadows
         onCreated={({ gl, camera }) => {
@@ -333,12 +336,16 @@ function EditorRig({
 
   /* Per-frame: outline update, gizmo attach, orbit damping, focus, stats */
   const lastPreset = useRef(viewportState.cameraPreset)
+  const lastReset = useRef(viewportState.viewResetRequests)
   useFrame((_, delta) => {
     controlsRef.current?.update()
 
-    // Camera preset switch (Perspective/Top/Front/Side from the toolbar).
-    if (viewportState.cameraPreset !== lastPreset.current) {
+    // Camera preset switch (Perspective/Top/Front/Side) + explicit view resets.
+    const presetChanged = viewportState.cameraPreset !== lastPreset.current
+    const resetRequested = viewportState.viewResetRequests !== lastReset.current
+    if (presetChanged || resetRequested) {
       lastPreset.current = viewportState.cameraPreset
+      lastReset.current = viewportState.viewResetRequests
       const controls = controlsRef.current
       if (controls) {
         const presets: Record<string, [THREE.Vector3, THREE.Vector3]> = {
@@ -514,7 +521,7 @@ function ViewportRail() {
   return (
     <div className="ah-viewport-rail">
       <IconButton icon={<Focus size={15} />} label="Frame selection (F)" onClick={() => { viewportState.focusRequests += 1 }} />
-      <IconButton icon={<Orbit size={15} />} label="Orbit — drag viewport to orbit" active />
+      <IconButton icon={<Orbit size={15} />} label="Reset view" onClick={() => { viewportState.viewResetRequests += 1 }} />
       <IconButton
         icon={<Sun size={15} />}
         label="Realtime shadows (RTX)"
@@ -554,6 +561,11 @@ function PlayModeBanner({ mode }: { mode: 'play' | 'paused' }) {
   return (
     <div className="ah-playmode-banner">
       {mode === 'play' ? '▶ PLAY MODE' : '⏸ PAUSED'}
+      {mode === 'play' ? (
+        <button onClick={pausePlayMode}>Pause</button>
+      ) : (
+        <button onClick={resumePlayMode}>Resume</button>
+      )}
       <button onClick={stopPlayMode}>Stop</button>
     </div>
   )

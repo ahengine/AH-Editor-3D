@@ -66,6 +66,8 @@ export interface EditorStore {
   timelineTab: TimelineTab
   editorMode: EditorMode
   gridVisible: boolean
+  /** Canvas resolution scale (1 = 100%). */
+  viewportScale: number
 
   clipboardEntity: import('@ahengine/project-schema').SerializedEntity[] | null
   clipboardComponent: { componentId: string; data: Record<string, unknown> } | null
@@ -102,6 +104,7 @@ export interface EditorStore {
   setTimelineTab(tab: TimelineTab): void
   setEditorMode(mode: EditorMode): void
   setGridVisible(visible: boolean): void
+  setViewportScale(scale: number): void
   setPlayMode(mode: PlayMode, playWorld: World | null): void
   setClipboardEntity(data: EditorStore['clipboardEntity']): void
   setClipboardComponent(data: EditorStore['clipboardComponent']): void
@@ -150,6 +153,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   timelineTab: 'timeline',
   editorMode: 'scene',
   gridVisible: true,
+  viewportScale: 1,
 
   clipboardEntity: null,
   clipboardComponent: null,
@@ -187,6 +191,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setTimelineTab: (timelineTab) => set({ timelineTab }),
   setEditorMode: (editorMode) => set({ editorMode }),
   setGridVisible: (gridVisible) => set({ gridVisible }),
+  setViewportScale: (viewportScale) => set({ viewportScale }),
   setPlayMode: (playMode, playWorld) => set({ playMode, playWorld }),
   setClipboardEntity: (clipboardEntity) => set({ clipboardEntity }),
   setClipboardComponent: (clipboardComponent) => set({ clipboardComponent }),
