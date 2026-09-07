@@ -11,10 +11,17 @@
 /* ---------------------------------------------------------------- */
 
 .ah-page {
+  /* Ambient backdrop — the luminance/color layer translucent chrome blurs.
+     Restrained scene-derived tones (warm sun upper right, cool sky lower
+     left) over a dark base; no decorative blobs. No `filter` here: a filter
+     on this ancestor would make it a backdrop root and cut descendant glass
+     off from nothing — saturation is baked into the gradient colors. */
   height: 100%;
   background:
-    radial-gradient(1200px 700px at 50% -10%, rgba(88, 96, 108, 0.5), transparent 60%),
-    linear-gradient(180deg, var(--page-bg-hi), var(--page-bg) 45%);
+    radial-gradient(1300px 800px at 76% 24%, rgba(202, 164, 110, 0.34), transparent 52%),
+    radial-gradient(1100px 720px at 12% 86%, rgba(92, 132, 182, 0.30), transparent 50%),
+    radial-gradient(1700px 1050px at 50% -24%, rgba(80, 106, 144, 0.70), transparent 64%),
+    linear-gradient(180deg, var(--page-bg-hi), var(--page-bg) 48%);
   display: flex;
   align-items: stretch;
   justify-content: center;
@@ -24,6 +31,9 @@
 .ah-shell {
   flex: 1;
   max-width: 100%;
+  /* Level 0 glass. Translucent by itself; deliberately NO backdrop-filter
+     here — an ancestor with backdrop-filter becomes a backdrop root and
+     would cut descendant panels off from the ambient layer beneath. */
   background: var(--shell-gradient);
   border: 1px solid var(--shell-border);
   border-radius: var(--radius-window);
@@ -106,8 +116,11 @@
   gap: var(--sp-4);
   padding: 0 var(--sp-4) 0 var(--sp-5);
   background: var(--topbar-bg);
+  backdrop-filter: var(--material-blur-panel);
+  -webkit-backdrop-filter: var(--material-blur-panel);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-group);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .ah-topbar-left {
@@ -197,7 +210,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-button);
   padding: 4px 9px;
-  background: rgba(20, 26, 34, 0.6);
+  background: var(--material-control);
 }
 .ah-topbar-chip .dot {
   width: 6px;
@@ -355,11 +368,12 @@
   flex-direction: column;
   gap: 2px;
   padding: var(--sp-1);
-  background: rgba(30, 38, 48, 0.88);
-  border: 1px solid var(--border-default);
+  background: var(--material-floating);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 21px;
-  backdrop-filter: blur(20px) saturate(120%);
-  box-shadow: var(--shadow-float);
+  backdrop-filter: var(--material-blur-floating);
+  -webkit-backdrop-filter: var(--material-blur-floating);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   z-index: 5;
 }
 .ah-viewport-rail .ah-icon-btn {
@@ -377,11 +391,12 @@
   gap: var(--sp-1);
   height: 32px;
   padding: 0 var(--sp-1);
-  background: rgba(30, 38, 48, 0.88);
-  border: 1px solid var(--border-default);
+  background: var(--material-floating);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: var(--radius-group);
-  backdrop-filter: blur(20px) saturate(120%);
-  box-shadow: var(--shadow-float);
+  backdrop-filter: var(--material-blur-floating);
+  -webkit-backdrop-filter: var(--material-blur-floating);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   z-index: 5;
 }
 .ah-viewport-status .chip {
@@ -431,7 +446,9 @@
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  background: rgba(122, 46, 42, 0.92);
+  background: rgba(122, 46, 42, 0.72);
+  backdrop-filter: var(--material-blur-floating);
+  -webkit-backdrop-filter: var(--material-blur-floating);
   color: #ffd9d5;
   border: 1px solid rgba(168, 70, 61, 0.9);
   border-radius: var(--radius-button);
@@ -454,8 +471,10 @@
   top: calc(var(--sp-4) + 46px);
   left: var(--sp-4);
   z-index: 6;
-  background: rgba(16, 22, 30, 0.9);
-  border: 1px solid var(--border-default);
+  background: var(--material-floating);
+  backdrop-filter: var(--material-blur-floating);
+  -webkit-backdrop-filter: var(--material-blur-floating);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: var(--radius-card);
   padding: var(--sp-3) var(--sp-4);
   font-size: var(--fs-meta);
@@ -728,7 +747,9 @@
   height: 28px;
   position: sticky;
   top: 0;
-  background: rgba(22, 28, 36, 0.95);
+  background: rgba(26, 36, 48, 0.55);
+  backdrop-filter: var(--material-blur-floating);
+  -webkit-backdrop-filter: var(--material-blur-floating);
   border-bottom: 1px solid var(--border-subtle);
   cursor: ew-resize;
   z-index: 2;
@@ -805,7 +826,7 @@
 }
 .ah-asset-card:hover {
   border-color: var(--border-default);
-  background: var(--panel-bg-raised);
+  background: var(--material-section-hover);
 }
 .ah-asset-card.selected {
   border-color: var(--accent);
@@ -813,7 +834,7 @@
 .ah-asset-thumb {
   height: 52px;
   border-radius: var(--radius-small);
-  background: linear-gradient(135deg, #232c38, #1a212b);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1187,8 +1208,10 @@
   top: 40px;
   left: 50px;
   width: 200px;
-  background: rgba(26, 33, 42, 0.98);
-  border: 1px solid var(--border-default);
+  background: var(--material-floating);
+  backdrop-filter: var(--material-blur-floating);
+  -webkit-backdrop-filter: var(--material-blur-floating);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: var(--radius-card);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.5);
   padding: var(--sp-1);
@@ -1200,7 +1223,9 @@
   position: absolute;
   bottom: 8px;
   left: 8px;
-  background: rgba(122, 46, 42, 0.92);
+  background: rgba(122, 46, 42, 0.72);
+  backdrop-filter: var(--material-blur-floating);
+  -webkit-backdrop-filter: var(--material-blur-floating);
   border: 1px solid rgba(168, 70, 61, 0.9);
   color: #ffd9d5;
   border-radius: var(--radius-small);

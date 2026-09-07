@@ -7,48 +7,65 @@
 
 :root {
   /* ---- page & shell ---- */
-  --page-bg: #2c3037;
-  --page-bg-hi: #3d424a;
+  --page-bg: #101720;
+  --page-bg-hi: #131b26;
 
-  --shell-bg: rgba(29, 39, 51, 0.96);
-  --shell-gradient: linear-gradient(180deg, rgba(27, 39, 53, 0.97), rgba(17, 27, 39, 0.98));
+  /* ---- spatial material system (dark translucent glass) ----
+     Four levels: shell > panel > section > control. Darkness comes from
+     TRANSLUCENT material over the ambient backdrop — never opaque navy.
+     Rule: no major spatial surface above ~0.68 alpha. */
+  --material-shell: rgba(26, 36, 48, 0.50);
+  --material-panel: rgba(20, 29, 40, 0.54);
+  --material-panel-secondary: rgba(44, 57, 73, 0.35);
+  --material-section: rgba(255, 255, 255, 0.03);
+  --material-section-hover: rgba(255, 255, 255, 0.05);
+  --material-control: rgba(12, 19, 28, 0.46);
+  --material-control-hover: rgba(110, 130, 155, 0.24);
+  --material-control-active: rgba(104, 151, 226, 0.34);
+  --material-floating: rgba(19, 28, 38, 0.50);
+  --material-selection: rgba(112, 153, 215, 0.28);
+  --material-blur-shell: blur(30px) saturate(135%);
+  --material-blur-panel: blur(24px) saturate(125%);
+  --material-blur-floating: blur(18px) saturate(130%);
+
+  /* ---- surfaces (legacy names, now spatial) ---- */
+  --panel-bg: var(--material-panel);
+  --panel-bg-soft: var(--material-section);
+  --panel-bg-raised: var(--material-floating);
+  --panel-bg-deep: rgba(16, 24, 34, 0.55);
+
+  --topbar-bg: rgba(255, 255, 255, 0.03);
+
+  --control-bg: var(--material-control);
+  --control-hover: var(--material-control-hover);
+  --control-active: var(--material-control-active);
+
+  --input-bg: var(--material-control);
+  --input-bg-focus: rgba(10, 16, 24, 0.62);
+
+  --surface-hover: rgba(255, 255, 255, 0.045);
+  --surface-active: var(--material-selection);
+
+  --shell-gradient: linear-gradient(180deg, rgba(26, 36, 48, 0.50), rgba(20, 29, 39, 0.46));
   --shell-border: rgba(255, 255, 255, 0.13);
-  --shell-shadow: 0 30px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-
-  /* ---- surfaces ---- */
-  --panel-bg: rgba(28, 34, 42, 0.97);
-  --panel-bg-soft: rgba(41, 50, 61, 0.96);
-  --panel-bg-raised: rgba(48, 57, 70, 0.96);
-  --panel-bg-deep: rgba(23, 29, 37, 0.97);
-
-  --topbar-bg: rgba(48, 57, 70, 0.55);
-
-  --control-bg: rgba(43, 52, 63, 0.92);
-  --control-hover: rgba(54, 65, 78, 0.96);
-  --control-active: rgba(75, 95, 125, 0.94);
-
-  --input-bg: rgba(35, 43, 52, 0.96);
-  --input-bg-focus: rgba(24, 31, 39, 0.98);
-
-  --surface-hover: rgba(255, 255, 255, 0.035);
-  --surface-active: rgba(120, 168, 255, 0.22);
+  --shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.075), 0 24px 70px rgba(0, 0, 0, 0.25);
 
   /* ---- text ---- */
-  --text-primary: rgba(248, 250, 252, 0.96);
-  --text-secondary: rgba(224, 231, 238, 0.69);
-  --text-tertiary: rgba(209, 219, 228, 0.43);
+  --text-primary: rgba(248, 250, 252, 0.94);
+  --text-secondary: rgba(225, 232, 240, 0.64);
+  --text-tertiary: rgba(215, 225, 235, 0.40);
 
-  /* ---- borders ---- */
+  /* ---- borders (soft, sparse) ---- */
   --border-subtle: rgba(255, 255, 255, 0.055);
   --border-default: rgba(255, 255, 255, 0.085);
-  --border-visible: rgba(255, 255, 255, 0.13);
+  --border-visible: rgba(255, 255, 255, 0.12);
 
   /* ---- accent ---- */
   --accent: #78a8ff;
   --accent-soft: rgba(105, 155, 239, 0.22);
   --accent-line: #78a8ff;
 
-  --selection-bg: rgba(62, 76, 100, 0.95);
+  --selection-bg: var(--material-selection);
   --selection-text: rgba(248, 250, 252, 0.98);
 
   /* ---- timeline clip palette (controlled saturation, from reference) ---- */
