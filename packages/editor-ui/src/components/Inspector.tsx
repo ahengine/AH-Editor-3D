@@ -120,10 +120,7 @@ function InspectorBody() {
         ) : null}
 
         {/* Always-present collapsed tail sections (visible with or without selection) */}
-        <InspectorSection title="Scene Settings" open={sceneOpen} onToggle={() => setSceneOpen(!sceneOpen)}>
-          <SceneSettingsPanel embedded />
-        </InspectorSection>
-        <LightSettingsSection open={lightOpen} onToggle={() => setLightOpen(!lightOpen)} />
+        <SceneSettingsPanel />
       </div>
       {adding && <AddComponentDialog onClose={() => setAdding(false)} />}
       {contextMenu.node}
