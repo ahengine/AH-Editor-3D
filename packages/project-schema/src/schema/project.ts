@@ -3,7 +3,7 @@ import { AssetRecordSchema } from './common.js'
 import { SceneDataSchema } from './scene.js'
 import { MaterialDefinitionSchema } from './material.js'
 import { PrefabDefinitionSchema } from './prefab.js'
-import { AnimationClipAssetSchema } from './animation.js'
+import { AnimationClipDataSchema } from './animation-clip.js'
 import { AnimatorControllerSchema } from './animator.js'
 import { ParticleEffectAssetSchema } from './particle.js'
 
@@ -26,7 +26,7 @@ export interface ProjectData {
   assets: import('./common.js').AssetRecord[]
   materials: import('./material.js').MaterialDefinition[]
   prefabs: import('./prefab.js').PrefabDefinition[]
-  animations: import('./animation.js').AnimationClipAsset[]
+  animations: import('./animation-clip.js').AnimationClipData[]
   animatorControllers: import('./animator.js').AnimatorController[]
   particleEffects: import('./particle.js').ParticleEffectAsset[]
 }
@@ -45,7 +45,7 @@ export const ProjectDataSchema = z.object({
   materials: z.array(MaterialDefinitionSchema),
   prefabs: z.array(PrefabDefinitionSchema),
   // v1 backfill: projects authored before these arrays existed parse as [].
-  animations: z.array(AnimationClipAssetSchema).default([]),
+  animations: z.array(AnimationClipDataSchema).default([]),
   animatorControllers: z.array(AnimatorControllerSchema),
   particleEffects: z.array(ParticleEffectAssetSchema).default([]),
 })

@@ -1,7 +1,7 @@
 import type { WorkspaceId } from '@ahengine/editor-core'
 import { useEditorStore } from '@ahengine/editor-core'
 import { HierarchyPanel } from './HierarchyPanel.js'
-import { TimelinePanel } from './TimelinePanel.js'
+import { AnimationWorkspace } from './AnimationWorkspace.js'
 import { AssetBrowser } from './AssetBrowser.js'
 import { MaterialListPanel, ParticleListPanel, IncompletePanelShell } from './WorkspacePanels.js'
 import { PrefabWorkspace } from './PrefabWorkspace.js'
@@ -82,7 +82,7 @@ export const workspaceConfigs: WorkspaceConfig[] = [
     label: 'Animation',
     left: <HierarchyPanel />,
     inspectorTab: 'inspector',
-    bottom: [{ id: 'timeline', label: 'Timeline', content: <TimelinePanel /> }],
+    bottom: [{ id: 'timeline', label: 'Timeline', content: <AnimationWorkspace /> }],
   },
   {
     id: 'particle',

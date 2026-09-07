@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { createWorld, type World } from 'koota'
-import type {
-  AnimationClipAsset,
+import type { AnimationClipData as AnimationClipData, 
   AnimatorController,
   AssetRecord,
   MaterialDefinition,
@@ -47,7 +46,7 @@ export interface EditorStore {
   materials: MaterialDefinition[]
   prefabs: PrefabDefinition[]
   controllers: AnimatorController[]
-  animations: AnimationClipAsset[]
+  animations: import('@ahengine/project-schema').AnimationClipData[]
   particleEffects: ParticleEffectAsset[]
 
   selection: string[]
@@ -94,7 +93,7 @@ export interface EditorStore {
   setMaterials(materials: MaterialDefinition[]): void
   setPrefabs(prefabs: PrefabDefinition[]): void
   setControllers(controllers: AnimatorController[]): void
-  setAnimations(animations: AnimationClipAsset[]): void
+  setAnimations(animations: AnimationClipData[]): void
   setParticleEffects(effects: ParticleEffectAsset[]): void
   setDirty(dirty: boolean): void
   setSaveState(state: 'saved' | 'saving' | 'unsaved'): void

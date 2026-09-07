@@ -102,7 +102,7 @@ export function migrateProject(data: ProjectData): ProjectData {
     ...project,
     scene: migrateScene(project.scene),
     prefabs: project.prefabs.map((prefab) => migratePrefab(prefab)),
-    animations: (project.animations ?? []).map((clip) => migrateAnimation(clip)),
+    animations: project.animations ?? [],
     animatorControllers: (project.animatorControllers ?? []).map((controller) =>
       migrateAnimator(controller)
     ),

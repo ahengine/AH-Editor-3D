@@ -203,10 +203,10 @@ export function validateProjectIntegrity(
 
   // Animation clip assets reference their source model.
   for (const clip of project.animations ?? []) {
-    if (clip.sourceModelAssetId && !assetIds.has(clip.sourceModelAssetId)) {
+    if (clip.sourceAssetId && !assetIds.has(clip.sourceAssetId)) {
       issues.push({
-        path: `animationClip "${clip.name}".sourceModelAssetId`,
-        message: `References missing asset "${clip.sourceModelAssetId}"`,
+        path: `animationClip "${clip.name}".sourceAssetId`,
+        message: `References missing asset "${clip.sourceAssetId}"`,
       })
     }
   }
