@@ -172,10 +172,16 @@ const transform = define({
   }),
   deserialize: (data) => {
     const d = (data ?? {}) as Record<string, unknown>
+    // Missing fields must fall back to the authored DEFAULTS — not zero.
+    // Zero defaulting scale produced invisible, unpickable entities for
+    // every "Create ▸ primitive/light/camera" path that passes `{}`.
+    const base = { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 } }
+    const vec3Or = (value: unknown, fallback: { x: number; y: number; z: number }) =>
+      value === undefined || value === null ? fallback : fromVec3Array(toVec3Array(value))
     return {
-      position: fromVec3Array(toVec3Array(d.position)),
-      rotation: fromVec3Array(toVec3Array(d.rotation)),
-      scale: fromVec3Array(toVec3Array(d.scale)),
+      position: vec3Or(d.position, base.position),
+      rotation: vec3Or(d.rotation, base.rotation),
+      scale: vec3Or(d.scale, base.scale),
     }
   },
 })

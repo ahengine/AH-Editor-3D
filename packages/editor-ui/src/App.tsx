@@ -1,4 +1,13 @@
 import { useEffect, useState } from 'react'
+
+declare global {
+  interface ImportMeta {
+    readonly env?: { readonly DEV?: boolean }
+  }
+}
+
+/** True in vite dev/HMR builds; the bundler replaces this statically. */
+const isDevBuild = import.meta.env?.DEV === true
 import { Panel, Group, Separator } from 'react-resizable-panels'
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
 import {
@@ -11,7 +20,7 @@ import {
   bootstrapDefaultProject,
   openSavedProject,
 } from '@ahengine/editor-core'
-import { viewportState } from './components/Viewport.js'
+import { installTransformChainProbe, viewportState } from './components/Viewport.js'
 import { TopBar } from './components/TopBar.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
@@ -28,6 +37,7 @@ import { ProblemsPanel } from './components/ProblemsPanel.js'
  */
 export function EditorApp() {
   const [booted, setBooted] = useState(false)
+  if (isDevBuild) installTransformChainProbe()
   const workspace = useEditorStore((s) => s.workspace)
   const viewportScale = useEditorStore((s) => s.viewportScale)
 
