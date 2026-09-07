@@ -8,7 +8,6 @@ declare global {
 
 /** True in vite dev/HMR builds; the bundler replaces this statically. */
 const isDevBuild = import.meta.env?.DEV === true
-import { Panel, Group, Separator } from 'react-resizable-panels'
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
 import {
   deleteSelection,
@@ -53,45 +52,20 @@ export function EditorApp() {
   useAutosave(booted)
 
   const config = workspaceConfigs.find((entry) => entry.id === workspace) ?? workspaceConfigs[0]
-  // Animation keeps the reference's larger timeline; other workspaces start compact.
-  const bottomDefault = workspace === 'animation' ? 246 : 200
 
   return (
     <div className="ah-page">
       <div className="ah-shell">
         <TopBar />
-        <div className="ah-workspace">
-          <Group
-            orientation="horizontal"
-            className="ah-group-h"
-            defaultLayout={loadLayout('main')}
-            onLayoutChange={(layout) => saveLayout('main', layout)}
-          >
-            <Panel id="left" defaultSize={292} minSize={240} maxSize={360}>
-              {config.left}
-            </Panel>
-            <Separator className="ah-resize-handle" />
-            <Panel id="center" minSize={400}>
-              <Group
-                orientation="vertical"
-                className="ah-group-v"
-                defaultLayout={loadLayout('center')}
-                onLayoutChange={(layout) => saveLayout('center', layout)}
-              >
-                <Panel id="viewport" minSize={200}>
-                  <Viewport dpr={viewportScale} />
-                </Panel>
-                <Separator className="ah-resize-handle" />
-                <Panel id="bottom" defaultSize={bottomDefault} minSize={120} maxSize={520}>
-                  <BottomContextPanel workspace={workspace} />
-                </Panel>
-              </Group>
-            </Panel>
-            <Separator className="ah-resize-handle" />
-            <Panel id="right" defaultSize={352} minSize={290} maxSize={430}>
-              <Inspector />
-            </Panel>
-          </Group>
+        <div className={`ah-layout ah-layout-${workspace}`}>
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>{config.left}</div>
+          <div className={`ah-layout-center ah-layout-center-${workspace}`}>
+            <Viewport dpr={viewportScale} />
+            <BottomContextPanel workspace={workspace} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <Inspector />
+          </div>
         </div>
       </div>
       <Notifications />
@@ -104,32 +78,6 @@ export function EditorApp() {
 /* ------------------------------------------------------------------ */
 /* Panel layout persistence — editor-only (localStorage, never scene   */
 /* data). Groups restore via defaultLayout on next mount.              */
-/* ------------------------------------------------------------------ */
-
-const LAYOUT_KEY = 'ahengine.layout.v1'
-
-function saveLayout(group: string, layout: Record<string, number>): void {
-  try {
-    const raw = localStorage.getItem(LAYOUT_KEY)
-    const all = raw ? (JSON.parse(raw) as Record<string, Record<string, number>>) : {}
-    all[group] = layout
-    localStorage.setItem(LAYOUT_KEY, JSON.stringify(all))
-  } catch {
-    /* storage unavailable — sizes stay session-only */
-  }
-}
-
-export function loadLayout(group: string): Record<string, number> | undefined {
-  try {
-    const raw = localStorage.getItem(LAYOUT_KEY)
-    if (!raw) return undefined
-    const all = JSON.parse(raw) as Record<string, Record<string, number>>
-    return all[group]
-  } catch {
-    return undefined
-  }
-}
-
 /* ------------------------------------------------------------------ */
 
 function useGlobalShortcuts(enabled: boolean): void {

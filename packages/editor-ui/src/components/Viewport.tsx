@@ -593,7 +593,7 @@ function ViewportToolbar() {
   }
 
   return (
-    <div className="ah-viewport-chrome-top">
+    <div className="ah-vptools">
       <div className="ah-toolbar-group">
         <div className={`ah-menu ${cameraMenu ? 'open' : ''}`}>
           <button className="ah-vtool" onClick={() => setCameraMenu(!cameraMenu)}>
@@ -627,32 +627,19 @@ function ViewportToolbar() {
         <IconButton icon={<Move3d size={15} />} label="Move (W)" active={tool === 'translate'} onClick={() => store().setTool('translate')} />
         <IconButton icon={<Rotate3d size={15} />} label="Rotate (E)" active={tool === 'rotate'} onClick={() => store().setTool('rotate')} />
         <IconButton icon={<Scale3d size={15} />} label="Scale (R)" active={tool === 'scale'} onClick={() => store().setTool('scale')} />
-        <span className="ah-vtool-sep" />
-        <Popover
-          trigger={({ onClick, open }) => (
-            <button className={`ah-vtool ${snapEnabled ? 'active-snap' : ''}`} onClick={onClick} title="Snap settings">
-              <Magnet size={15} />
-              {snapEnabled ? `${store().snapTranslate}` : 'Off'}
-              <ChevronDown size={12} style={{ opacity: 0.6 }} />
-              {open ? null : null}
-            </button>
-          )}
-        >
-          {(close) => <SnapSettings onClose={close} />}
-        </Popover>
         <IconButton icon={<Magnet size={15} />} label="Toggle snapping" active={snapEnabled} onClick={() => store().setSnap(!snapEnabled)} />
       </div>
 
-      <div className={`ah-menu ${spaceMenu ? 'open' : ''}`}>
-        <button className="ah-vtool ah-toolbar-group" style={{ padding: '0 10px' }} onClick={() => setSpaceMenu(!spaceMenu)}>
-          {space === 'local' ? 'Local' : 'Global'} <ChevronDown size={12} style={{ opacity: 0.6 }} />
+      <div className="ah-toolbar-group ah-menu-space">
+        <button className="ah-tool-wide" style={{ border: 0, background: 'transparent', color: 'var(--muted)', cursor: 'pointer' }} onClick={() => setSpaceMenu(!spaceMenu)}>
+          {space === 'local' ? 'Local' : 'World'} ▾
         </button>
         {spaceMenu && (
           <div className="ah-menu-pop">
             <MenuList
               items={[
                 { label: 'Local', onClick: () => { store().setSpace('local'); setSpaceMenu(false) } },
-                { label: 'Global', onClick: () => { store().setSpace('world'); setSpaceMenu(false) } },
+                { label: 'World', onClick: () => { store().setSpace('world'); setSpaceMenu(false) } },
               ]}
               onDone={() => setSpaceMenu(false)}
             />
@@ -671,13 +658,13 @@ function ViewportRail() {
   return (
     <div className="ah-viewport-rail">
       <IconButton icon={<Focus size={15} />} label="Frame selection (F)" onClick={() => { viewportState.focusRequests += 1 }} />
-      <IconButton icon={<Orbit size={15} />} label="Reset view" onClick={() => { viewportState.viewResetRequests += 1 }} />
       <IconButton
         icon={<Sun size={15} />}
-        label="Realtime shadows (RTX)"
+        label="Toggle scene lights"
         active={settings.shadowEnabled}
         onClick={() => store().setSceneSettings({ ...settings, shadowEnabled: !settings.shadowEnabled })}
       />
+      <IconButton icon={<Orbit size={15} />} label="Reset view" onClick={() => { viewportState.viewResetRequests += 1 }} />
       <IconButton icon={<Activity size={15} />} label="Diagnostics" active={diagnosticsOpen} onClick={() => store().setDiagnosticsOpen(!diagnosticsOpen)} />
     </div>
   )
@@ -686,23 +673,20 @@ function ViewportRail() {
 /** Bottom-right status cluster: Grid 1m · Snap · RTX — floats over canvas. */
 function ViewportStatus() {
   const snapEnabled = useEditorStore((s) => s.snapEnabled)
-  const settings = useEditorStore((s) => s.sceneSettings)
   const gridVisible = useEditorStore((s) => s.gridVisible)
+  const backend = useEditorStore((s) => s.backend)
   const store = useEditorStore.getState
   return (
     <div className="ah-viewport-status">
-      <button className={`chip ${gridVisible ? '' : 'off'}`} onClick={() => store().setGridVisible(!gridVisible)}>
-        Grid <b>1m</b>
-      </button>
-      <button className={`chip ${snapEnabled ? 'on' : ''}`} onClick={() => store().setSnap(!snapEnabled)}>
-        Snap {snapEnabled ? '◉' : '○'}
-      </button>
-      <button
-        className={`chip ${settings.shadowEnabled ? 'on' : ''}`}
-        onClick={() => store().setSceneSettings({ ...settings, shadowEnabled: !settings.shadowEnabled })}
-      >
-        RTX {settings.shadowEnabled ? '◉' : '○'}
-      </button>
+      <span className="chip">Grid <b>{gridVisible ? '1m' : 'off'}</b></span>
+      <span className="chip">
+        Snap{' '}
+        <button className={`ah-switch ${snapEnabled ? 'on' : ''}`} title="Toggle snapping" onClick={() => store().setSnap(!snapEnabled)} />
+      </span>
+      <span className="chip">
+        {backend === 'webgpu' ? 'WebGPU' : backend === 'webgl2' ? 'WebGL2' : 'GPU'}{' '}
+        <span className={`ah-switch ${backend !== 'initializing' ? 'on' : ''}`} title="GPU acceleration" />
+      </span>
     </div>
   )
 }
@@ -925,44 +909,6 @@ function createParticleEmitter(
 /* ------------------------------------------------------------------ */
 /* Snap settings — editor preferences, never scene data                */
 /* ------------------------------------------------------------------ */
-
-function SnapSettings({ onClose }: { onClose: () => void }) {
-  const snapEnabled = useEditorStore((s) => s.snapEnabled)
-  const snapTranslate = useEditorStore((s) => s.snapTranslate)
-  const snapRotateDeg = useEditorStore((s) => s.snapRotateDeg)
-  const snapScale = useEditorStore((s) => s.snapScale)
-  const store = useEditorStore.getState
-  const row = (label: string, value: number, step: number, set: (v: number) => void, unit: string) => (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', fontSize: 'var(--fs-secondary)', color: 'var(--text-secondary)' }}>
-      <span style={{ width: 82 }}>{label}</span>
-      <input
-        className="ah-input"
-        style={{ width: 62, height: 24, textAlign: 'right' }}
-        type="number"
-        step={step}
-        min={0}
-        value={value}
-        onChange={(event) => {
-          const next = parseFloat(event.target.value)
-          if (!Number.isNaN(next) && next >= 0) set(next)
-        }}
-      />
-      <span style={{ color: 'var(--text-tertiary)', width: 18 }}>{unit}</span>
-    </label>
-  )
-  return (
-    <>
-      <div className="ah-menu-label">Snap settings {snapEnabled ? '' : '(off)'}</div>
-      {row('Translation', snapTranslate, 0.1, (v) => setPref('snapTranslate', v), 'm')}
-      {row('Rotation', snapRotateDeg, 5, (v) => setPref('snapRotateDeg', v), '°')}
-      {row('Scale', snapScale, 0.05, (v) => setPref('snapScale', v), '')}
-      <div className="ah-menu-sep" />
-      <button className="ah-menu-item" onClick={() => { store().setSnap(!snapEnabled); onClose() }}>
-        {snapEnabled ? 'Disable snapping' : 'Enable snapping'}
-      </button>
-    </>
-  )
-}
 
 function setPref(key: 'snapTranslate' | 'snapRotateDeg' | 'snapScale', value: number): void {
   useEditorStore.setState({ [key]: value } as never)

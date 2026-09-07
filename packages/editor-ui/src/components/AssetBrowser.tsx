@@ -138,22 +138,18 @@ export function AssetBrowser({ compact: _compact = false }: { compact?: boolean 
           <Search size={12} />
           <input placeholder="Search assets…" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <div className="ah-segment">
-          {TYPE_ORDER.filter((t) => t.value === 'all' || assets.some((a) => a.type === t.value)).map((t) => (
-            <button key={t.value} className={filter === t.value ? 'active' : ''} onClick={() => setFilter(t.value)}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {TYPE_ORDER.filter((t) => t.value === 'all' || assets.some((a) => a.type === t.value)).map((t) => (
+          <button key={t.value} className={`ah-chip ${filter === t.value ? 'active' : ''}`} onClick={() => setFilter(t.value)}>
+            {t.label}
+          </button>
+        ))}
         <div style={{ flex: 1 }} />
-        <div className="ah-segment">
-          <button className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')} title="Grid view">
-            <Grid3x3 size={12} />
-          </button>
-          <button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')} title="List view">
-            <List size={12} />
-          </button>
-        </div>
+        <button className={`ah-chip ${view === 'grid' ? 'active' : ''}`} onClick={() => setView('grid')} title="Grid view">
+          <Grid3x3 size={12} />
+        </button>
+        <button className={`ah-chip ${view === 'list' ? 'active' : ''}`} onClick={() => setView('list')} title="List view">
+          <List size={12} />
+        </button>
         <button className="ah-btn" onClick={() => fileInput.current?.click()}>
           <Upload size={13} /> Import
         </button>

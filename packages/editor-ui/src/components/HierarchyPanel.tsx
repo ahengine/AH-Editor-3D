@@ -354,7 +354,7 @@ function EnvironmentCard() {
   const envAsset = assets.find((a) => a.id === settings.environmentAssetId)
   return (
     <button
-      className="ah-env-card"
+      className="ah-sidefoot"
       onClick={() => {
         store().setInspectorTab('inspector')
         store().select([])
@@ -362,16 +362,16 @@ function EnvironmentCard() {
       title="Scene environment — click to open Scene Settings"
     >
       <span
-        className="ah-env-thumb"
+        className="ah-envthumb"
         style={{
           background: envAsset
             ? 'radial-gradient(circle at 35% 30%, #9db8d8, #2c3e57 70%)'
-            : `radial-gradient(circle at 35% 30%, ${settings.background}, #141b24 78%)`,
+            : `linear-gradient(${settings.background} 0 47%, #38516b 48% 55%, #c49b62 56%)`,
         }}
       />
-      <span className="ah-env-meta">
-        <span className="ah-env-name">{envAsset ? envAsset.name.replace(/\.(hdr|exr)$/i, '') : 'Gradient'}</span>
-        <span className="ah-env-sub">Environment · {projectName}</span>
+      <span style={{ textAlign: 'left', minWidth: 0 }}>
+        <span className="ah-title" style={{ display: 'block' }}>{envAsset ? envAsset.name.replace(/\.(hdr|exr)$/i, '') : 'Gradient'}</span>
+        <span className="ah-meta" style={{ display: 'block' }}>Environment · {projectName}</span>
       </span>
     </button>
   )

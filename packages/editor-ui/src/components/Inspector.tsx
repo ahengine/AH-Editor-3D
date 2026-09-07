@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Entity } from 'koota'
-import { ChevronDown, ChevronRight, ClipboardPaste, Copy, Eye, EyeOff, Lightbulb, Package, PenLine, Plus, RotateCcw, Settings2, Trash2 } from 'lucide-react'
+import { Camera as CameraIcon, ChevronDown, ChevronRight, ClipboardPaste, Copy, Eye, EyeOff, Lightbulb, Package, PenLine, Plus, RotateCcw, Settings2, Trash2 } from 'lucide-react'
 import {
   EntityMeta,
   Light as LightTrait,
@@ -129,7 +129,7 @@ function InspectorBody() {
 }
 
 /* traits used directly in JSX above (imported alongside the rest of ecs-runtime) */
-import { Transform, Animator } from '@ahengine/ecs-runtime'
+import { Transform, Animator, Camera as CameraTrait } from '@ahengine/ecs-runtime'
 
 /* ------------------------------------------------------------------ */
 /* Entity header                                                       */
@@ -140,19 +140,20 @@ function EntityHeader({ entity, uuid, name, enabled }: { entity: Entity; uuid: s
   const tris = useMemo(() => (isMesh ? primitiveTriangleCount(entity) : null), [entity, isMesh])
   const kindLabel = entity.has(LightTrait) ? 'Light' : isMesh ? 'Mesh' : 'Entity'
   return (
-    <div className="ah-entity-header">
-      <span className="ah-entity-icon">
-        <Package size={15} />
+    <div className="ah-entityhead">
+      <span className="ah-eicon">
+        {entity.has(LightTrait) ? <Lightbulb size={15} /> : entity.has(CameraTrait) ? <CameraIcon size={15} /> : <Package size={15} />}
       </span>
-      <div className="ah-entity-meta">
+      <div style={{ minWidth: 0, flex: 1 }}>
         <input
           className="ah-entity-name"
           defaultValue={name}
           key={uuid}
+          style={{ width: '100%', border: 0, background: 'transparent', color: 'var(--text)', fontSize: 11, fontWeight: 650, outline: 'none' }}
           onBlur={(event) => renameEntity(uuid, event.target.value.trim() || name)}
           onKeyDown={(event) => event.key === 'Enter' && (event.target as HTMLInputElement).blur()}
         />
-        <span className="ah-entity-sub">
+        <span className="ah-meta" style={{ display: 'block' }}>
           {kindLabel}
           {tris !== null ? ` · ${tris.toLocaleString()} tris` : ''} · {uuid.slice(0, 8)}
         </span>

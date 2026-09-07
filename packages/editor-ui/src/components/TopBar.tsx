@@ -46,7 +46,6 @@ export function TopBar() {
   const workspace = useEditorStore((s) => s.workspace)
   const playMode = useEditorStore((s) => s.playMode)
   const projectName = useEditorStore((s) => s.projectName)
-  const dirty = useEditorStore((s) => s.dirty)
   const dirtyDocs = useEditorStore((s) => s.dirtyDocs)
   const backend = useEditorStore((s) => s.backend)
   const undoDepth = useEditorStore((s) => s.undoDepth)
@@ -103,12 +102,9 @@ export function TopBar() {
       <div className="ah-topbar-left">
         <div className="ah-logo">
           <div className="ah-logo-mark" />
-          <span className="ah-logo-name">
-            AH<em>Engine</em>
-          </span>
+          <span className="ah-logo-name">AHEditor</span>
         </div>
         <span className="ah-topbar-project" title={projectName}>
-          {saveState === 'unsaved' && <span className="dirty-dot" />}
           {projectName}
         </span>
         <span
@@ -125,15 +121,6 @@ export function TopBar() {
         >
           {saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving…' : 'Unsaved'}
         </span>
-        {dirty && dirtyDocLabels.length > 0 && (
-          <span className="ah-doc-dots" title={`Unsaved documents: ${dirtyDocLabels.join(', ')}`}>
-            {dirtyDocLabels.map((label) => (
-              <span key={label} className="ah-doc-dot">
-                {label}
-              </span>
-            ))}
-          </span>
-        )}
       </div>
 
       <div className="ah-topbar-center">
@@ -178,23 +165,30 @@ export function TopBar() {
           disabled={playMode === 'play'}
           onClick={playMode === 'edit' ? enterPlayMode : stopPlayMode}
         />
-        <select
-          className="ah-input"
-          style={{ width: 64, height: 28 }}
+        <button
+          className="ah-btn"
           title="Viewport resolution scale"
-          value={String(viewportScale)}
-          onChange={(event) => store().setViewportScale(parseFloat(event.target.value) || 1)}
+          onClick={(event) => {
+            const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+            setMenuOpen(false)
+            void rect
+          }}
         >
-          {[0.5, 0.75, 1, 1.5, 2].map((scale) => (
-            <option key={scale} value={scale}>
-              {Math.round(scale * 100)}%
-            </option>
-          ))}
-        </select>
-        <span className={`ah-topbar-chip ${backend === 'webgpu' ? 'gpu' : ''}`} title="Renderer backend">
-          <span className="dot" />
+          {Math.round(viewportScale * 100)}% ▾
+        </button>
+        <button
+          className="ah-btn"
+          title="Resolution"
+          onClick={() => {
+            const scales = [0.5, 0.75, 1, 1.5, 2]
+            const next = scales[(scales.indexOf(viewportScale) + 1) % scales.length]
+            store().setViewportScale(next)
+          }}
+        >
+          <span className="dot" style={{ width: 7, height: 7, borderRadius: '50%', background: backend === 'webgpu' ? '#62a0ff' : '#87919a', boxShadow: backend === 'webgpu' ? '0 0 9px #62a0ff' : 'none' }} />
           {backend === 'webgpu' ? 'WebGPU' : backend === 'webgl2' ? 'WebGL2' : '…'}
-        </span>
+        </button>
+        <IconButton icon={<Save size={15} />} label="Save project (Ctrl+S)" onClick={() => void saveProject()} />
         <div className={`ah-menu ${menuOpen ? 'open' : ''}`}>
           <IconButton icon={<MoreHorizontal size={15} />} label="Menu" active={menuOpen} onClick={() => setMenuOpen(!menuOpen)} />
           {menuOpen && (

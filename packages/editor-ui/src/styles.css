@@ -5,6 +5,7 @@
 
 @import './editor-tokens.css';
 @import './editor-primitives.css';
+@import './editor-reference.css';
 
 /* ---------------------------------------------------------------- */
 /* Page + floating editor window (22px radius)                       */

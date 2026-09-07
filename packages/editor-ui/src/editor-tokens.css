@@ -1,104 +1,104 @@
 /* ================================================================
-   AHEngine design tokens — pixel-locked to Design/Editor Concept.png
-   (reference 1672×941). Single source of truth: colors, spacing,
-   radii, typography, control sizes. Do not hardcode these values
-   anywhere else.
+   AHEditor design tokens — ported 1:1 from the reference build.
+   Single source of truth: colors, spacing, radii, typography.
    ================================================================ */
 
 :root {
-  /* ---- page & shell ---- */
-  --page-bg: #101720;
-  --page-bg-hi: #131b26;
+  /* ---- reference palette ---- */
+  --bg: #071018;
+  --shell: rgba(23, 34, 47, 0.64);
+  --panel: rgba(16, 26, 37, 0.62);
+  --panel2: rgba(255, 255, 255, 0.035);
+  --control: rgba(7, 14, 23, 0.46);
+  --stroke: rgba(255, 255, 255, 0.08);
+  --stroke2: rgba(255, 255, 255, 0.14);
+  --text: #f5f8fc;
+  --muted: rgba(229, 236, 245, 0.66);
+  --faint: rgba(216, 227, 238, 0.39);
+  --blue: #79aaff;
+  --red: #ff625d;
+  --green: #69d68e;
+  --orange: #ff9d52;
+  --purple: #8a73ff;
 
-  /* ---- spatial material system (dark translucent glass) ----
-     Four levels: shell > panel > section > control. Darkness comes from
-     TRANSLUCENT material over the ambient backdrop — never opaque navy.
-     Rule: no major spatial surface above ~0.68 alpha. */
-  --material-shell: rgba(26, 36, 48, 0.50);
-  --material-panel: rgba(20, 29, 40, 0.54);
+  /* ---- spatial material system (keeps the translucent hierarchy) ---- */
+  --material-shell: rgba(34, 48, 63, 0.58);
+  --material-panel: rgba(22, 33, 45, 0.62);
   --material-panel-secondary: rgba(44, 57, 73, 0.35);
   --material-section: rgba(255, 255, 255, 0.03);
   --material-section-hover: rgba(255, 255, 255, 0.05);
-  --material-control: rgba(12, 19, 28, 0.46);
-  --material-control-hover: rgba(110, 130, 155, 0.24);
-  --material-control-active: rgba(104, 151, 226, 0.34);
-  --material-floating: rgba(19, 28, 38, 0.50);
-  --material-selection: rgba(112, 153, 215, 0.28);
-  --material-blur-shell: blur(30px) saturate(135%);
-  --material-blur-panel: blur(24px) saturate(125%);
-  --material-blur-floating: blur(18px) saturate(130%);
+  --material-control: rgba(7, 14, 23, 0.46);
+  --material-control-hover: rgba(255, 255, 255, 0.055);
+  --material-control-active: rgba(105, 151, 225, 0.31);
+  --material-floating: rgba(12, 20, 29, 0.50);
+  --material-selection: rgba(110, 154, 222, 0.29);
+  --material-blur-shell: blur(30px) saturate(125%);
+  --material-blur-panel: blur(24px) saturate(120%);
+  --material-blur-floating: blur(18px);
 
-  /* ---- surfaces (legacy names, now spatial) ---- */
+  /* ---- surfaces (legacy names, now reference values) ---- */
+  --page-bg: #071018;
+  --page-bg-hi: #09131d;
   --panel-bg: var(--material-panel);
-  --panel-bg-soft: var(--material-section);
-  --panel-bg-raised: var(--material-floating);
-  --panel-bg-deep: rgba(16, 24, 34, 0.55);
-
-  --topbar-bg: rgba(255, 255, 255, 0.03);
-
-  --control-bg: var(--material-control);
+  --panel-bg-soft: var(--panel2);
+  --panel-bg-raised: rgba(24, 35, 47, 0.93);
+  --panel-bg-deep: #101923;
+  --topbar-bg: linear-gradient(rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.006));
+  --control-bg: var(--control);
   --control-hover: var(--material-control-hover);
   --control-active: var(--material-control-active);
-
-  --input-bg: var(--material-control);
-  --input-bg-focus: rgba(10, 16, 24, 0.62);
-
-  --surface-hover: rgba(255, 255, 255, 0.045);
+  --input-bg: rgba(7, 14, 22, 0.38);
+  --input-bg-focus: rgba(7, 14, 22, 0.55);
+  --surface-hover: rgba(255, 255, 255, 0.04);
   --surface-active: var(--material-selection);
-
-  --shell-gradient: linear-gradient(180deg, rgba(26, 36, 48, 0.50), rgba(20, 29, 39, 0.46));
-  --shell-border: rgba(255, 255, 255, 0.13);
-  --shell-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.075), 0 24px 70px rgba(0, 0, 0, 0.25);
+  --shell-gradient: linear-gradient(180deg, rgba(34, 48, 63, 0.58), rgba(10, 18, 28, 0.60));
+  --shell-border: var(--stroke2);
+  --shell-shadow: 0 28px 80px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.05);
 
   /* ---- text ---- */
-  --text-primary: rgba(248, 250, 252, 0.94);
-  --text-secondary: rgba(225, 232, 240, 0.64);
-  --text-tertiary: rgba(215, 225, 235, 0.40);
+  --text-primary: var(--text);
+  --text-secondary: var(--muted);
+  --text-tertiary: var(--faint);
 
-  /* ---- borders (soft, sparse) ---- */
-  --border-subtle: rgba(255, 255, 255, 0.055);
-  --border-default: rgba(255, 255, 255, 0.085);
-  --border-visible: rgba(255, 255, 255, 0.12);
+  /* ---- borders ---- */
+  --border-subtle: var(--stroke);
+  --border-default: rgba(255, 255, 255, 0.10);
+  --border-visible: var(--stroke2);
 
   /* ---- accent ---- */
-  --accent: #78a8ff;
-  --accent-soft: rgba(105, 155, 239, 0.22);
-  --accent-line: #78a8ff;
+  --accent: var(--blue);
+  --accent-soft: rgba(121, 170, 255, 0.16);
+  --accent-line: var(--blue);
+  --selection-bg: linear-gradient(90deg, rgba(110, 154, 222, 0.29), rgba(67, 91, 127, 0.18));
+  --selection-text: #fff;
 
-  --selection-bg: var(--material-selection);
-  --selection-text: rgba(248, 250, 252, 0.98);
-
-  /* ---- timeline clip palette (controlled saturation, from reference) ---- */
-  --clip-blue: #3a5aa6;
-  --clip-blue-hi: #4668ba;
-  --clip-violet: #5859b5;
-  --clip-violet-hi: #6a6bc7;
-  --clip-green: #478664;
-  --clip-green-hi: #549a74;
+  /* ---- timeline clip palette (reference) ---- */
+  --clip-blue: #4b7cde;
+  --clip-violet: #6753d6;
+  --clip-green: #3d8e63;
 
   /* ---- semantic ---- */
-  --axis-x: #ff6b6b;
-  --axis-y: #7df17d;
-  --axis-z: #6ba8ff;
+  --axis-x: var(--red);
+  --axis-y: var(--green);
+  --axis-z: #62a0ff;
+  --error: #ff625d;
+  --error-soft: rgba(255, 98, 93, 0.14);
+  --warning: #ff9d52;
+  --warning-soft: rgba(255, 157, 82, 0.14);
+  --success: #69d68e;
+  --success-soft: rgba(105, 214, 142, 0.14);
+  --accent-green: #69d68e;
 
-  --error: #e2574c;
-  --error-soft: rgba(226, 87, 76, 0.16);
-  --warning: #e2b93c;
-  --warning-soft: rgba(226, 185, 60, 0.14);
-  --success: #6fcf8e;
-  --success-soft: rgba(111, 207, 142, 0.14);
-  --accent-green: #6fcf8e;
-
-  /* ---- radii hierarchy ---- */
-  --radius-window: 22px;
-  --radius-panel: 14px;
-  --radius-card: 12px;
-  --radius-group: 10px;
+  /* ---- radii (reference) ---- */
+  --radius-window: 23px;
+  --radius-panel: 15px;
+  --radius-card: 11px;
+  --radius-group: 11px;
   --radius-button: 9px;
   --radius-input: 7px;
-  --radius-small: 6px;
+  --radius-small: 8px;
 
-  /* ---- spacing scale (4-based) ---- */
+  /* ---- spacing scale ---- */
   --sp-1: 4px;
   --sp-2: 6px;
   --sp-3: 8px;
@@ -107,27 +107,27 @@
   --sp-6: 16px;
   --sp-7: 20px;
 
-  /* ---- typography ---- */
+  /* ---- typography (reference density) ---- */
   --font-ui: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --fs-ui: 13px;
   --fs-panel-heading: 13px;
-  --fs-secondary: 11.5px;
+  --fs-secondary: 11px;
   --fs-meta: 10.5px;
   --fs-tiny: 10px;
 
-  /* ---- control sizes (dense desktop) ---- */
-  --row-height: 28px;
+  /* ---- control sizes (reference) ---- */
+  --row-height: 30px;
   --input-height: 28px;
-  --toolbar-btn: 34px;
+  --toolbar-btn: 31px;
   --toolbar-group-h: 38px;
-  --topbar-height: 46px;
+  --topbar-height: 54px;
 
-  /* ---- layout geometry (reference frame: 1672×941) ---- */
-  --hierarchy-width: 292px;
-  --inspector-width: 352px;
-  --timeline-height: 246px;
+  /* ---- layout geometry (reference) ---- */
+  --hierarchy-width: 272px;
+  --inspector-width: 340px;
+  --timeline-height: 206px;
   --panel-gap: 8px;
-  --shell-padding: 9px;
+  --shell-padding: 0px;
 
   /* ---- motion ---- */
   --motion-hover: 120ms ease;
@@ -135,9 +135,9 @@
   --motion-panel: 200ms ease;
 
   /* ---- focus ---- */
-  --focus-ring: 0 0 0 1px rgba(120, 168, 255, 0.75);
+  --focus-ring: 0 0 0 2px rgba(121, 170, 255, 0.35);
 
-  /* ---- shadows (restrained) ---- */
-  --shadow-panel: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-float: 0 6px 20px rgba(0, 0, 0, 0.28);
+  /* ---- shadows ---- */
+  --shadow-panel: inset 0 1px rgba(255, 255, 255, 0.035);
+  --shadow-float: 0 8px 22px rgba(0, 0, 0, 0.14), inset 0 1px rgba(255, 255, 255, 0.05);
 }
