@@ -14,4 +14,6 @@ export const viewportState = {
   stats: { fps: 0, frameMs: 0, calls: 0, triangles: 0 },
   /** Live editor gizmo — exposed for the DEV transform-chain probe. */
   gizmo: null as TransformControls | null,
+  /** Live orbit controls — exposed for DEV navigation diagnostics. */
+  controls: null as import('three/examples/jsm/controls/OrbitControls.js').OrbitControls | null,
 }

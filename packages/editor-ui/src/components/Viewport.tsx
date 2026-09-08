@@ -191,8 +191,13 @@ function ViewportScene() {
 /* Editor rig: grid, orbit, gizmo, picking, outline, focus             */
 /* ------------------------------------------------------------------ */
 
-/** Alt-held state for the Unity-style Alt+Left orbit swap. */
+const _pivotVec = new THREE.Vector3()
+const _orbitOffset = new THREE.Vector3()
+const _orbitSpherical = new THREE.Spherical()
+
+/** Modifier-held state for the Unity-style left-button orbit swaps. */
 let eventAltHeld = false
+let eventCtrlOrbit = false
 
 function EditorRig({
   selection,
@@ -234,9 +239,8 @@ function EditorRig({
     controls.zoomToCursor = true
     const unityButtons = { LEFT: null, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE } as unknown as typeof controls.mouseButtons
     const applyButtons = () => {
-      controls.mouseButtons = eventAltHeld
-        ? { ...unityButtons, LEFT: THREE.MOUSE.ROTATE }
-        : unityButtons
+      const leftOrbit = eventAltHeld || eventCtrlOrbit
+      controls.mouseButtons = leftOrbit ? { ...unityButtons, LEFT: THREE.MOUSE.ROTATE } : unityButtons
     }
     const onAltDown = (event: KeyboardEvent) => {
       if (event.key !== 'Alt') return
@@ -248,18 +252,119 @@ function EditorRig({
       eventAltHeld = false
       applyButtons()
     }
+
+    // Ctrl+left-drag = orbit AROUND the selected entity: while Ctrl is held
+    // the orbit pivot snaps to the selection's world position and STAYS
+    // there after release (Unity-like — no look-jump when the gesture
+    // ends). Without a selection the gesture stays inert; Ctrl+click
+    // multi-select is unaffected (pointer drags never reach the click
+    // handler).
+    const selectionPivot = () => {
+      const uuid = useEditorStore.getState().selection[0]
+      if (!uuid) return null
+      const object = findEntityByUuid(world, uuid)?.get(ThreeObject)?.object ?? null
+      return object && isInSceneGraph(object) ? object.getWorldPosition(_pivotVec) : null
+    }
+    const onCtrlDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Control' || event.repeat || eventCtrlOrbit) return
+      const pivot = selectionPivot()
+      if (!pivot) return
+      controls.target.copy(pivot)
+      controls.update()
+      eventCtrlOrbit = true
+      applyButtons()
+    }
+    const onCtrlUp = (event: KeyboardEvent) => {
+      if (event.key !== 'Control' || !eventCtrlOrbit) return
+      eventCtrlOrbit = false
+      endSelectionOrbit()
+      applyButtons()
+    }
+    const onBlur = () => {
+      eventAltHeld = false
+      eventCtrlOrbit = false
+      endSelectionOrbit()
+      applyButtons()
+    }
+
+    // Manual orbit for Ctrl+left-drag: OrbitControls itself converts any
+    // ctrl/meta/shift-drag into PAN (three.js convention), which would
+    // hijack the gesture. We arm on pointerdown (capture phase — without
+    // swallowing the event, so Ctrl+CLICK multi-select still works) and
+    // take over only once the pointer actually MOVES: OrbitControls is
+    // disabled for the rest of the gesture and we rotate the camera
+    // around controls.target ourselves. controls.update() re-derives
+    // spherical state from the camera each frame, so the manual placement
+    // is preserved afterwards.
+    const selectionOrbit = { armed: false, started: false, x: 0, y: 0 }
+    const onCanvasPointerDownCapture = (event: PointerEvent) => {
+      if (event.button !== 0 || !eventCtrlOrbit || !event.isPrimary) return
+      selectionOrbit.armed = true
+      selectionOrbit.started = false
+      selectionOrbit.x = event.clientX
+      selectionOrbit.y = event.clientY
+      window.addEventListener('pointermove', onSelectionOrbitMove)
+      window.addEventListener('pointerup', endSelectionOrbit)
+    }
+    const onSelectionOrbitMove = (event: PointerEvent) => {
+      if (!selectionOrbit.armed) return
+      // A gizmo drag under the pointer wins — stand down.
+      if (gizmoRef.current?.dragging) {
+        endSelectionOrbit()
+        return
+      }
+      const dx = event.clientX - selectionOrbit.x
+      const dy = event.clientY - selectionOrbit.y
+      selectionOrbit.x = event.clientX
+      selectionOrbit.y = event.clientY
+      if (!selectionOrbit.started) {
+        if (Math.abs(dx) + Math.abs(dy) < 4) return // still a click — let selection run
+        selectionOrbit.started = true
+        controls.enabled = false // freeze OrbitControls (incl. its ctrl→PAN)
+      }
+      const speed = (2 * Math.PI) / gl.domElement.clientHeight
+      _orbitOffset.copy(camera.position).sub(controls.target)
+      _orbitSpherical.setFromVector3(_orbitOffset)
+      _orbitSpherical.theta -= dx * speed
+      _orbitSpherical.phi = Math.min(
+        controls.maxPolarAngle - 0.001,
+        Math.max(controls.minPolarAngle + 0.001, _orbitSpherical.phi - dy * speed)
+      )
+      camera.position.copy(controls.target).add(_orbitOffset.setFromSpherical(_orbitSpherical))
+      camera.lookAt(controls.target)
+    }
+    function endSelectionOrbit(): void {
+      if (!selectionOrbit.armed) return
+      selectionOrbit.armed = false
+      if (selectionOrbit.started) controls.enabled = true
+      selectionOrbit.started = false
+      window.removeEventListener('pointermove', onSelectionOrbitMove)
+      window.removeEventListener('pointerup', endSelectionOrbit)
+    }
+    gl.domElement.addEventListener('pointerdown', onCanvasPointerDownCapture, { capture: true })
+
     applyButtons()
     window.addEventListener('keydown', onAltDown)
     window.addEventListener('keyup', onAltUp)
+    window.addEventListener('keydown', onCtrlDown)
+    window.addEventListener('keyup', onCtrlUp)
+    window.addEventListener('blur', onBlur)
 
     controlsRef.current = controls
+    viewportState.controls = controls
     return () => {
+      if (viewportState.controls === controls) viewportState.controls = null
+      gl.domElement.removeEventListener('pointerdown', onCanvasPointerDownCapture, { capture: true })
+      endSelectionOrbit()
       window.removeEventListener('keydown', onAltDown)
       window.removeEventListener('keyup', onAltUp)
+      window.removeEventListener('keydown', onCtrlDown)
+      window.removeEventListener('keyup', onCtrlUp)
+      window.removeEventListener('blur', onBlur)
       controls.dispose()
       controlsRef.current = null
     }
-  }, [camera, gl])
+  }, [camera, gl, world])
 
   /* Transform gizmo */
   useEffect(() => {
