@@ -1,11 +1,14 @@
+import { useEffect, useRef, useState } from 'react'
+
 import type { WorkspaceId } from '@ahengine/editor-core'
-import { instantiatePrefabAction, saveProject, useEditorStore } from '@ahengine/editor-core'
+import { instantiatePrefabAction, runCommand, saveProject, UpsertMaterialCommand, useEditorStore } from '@ahengine/editor-core'
 import { HierarchyPanel } from './HierarchyPanel.js'
 import { AnimationWorkspace } from './AnimationWorkspace.js'
 import { AnimatorWorkspace } from './AnimatorWorkspace.js'
 import { ParticleWorkspace } from './ParticleWorkspace.js'
 import { AssetBrowser } from './AssetBrowser.js'
-import { MaterialListPanel, ParticleListPanel } from './WorkspacePanels.js'
+import { ParticleListPanel } from './WorkspacePanels.js'
+import { Plus } from 'lucide-react'
 import { PrefabWorkspace } from './PrefabWorkspace.js'
 import { MaterialGraphEditor } from './MaterialGraphEditor.js'
 
@@ -66,7 +69,7 @@ export const workspaceConfigs: WorkspaceConfig[] = [
   {
     id: 'material',
     label: 'Material',
-    left: <MaterialListPanel />,
+    left: <MaterialGridBrowser />,
     inspectorTab: 'library',
     bottom: [
       {
@@ -131,7 +134,214 @@ function PrefabCrumbbar() {
   )
 }
 
+/**
+ * Material grid browser — reference-style material thumbnails in a grid.
+ * Click to select, double-click to open in the graph. "+" creates new.
+ */
+function MaterialGridBrowser() {
+  const materials = useEditorStore((s) => s.materials)
+  const editingMaterialId = useEditorStore((s) => s.editingMaterialId)
+  const store = useEditorStore.getState
+
+  const create = () => {
+    const id = `mat-${crypto.randomUUID().slice(0, 8)}`
+    runCommand(
+      new UpsertMaterialCommand('Create material', {
+        id,
+        name: `Material ${materials.length + 1}`,
+        type: 'standard',
+        properties: { baseColor: '#8da4bc', roughness: 0.5, metalness: 0.1 },
+      })
+    )
+    store().setEditingMaterial(id)
+  }
+
+  return (
+    <div className="ah-panel" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="ah-panel-head">
+        <span className="ah-panel-title">Materials</span>
+        <span className="ah-list-count">{materials.length}</span>
+        <div style={{ flex: 1 }} />
+        <button className="ah-icon-btn small" title="New material" onClick={create}>
+          <Plus size={13} />
+        </button>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: 6 }}>
+          {materials.map((m) => (
+            <button
+              key={m.id}
+              className="ah-asset-card"
+              style={{
+                minHeight: 72,
+                border: m.id === editingMaterialId ? '1px solid var(--accent)' : '1px solid transparent',
+                background: m.id === editingMaterialId ? 'var(--accent-soft)' : 'transparent',
+              }}
+              draggable
+              onDragStart={(event) => event.dataTransfer.setData('ah/material', m.id)}
+              onClick={() => store().setEditingMaterial(m.id)}
+              title={`${m.name} — click to edit, drag to assign`}
+            >
+              <div
+                className="ah-asset-thumb"
+                style={{ background: m.graph ? 'linear-gradient(135deg,#5d55a5,#7d7dd9)' : m.properties.baseColor ?? '#888' }}
+              />
+              <div className="ah-asset-name" style={{ fontSize: 9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</div>
+              <div className="ah-asset-type">{m.graph ? 'NODE' : m.type.toUpperCase()}</div>
+            </button>
+          ))}
+        </div>
+        {materials.length === 0 && <div className="ah-empty">No materials — create one with +</div>}
+      </div>
+    </div>
+  )
+}
+
 /** Material workspace center — reference composition: node graph hero + preview bar. */
+/**
+ * Real 3D material preview — a sphere on a small WebGPU canvas that you
+ * can DRAG to rotate. Compiles the material's graph (or flat properties)
+ * live so node edits update the preview in real time.
+ */
+function MaterialPreview3D({ materialId }: { materialId: string | null }) {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(false)
+  const rotRef = useRef({ x: 0, y: 0 })
+  const dragRef = useRef<{ x: number; y: number } | null>(null)
+  const rendererRef = useRef<import('three/webgpu').WebGPURenderer | null>(null)
+  const meshRef = useRef<import('three').Mesh | null>(null)
+  const sceneRef = useRef<import('three').Scene | null>(null)
+  const cameraRef = useRef<import('three').PerspectiveCamera | null>(null)
+  const materials = useEditorStore((s) => s.materials)
+  const material = materials.find((m) => m.id === materialId) ?? null
+
+  // Mount renderer once (ResizeObserver guard against 0-size WebGPU crash)
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    let disposed = false
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth > 10 && el.clientHeight > 10 && !ready) setReady(true)
+    })
+    ro.observe(el)
+    if (el.clientWidth > 10 && el.clientHeight > 10) setReady(true)
+    return () => { ro.disconnect(); void disposed }
+  }, [ready])
+
+  useEffect(() => {
+    if (!ready || !wrapRef.current) return
+    const el = wrapRef.current
+    let disposed = false
+    void (async () => {
+      const THREE = await import('three')
+      const { WebGPURenderer: Renderer } = await import('three/webgpu')
+      const renderer = new Renderer({ antialias: true, forceWebGL: true })
+      await renderer.init()
+      if (disposed) { renderer.dispose(); return }
+      renderer.setSize(el.clientWidth, el.clientHeight, false)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      el.appendChild(renderer.domElement)
+      rendererRef.current = renderer
+
+      const scene = new THREE.Scene()
+      scene.background = new THREE.Color(0x101923)
+      sceneRef.current = scene
+      const camera = new THREE.PerspectiveCamera(40, el.clientWidth / el.clientHeight, 0.1, 10)
+      camera.position.set(0, 0, 3)
+      cameraRef.current = camera
+
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.2))
+      const key = new THREE.DirectionalLight(0xffffff, 2.5)
+      key.position.set(2, 3, 2)
+      scene.add(key)
+      const rim = new THREE.DirectionalLight(0x88aaff, 0.8)
+      rim.position.set(-2, 1, -2)
+      scene.add(rim)
+
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 48, 32),
+        new THREE.MeshStandardMaterial({ color: '#8da4bc', roughness: 0.5, metalness: 0.1 })
+      )
+      scene.add(mesh)
+      meshRef.current = mesh
+
+      let raf = 0
+      const tick = () => {
+        mesh.rotation.x = rotRef.current.x
+        mesh.rotation.y = rotRef.current.y
+        renderer.render(scene, camera)
+        raf = requestAnimationFrame(tick)
+      }
+      tick()
+
+      return () => {
+        cancelAnimationFrame(raf)
+        renderer.dispose()
+        el.removeChild(renderer.domElement)
+      }
+    })()
+    return () => { disposed = true }
+  }, [ready])
+
+  // Real-time material update: compile the graph or apply flat properties
+  useEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh || !material) return
+    void (async () => {
+      if (material.graph) {
+        const { compileMaterialGraphAsync } = await import('@ahengine/ecs-runtime')
+        const result = await compileMaterialGraphAsync(material.graph)
+        if (result.material) {
+          (Array.isArray(mesh.material) ? mesh.material.forEach((m) => m.dispose?.()) : mesh.material?.dispose?.())
+          mesh.material = result.material
+        }
+      } else {
+        const std = mesh.material as import('three/webgpu').MeshStandardNodeMaterial
+        if (std && 'color' in std) {
+          std.color.set(material.properties.baseColor ?? '#8da4bc')
+          std.roughness = material.properties.roughness ?? 0.5
+          std.metalness = material.properties.metalness ?? 0.1
+          if (std.emissive) std.emissive.set(material.properties.emissive ?? '#000000')
+          std.needsUpdate = true
+        }
+      }
+    })()
+  }, [material])
+
+  // Drag to rotate
+  const onPointerDown = (event: React.PointerEvent) => {
+    dragRef.current = { x: event.clientX, y: event.clientY }
+    const onMove = (e: PointerEvent) => {
+      if (!dragRef.current) return
+      rotRef.current.y += (e.clientX - dragRef.current.x) * 0.012
+      rotRef.current.x += (e.clientY - dragRef.current.y) * 0.012
+      rotRef.current.x = Math.max(-1.4, Math.min(1.4, rotRef.current.x))
+      dragRef.current = { x: e.clientX, y: e.clientY }
+    }
+    const onUp = () => {
+      dragRef.current = null
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      onPointerDown={onPointerDown}
+      style={{
+        width: 110, height: 110, flex: 'none', position: 'relative',
+        borderRadius: '50%', overflow: 'hidden', cursor: 'grab',
+        border: '1px solid var(--stroke)',
+        background: ready ? 'transparent' : '#101923',
+      }}
+      title="Drag to rotate the material preview"
+    />
+  )
+}
+
 function MaterialCenterPanel() {
   const editingMaterialId = useEditorStore((s) => s.editingMaterialId)
   const materials = useEditorStore((s) => s.materials)
@@ -143,17 +353,10 @@ function MaterialCenterPanel() {
         {activeId ? <MaterialGraphEditor graphId={activeId} /> : <div className="ah-empty">Create a material to edit its graph</div>}
       </div>
       <div className="ah-panel ah-mat-preview-bar">
-        <div
-          className="ah-spherepreview"
-          style={{
-            width: 84, height: 84, borderRadius: '50%', flex: 'none',
-            background: `radial-gradient(circle at 30% 25%, #eef6ff 0 3%, ${material?.properties?.baseColor ?? '#4f87a6'} 25%, #17212c 77%)`,
-            boxShadow: 'inset -18px -22px 36px rgba(0,0,0,.45), 0 12px 28px rgba(0,0,0,.22)',
-          }}
-        />
+        <MaterialPreview3D materialId={activeId} />
         <div>
           <div style={{ fontSize: 11, fontWeight: 650 }}>{material?.name ?? 'No material'}</div>
-          <div style={{ fontSize: 8, color: 'var(--faint)', marginTop: 2 }}>Live Material Preview · graph drives the selected scene material</div>
+          <div style={{ fontSize: 8, color: 'var(--faint)', marginTop: 2 }}>Live Preview · drag to rotate · graph edits update in real time</div>
         </div>
         <div style={{ flex: 1 }} />
         <button className="ah-btn" onClick={() => void saveProject()}>

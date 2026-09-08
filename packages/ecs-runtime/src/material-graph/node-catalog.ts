@@ -14,6 +14,14 @@ const {
   mx_noise_float,
   oscSine,
   positionLocal,
+  abs, floor, ceil, round, sign,
+  step, smoothstep, mod,
+  sin, cos, sqrt,
+  cross, normalize, length,
+  positionWorld, cameraPosition,
+  reflect,
+  hue,
+  screenUV,
 } = TSL
 
 export interface SocketDef {
@@ -398,6 +406,119 @@ export const NODE_TYPES: NodeTypeDef[] = [
     outputs: [{ id: 'out', type: 'vec3', label: '' }],
     defaults: {},
     compile: (_n, getInput) => { const v = vec3 as unknown as (...args: unknown[]) => unknown; return { out: v(coerced(getInput('x'), 'float'), coerced(getInput('y'), 'float'), coerced(getInput('z'), 'float')) } },
+  },
+
+  /* ---- Math (extended) ---- */
+  {
+    type: 'math.abs', label: 'Abs', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: abs(coerced(getInput('in'), 'float') as never) }),
+  },
+  {
+    type: 'math.floor', label: 'Floor', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: floor(coerced(getInput('in'), 'float') as never) }),
+  },
+  {
+    type: 'math.ceil', label: 'Ceil', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: ceil(coerced(getInput('in'), 'float') as never) }),
+  },
+  {
+    type: 'math.round', label: 'Round', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: round(coerced(getInput('in'), 'float') as never) }),
+  },
+  {
+    type: 'math.oneMinus', label: 'One Minus', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: oneMinus(coerced(getInput('in'), 'float') as never) }),
+  },
+  {
+    type: 'math.sign', label: 'Sign', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: sign(coerced(getInput('in'), 'float') as never) }),
+  },
+  {
+    type: 'math.sqrt', label: 'Square Root', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: sqrt(coerced(getInput('in'), 'float') as never) }),
+  },
+  {
+    type: 'math.cosine', label: 'Cosine', category: 'Math',
+    inputs: [{ id: 'in', type: 'float', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: { frequency: 1, amplitude: 1 },
+    compile: (node, getInput) => {
+      const m = mul as unknown as (...args: unknown[]) => unknown
+      const c = cos as unknown as (x: unknown) => unknown
+      return { out: m(c(m(coerced(getInput('in'), 'float'), float(num(node.values, 'frequency', 1)))), float(num(node.values, 'amplitude', 1))) }
+    },
+  },
+
+  /* ---- Vector / Utility ---- */
+  {
+    type: 'utility.dot', label: 'Dot Product', category: 'Vector',
+    inputs: [{ id: 'a', type: 'vec3', label: 'A' }, { id: 'b', type: 'vec3', label: 'B' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: dot(coerced(getInput('a'), 'vec3') as never, coerced(getInput('b'), 'vec3') as never) }),
+  },
+  {
+    type: 'utility.cross', label: 'Cross Product', category: 'Vector',
+    inputs: [{ id: 'a', type: 'vec3', label: 'A' }, { id: 'b', type: 'vec3', label: 'B' }],
+    outputs: [{ id: 'out', type: 'vec3', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: cross(coerced(getInput('a'), 'vec3') as never, coerced(getInput('b'), 'vec3') as never) }),
+  },
+  {
+    type: 'utility.normalize', label: 'Normalize', category: 'Vector',
+    inputs: [{ id: 'in', type: 'vec3', label: 'In' }],
+    outputs: [{ id: 'out', type: 'vec3', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: normalize(coerced(getInput('in'), 'vec3') as never) }),
+  },
+  {
+    type: 'utility.length', label: 'Length', category: 'Vector',
+    inputs: [{ id: 'in', type: 'vec3', label: 'In' }],
+    outputs: [{ id: 'out', type: 'float', label: '' }],
+    defaults: {},
+    compile: (_n, getInput) => ({ out: length(coerced(getInput('in'), 'vec3') as never) }),
+  },
+  {
+    type: 'input.cameraPos', label: 'Camera Position', category: 'Input',
+    inputs: [],
+    outputs: [{ id: 'out', type: 'vec3', label: '' }],
+    defaults: {},
+    compile: () => ({ out: cameraPosition }),
+  },
+  {
+    type: 'input.worldPos', label: 'World Position', category: 'Input',
+    inputs: [],
+    outputs: [{ id: 'out', type: 'vec3', label: '' }],
+    defaults: {},
+    compile: () => ({ out: positionWorld }),
+  },
+  {
+    type: 'input.screenUV', label: 'Screen UV', category: 'Input',
+    inputs: [],
+    outputs: [{ id: 'out', type: 'vec2', label: '' }],
+    defaults: {},
+    compile: () => ({ out: screenUV }),
   },
 ]
 
