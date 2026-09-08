@@ -66,11 +66,13 @@ export function EditorApp() {
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>{config.left}</div>
           <div className={`ah-layout-center ah-layout-center-${workspace}`}>
             <Viewport dpr={viewportScale} />
-            <BottomContextPanel workspace={workspace} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <Inspector />
           </div>
+          {/* Bottom panel spans the FULL WIDTH (under hierarchy + viewport +
+              inspector) — the Project/Assets tray owns all remaining space. */}
+          <BottomContextPanel workspace={workspace} />
         </div>
       </div>
       <Notifications />

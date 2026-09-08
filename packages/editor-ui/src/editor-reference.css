@@ -128,12 +128,16 @@ html, body { background: #060d14; }
 /* ---- workspace page grids (reference layouts) ---- */
 .ah-workspace { min-height: 0; }
 .ah-layout { display: grid; gap: 8px; padding: 8px; height: 100%; min-height: 0; }
-.ah-layout-scene { grid-template-columns: 272px minmax(520px, 1fr) 340px; }
+.ah-layout-scene {
+  grid-template-columns: 272px minmax(520px, 1fr) 340px;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.ah-layout-scene > .ah-panel:last-child { grid-column: 1 / -1; }
 .ah-layout-prefab { grid-template-columns: 240px minmax(520px, 1fr) 360px; }
 .ah-layout-material { grid-template-columns: 225px minmax(520px, 1fr) 295px; }
 .ah-layout-animation { grid-template-columns: 225px minmax(520px, 1fr) 325px; }
 .ah-layout-particle { grid-template-columns: 225px minmax(520px, 1fr) 325px; }
-.ah-layout-center-viewport { display: grid; grid-template-rows: minmax(370px, 1fr) 206px; gap: 8px; min-height: 0; }
+.ah-layout-center-viewport { min-height: 0; }
 .ah-layout-center-prefab { display: grid; grid-template-rows: minmax(380px, 1fr) 112px; gap: 8px; min-height: 0; }
 .ah-layout-center-material { display: grid; grid-template-rows: minmax(370px, 1fr) 142px; gap: 8px; min-height: 0; }
 .ah-layout-center-animation { display: grid; grid-template-rows: minmax(280px, 0.9fr) minmax(265px, 1.1fr); gap: 8px; min-height: 0; }
