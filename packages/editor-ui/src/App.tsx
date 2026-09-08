@@ -130,6 +130,7 @@ export function EditorApp() {
         </div>
       </div>
       <DockZoneOverlay />
+      <FloatingPanels />
       <Notifications />
       <CommandPalette />
       <ProblemsPanel />
@@ -397,5 +398,18 @@ function BottomDockPanels() {
     <div style={{ display: 'flex', height: '100%', gap: 4 }}>
       {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
     </div>
+  )
+}
+
+
+/** Render all floating (undocked) panels as fixed-position overlays. */
+function FloatingPanels() {
+  const panels = useWindowPanels((s) => s.panels)
+  const floating = panels.filter((p) => p.dock === null)
+  if (floating.length === 0) return null
+  return (
+    <>
+      {floating.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
+    </>
   )
 }
