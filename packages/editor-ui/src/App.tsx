@@ -12,6 +12,7 @@ import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
 import {
   deleteSelection,
   duplicateSelection,
+  editComponentField,
   redo,
   saveProject,
   undo,
@@ -19,6 +20,7 @@ import {
   bootstrapDefaultProject,
   openSavedProject,
 } from '@ahengine/editor-core'
+import { findEntityByUuid, Transform } from '@ahengine/ecs-runtime'
 import { viewportState } from './viewportState.js'
 import { installTransformChainProbe } from './transformChainProbe.js'
 import { TopBar } from './components/TopBar.js'
@@ -142,13 +144,44 @@ function useGlobalShortcuts(enabled: boolean): void {
         case 'backspace':
           deleteSelection()
           break
+        case 'arrowleft':
+        case 'arrowright':
+        case 'arrowup':
+        case 'arrowdown':
+          nudgeSelection(event.key, event.shiftKey)
+          break
         default:
           break
       }
+      if (event.key.startsWith('Arrow')) event.preventDefault()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [enabled])
+}
+
+/**
+ * Unity-style arrow-key nudge: moves the selected entity on the ground
+ * plane (left/right = X, up/down = Z forward/back). Shift speeds it up;
+ * snapping, when enabled, defines the base step. Rapid presses coalesce
+ * into ONE undo entry (SetComponentFieldCommand coalesceKey).
+ */
+function nudgeSelection(key: string, fast: boolean): void {
+  const store = useEditorStore.getState()
+  const uuid = store.selection[0]
+  if (!uuid) return
+  const base = store.snapEnabled ? store.snapTranslate : 0.25
+  const step = base * (fast ? 4 : 1)
+  const entity = findEntityByUuid(store.world, uuid)
+  const transform = entity?.get(Transform)
+  if (!transform) return
+  const position = { x: transform.position.x, y: transform.position.y, z: transform.position.z }
+  const arrow = key.toLowerCase()
+  if (arrow === 'arrowleft') position.x -= step
+  else if (arrow === 'arrowright') position.x += step
+  else if (arrow === 'arrowup') position.z -= step
+  else if (arrow === 'arrowdown') position.z += step
+  editComponentField(uuid, 'core.transform', { position })
 }
 
 function useAutosave(enabled: boolean): void {

@@ -191,6 +191,9 @@ function ViewportScene() {
 /* Editor rig: grid, orbit, gizmo, picking, outline, focus             */
 /* ------------------------------------------------------------------ */
 
+/** Alt-held state for the Unity-style Alt+Left orbit swap. */
+let eventAltHeld = false
+
 function EditorRig({
   selection,
   tool,
@@ -224,8 +227,35 @@ function EditorRig({
     controls.maxPolarAngle = Math.PI * 0.495
     controls.minDistance = 0.5
     controls.maxDistance = 220
+
+    // Unity Scene-view navigation: wheel = zoom (toward the cursor),
+    // middle-drag = pan, right-drag = orbit, Alt+left-drag = orbit.
+    // Left button alone stays free for selection and the transform gizmo.
+    controls.zoomToCursor = true
+    const unityButtons = { LEFT: null, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE } as unknown as typeof controls.mouseButtons
+    const applyButtons = () => {
+      controls.mouseButtons = eventAltHeld
+        ? { ...unityButtons, LEFT: THREE.MOUSE.ROTATE }
+        : unityButtons
+    }
+    const onAltDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Alt') return
+      eventAltHeld = true
+      applyButtons()
+    }
+    const onAltUp = (event: KeyboardEvent) => {
+      if (event.key !== 'Alt') return
+      eventAltHeld = false
+      applyButtons()
+    }
+    applyButtons()
+    window.addEventListener('keydown', onAltDown)
+    window.addEventListener('keyup', onAltUp)
+
     controlsRef.current = controls
     return () => {
+      window.removeEventListener('keydown', onAltDown)
+      window.removeEventListener('keyup', onAltUp)
       controls.dispose()
       controlsRef.current = null
     }
