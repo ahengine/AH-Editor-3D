@@ -19,7 +19,8 @@ import {
   bootstrapDefaultProject,
   openSavedProject,
 } from '@ahengine/editor-core'
-import { installTransformChainProbe, viewportState } from './components/Viewport.js'
+import { viewportState } from './viewportState.js'
+import { installTransformChainProbe } from './transformChainProbe.js'
 import { TopBar } from './components/TopBar.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'

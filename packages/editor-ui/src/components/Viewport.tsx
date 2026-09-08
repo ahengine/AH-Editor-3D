@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Light, EntityMeta, ThreeObject, Transform, findEntityByUuid } from '@ahengine/ecs-runtime'
 import { KootaScene, gizmoDragTargets } from '@ahengine/ecs-runtime/react'
+import { viewportState } from '../viewportState.js'
 import {
   animator as editorAnimator,
   environmentLookup,
@@ -41,95 +42,6 @@ import { MenuList } from '../hooks.js'
  * selection outline, diagnostics. Per-frame work stays imperative — React
  * never rerenders on transform movement.
  */
-
-/** Shared bridge between the R3F scene and HTML overlays (no React per frame). */
-export const viewportState = {
-  camera: null as THREE.PerspectiveCamera | null,
-  focusRequests: 0,
-  viewResetRequests: 0,
-  cameraPreset: 'perspective' as 'perspective' | 'top' | 'front' | 'side',
-  stats: { fps: 0, frameMs: 0, calls: 0, triangles: 0 },
-  /** Live editor gizmo — exposed for the DEV transform-chain probe. */
-  gizmo: null as TransformControls | null,
-}
-
-/**
- * DEV-only transform-chain probe (dev server / ?harness=1 — never prod):
- * reports the complete selection → Koota → Object3D → TransformControls
- * chain with ECS vs Three transform values, proving synchronization and
- * exposing stale references or remounts.
- */
-export function installTransformChainProbe(): void {
-  if (typeof window === 'undefined') return
-  const w = window as typeof window & { __ahTransformChain?: () => unknown; __ahViewport?: typeof viewportState }
-  if (w.__ahTransformChain) return
-  w.__ahViewport = viewportState
-  w.__ahTransformChain = () => {
-    const store = useEditorStore.getState()
-    const uuid = store.selection[0] ?? null
-    const gizmo = viewportState.gizmo
-    interface Vec3Triplet { position: number[]; rotationDeg: number[]; scale: number[] }
-    const report = {
-      selectedEntityUuid: uuid as string | null,
-      kootaEntity: null as null | { id: number; alive: boolean },
-      runtimeObject: null as null | { threeUuid: string; ownerUuid: unknown; inScene: boolean },
-      transformControls: {
-        attached: null as null | string,
-        mode: (gizmo?.mode ?? null) as string | null,
-        space: (gizmo?.space ?? null) as string | null,
-        dragging: gizmo?.dragging ?? false,
-      },
-      ecs: null as null | Vec3Triplet,
-      three: null as null | Vec3Triplet,
-      match: null as null | boolean,
-      activeDragTargets: [...gizmoDragTargets],
-    }
-    if (!uuid) return report
-    const entity = findEntityByUuid(store.world, uuid)
-    if (!entity) return report
-    report.kootaEntity = { id: entity.id(), alive: entity.isAlive() }
-    const object = entity.get(ThreeObject)?.object ?? null
-    if (!object) return report
-    report.runtimeObject = {
-      threeUuid: object.uuid,
-      ownerUuid: object.userData?.entityUuid ?? null,
-      inScene: isInSceneGraph(object),
-    }
-    const attached = gizmo?.object ?? null
-    report.transformControls.attached = attached ? attached.uuid : null
-    const transform = entity.get(Transform)
-    if (transform) {
-      const deg = (r: number) => (r * 180) / Math.PI
-      const round = (n: number) => Math.round(n * 1000) / 1000
-      report.ecs = {
-        position: [transform.position.x, transform.position.y, transform.position.z].map(round),
-        rotationDeg: [transform.rotation.x, transform.rotation.y, transform.rotation.z].map(round),
-        scale: [transform.scale.x, transform.scale.y, transform.scale.z].map(round),
-      }
-      report.three = {
-        position: [object.position.x, object.position.y, object.position.z].map(round),
-        rotationDeg: [deg(object.rotation.x), deg(object.rotation.y), deg(object.rotation.z)].map(round),
-        scale: [object.scale.x, object.scale.y, object.scale.z].map(round),
-      }
-      const close = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]) < 0.01)
-      // Rotation compares as ORIENTATION: Euler decompositions aren't unique
-      // (y>90° yields equivalent alternates), so compare the quaternions.
-      const ecsQuat = new THREE.Quaternion().setFromEuler(
-        new THREE.Euler(
-          (transform.rotation.x * Math.PI) / 180,
-          (transform.rotation.y * Math.PI) / 180,
-          (transform.rotation.z * Math.PI) / 180
-        )
-      )
-      const rotationMatches = Math.abs(ecsQuat.dot(object.quaternion)) > 0.9999
-      report.match =
-        close(report.ecs.position, report.three.position) &&
-        rotationMatches &&
-        close(report.ecs.scale, report.three.scale)
-    }
-    return report
-  }
-}
 
 function isInSceneGraph(object: THREE.Object3D): boolean {
   let cursor: THREE.Object3D | null = object
