@@ -28,7 +28,7 @@ import {
   openSavedProject,
   saveProject,
 } from '@ahengine/editor-core'
-import { createCamera, createEntity, createLight, createPrimitive } from '@ahengine/editor-core'
+import { createCamera, createEntity, createLight, createPrimitive, exportNamedLayout, importNamedLayout, listNamedLayouts, loadNamedLayout, removeNamedLayout, saveNamedLayout } from '@ahengine/editor-core'
 import { SegmentedControl, IconButton } from '../ui/primitives.js'
 import { workspaceConfigs } from './BottomContextPanel.js'
 import { MenuList, type MenuItemSpec } from '../hooks.js'
@@ -40,6 +40,68 @@ const icon13 = { size: 13, strokeWidth: 1.7 }
  * Top bar (46px) — left: logo + project; center: Scene|Animate|Render;
  * right: Share (export), Play, zoom, overflow menu (File/Edit/Create).
  */
+/* ------------------------------------------------------------------ */
+/* Named layout menu items (Save/Load/Import/Export/Remove)             */
+/* ------------------------------------------------------------------ */
+
+function layoutMenuItems(): MenuItemSpec[] {
+  const saved = listNamedLayouts()
+  const items: MenuItemSpec[] = [{ separatorBefore: true, sectionLabel: 'Layouts', label: 'Save Current Layout…', onClick: () => {
+    const name = window.prompt('Layout name', 'My Layout')
+    if (name && name.trim()) {
+      saveNamedLayout(name.trim())
+      useEditorStore.getState().notify('success', `Layout "${name.trim()}" saved`)
+    }
+  } }]
+  if (saved.length > 0) {
+    for (const { name } of saved) {
+      items.push({
+        label: `Load: ${name}`,
+        onClick: () => {
+          const layout = loadNamedLayout(name)
+          if (layout) {
+            localStorage.setItem('ahengine.prefs.v1', JSON.stringify({ ...JSON.parse(localStorage.getItem('ahengine.prefs.v1') ?? '{}'), ...layout.preferences }))
+            location.reload()
+          }
+        },
+      })
+    }
+    for (const { name } of saved.slice(0, 4)) {
+      items.push({
+        label: `Export: ${name}`,
+        onClick: () => {
+          if (exportNamedLayout(name)) useEditorStore.getState().notify('success', `Layout "${name}" exported`)
+        },
+      })
+    }
+    const first = saved[0]?.name
+    if (first) {
+      items.push({ label: `Remove: ${first}…`, onClick: () => {
+        const name = window.prompt('Layout name to remove', first)
+        if (name && removeNamedLayout(name)) useEditorStore.getState().notify('info', `Layout "${name}" removed`)
+      } })
+    }
+  }
+  items.push({ label: 'Import Layout JSON…', onClick: () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json,.ahengine-layout.json'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      if (!file) return
+      try {
+        const name = importNamedLayout(JSON.parse(await file.text()))
+        if (name) useEditorStore.getState().notify('success', `Layout "${name}" imported`)
+        else useEditorStore.getState().notify('error', 'Invalid layout file')
+      } catch {
+        useEditorStore.getState().notify('error', 'Could not parse layout JSON')
+      }
+    }
+    input.click()
+  } })
+  return items
+}
+
 export function TopBar() {
   const workspace = useEditorStore((s) => s.workspace)
   const playMode = useEditorStore((s) => s.playMode)
@@ -92,6 +154,8 @@ export function TopBar() {
     View: [
       { label: 'Diagnostics', shortcut: '', onClick: () => store().setDiagnosticsOpen(!diagnosticsOpen) },
       { label: 'Grid', onClick: () => store().setGridVisible(!store().gridVisible) },
+      { label: 'Reset Layout', onClick: () => { localStorage.removeItem('ahengine.panel-layout.v2'); location.reload() } },
+      ...layoutMenuItems(),
     ],
   }
 
