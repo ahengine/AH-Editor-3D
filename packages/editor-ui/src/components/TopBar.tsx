@@ -28,6 +28,7 @@ import {
   openSavedProject,
   saveProject,
 } from '@ahengine/editor-core'
+import { useWindowPanels } from '@ahengine/editor-core'
 import { createCamera, createEntity, createLight, createPrimitive, exportNamedLayout, importNamedLayout, listNamedLayouts, loadNamedLayout, removeNamedLayout, saveNamedLayout } from '@ahengine/editor-core'
 import { SegmentedControl, IconButton } from '../ui/primitives.js'
 import { workspaceConfigs } from './BottomContextPanel.js'
@@ -150,6 +151,12 @@ export function TopBar() {
       { label: 'Spot Light', icon: <Disc {...icon13} />, onClick: () => createLight('spot') },
       { label: 'Hemisphere Light', icon: <Globe {...icon13} />, onClick: () => createLight('hemisphere') },
       { sectionLabel: 'Other', label: 'Camera', icon: <Camera {...icon13} />, onClick: createCamera },
+    ],
+    Window: [
+      { label: 'Add Hierarchy', onClick: () => useWindowPanels.getState().addPanel('hierarchy') },
+      { label: 'Add Inspector', onClick: () => useWindowPanels.getState().addPanel('inspector') },
+      { label: 'Add Viewport', onClick: () => useWindowPanels.getState().addPanel('viewport') },
+      { label: 'Add Project', onClick: () => useWindowPanels.getState().addPanel('project') },
     ],
     View: [
       { label: 'Diagnostics', shortcut: '', onClick: () => store().setDiagnosticsOpen(!diagnosticsOpen) },

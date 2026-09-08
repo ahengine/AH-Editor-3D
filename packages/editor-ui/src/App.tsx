@@ -29,7 +29,8 @@ import { TopBar } from './components/TopBar.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
 import { Panel, Group, Separator } from 'react-resizable-panels'
-import { PanelFrame } from './components/PanelFrame.js'
+import { WindowPanel, DockZoneOverlay } from './components/WindowPanel.js'
+import { useWindowPanels } from '@ahengine/editor-core'
 import { AnimationPreviewPanel, BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
 import { CommandPalette } from './components/CommandPalette.js'
 import { ProblemsPanel } from './components/ProblemsPanel.js'
@@ -109,31 +110,26 @@ export function EditorApp() {
                 onLayoutChange={(layout) => saveLayout(`h-${workspace}`, layout)}
               >
                 <Panel id="left" defaultSize={272} minSize={180} maxSize={480}>
-                  <PanelFrame id="hierarchy" side="left">{config.left}</PanelFrame>
+                  <LeftDockPanels />
                 </Panel>
                 <Separator className="ah-resize-handle" />
                 <Panel id="center" minSize={360}>
-                  <PanelFrame id="viewport" side="center">
-                    <Viewport dpr={viewportScale} />
-                  </PanelFrame>
+                  <Viewport dpr={viewportScale} />
                 </Panel>
                 <Separator className="ah-resize-handle" />
                 <Panel id="right" defaultSize={340} minSize={240} maxSize={500}>
-                  <PanelFrame id="inspector" side="right">
-                    {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
-                  </PanelFrame>
+                  <RightDockPanels />
                 </Panel>
               </Group>
             </Panel>
             <Separator className="ah-resize-handle ah-resize-handle-v" />
             <Panel id="bottom" defaultSize={200} minSize={100} maxSize={520}>
-              <PanelFrame id="bottom" side="bottom">
-                <BottomContextPanel workspace={workspace} />
-              </PanelFrame>
+              <BottomDockPanels />
             </Panel>
           </Group>
         </div>
       </div>
+      <DockZoneOverlay />
       <Notifications />
       <CommandPalette />
       <ProblemsPanel />
@@ -362,6 +358,44 @@ function Notifications() {
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+
+/* ------------------------------------------------------------------ */
+/* Dock zone renderers — render all panels docked to a specific side    */
+/* ------------------------------------------------------------------ */
+
+function LeftDockPanels() {
+  const panels = useWindowPanels((s) => s.panels)
+  const docked = panels.filter((p) => p.dock === 'left')
+  if (docked.length === 0) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 4 }}>
+      {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
+    </div>
+  )
+}
+
+function RightDockPanels() {
+  const panels = useWindowPanels((s) => s.panels)
+  const docked = panels.filter((p) => p.dock === 'right')
+  if (docked.length === 0) return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 4 }}>
+      {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
+    </div>
+  )
+}
+
+function BottomDockPanels() {
+  const panels = useWindowPanels((s) => s.panels)
+  const docked = panels.filter((p) => p.dock === 'bottom')
+  if (docked.length === 0) return <BottomContextPanel workspace={useEditorStore.getState().workspace} />
+  return (
+    <div style={{ display: 'flex', height: '100%', gap: 4 }}>
+      {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
     </div>
   )
 }

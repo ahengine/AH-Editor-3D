@@ -18,7 +18,7 @@ import {
   setComponentFieldLive,
   setEnabled,
   useEditorStore,
-  usePanelStore,
+  useWindowPanels,
 } from '@ahengine/editor-core'
 import { SegmentedControl, IconButton, InspectorSection, NumberInput, EditorSlider } from '../ui/primitives.js'
 import { AddComponentDialog } from './AddComponentDialog.js'
@@ -59,7 +59,8 @@ function InspectorBody() {
 
   // Inspector Lock (Unity-style): when locked, the Inspector stays pinned
   // to the locked entity regardless of viewport/hierarchy selection.
-  const lockedUuid = usePanelStore((s) => s.lockedUuid)
+  const panels = useWindowPanels((s) => s.panels)
+  const lockedUuid = panels.find((p) => p.type === 'inspector' && p.lockedUuid)?.lockedUuid ?? null
   const selection = lockedUuid ? [lockedUuid] : rawSelection
 
   const uuid = selection[0]

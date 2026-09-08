@@ -654,3 +654,39 @@ input[type='color'], .ah-color-chip {
 .ah-panel-floating .ah-panel-head:active { cursor: grabbing; }
 .ah-panel-closed { border: 1px dashed var(--stroke); border-radius: 15px; }
 .ah-panel-frame .ah-panel-head .ah-icon-btn { width: 18px; height: 18px; border-radius: 5px; }
+
+/* ---- window panel system (Unity-style) ---- */
+.ah-window-panel-floating {
+  border: 1px solid var(--stroke2);
+  border-radius: 15px;
+  background: var(--panel-bg);
+  backdrop-filter: var(--material-blur-panel);
+  -webkit-backdrop-filter: var(--material-blur-panel);
+}
+.ah-window-panel-floating.dragging {
+  box-shadow: 0 24px 70px rgba(0,0,0,.55), 0 0 0 2px var(--accent);
+}
+.ah-window-panel-head {
+  height: 28px;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: default;
+  user-select: none;
+}
+.ah-window-panel-floating .ah-window-panel-head { cursor: grab; }
+.ah-window-panel-floating .ah-window-panel-head:active { cursor: grabbing; }
+.ah-window-panel-btn {
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 5px;
+  background: transparent; color: var(--text-tertiary);
+  cursor: pointer; padding: 0;
+}
+.ah-window-panel-btn:hover { background: var(--surface-hover); color: var(--text-primary); }
