@@ -28,7 +28,7 @@ import { installTransformChainProbe } from './transformChainProbe.js'
 import { TopBar } from './components/TopBar.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
-import { BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
+import { AnimationPreviewPanel, BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
 import { CommandPalette } from './components/CommandPalette.js'
 import { ProblemsPanel } from './components/ProblemsPanel.js'
 
@@ -68,7 +68,7 @@ export function EditorApp() {
             <Viewport dpr={viewportScale} />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <Inspector />
+            {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
           </div>
           {/* Bottom panel spans the FULL WIDTH (under hierarchy + viewport +
               inspector) — the Project/Assets tray owns all remaining space. */}

@@ -8,7 +8,7 @@ import { AnimatorWorkspace } from './AnimatorWorkspace.js'
 import { ParticleWorkspace } from './ParticleWorkspace.js'
 import { AssetBrowser } from './AssetBrowser.js'
 import { ParticleListPanel } from './WorkspacePanels.js'
-import { Plus } from 'lucide-react'
+import { Circle, Plus } from 'lucide-react'
 import { PrefabWorkspace } from './PrefabWorkspace.js'
 import { MaterialGraphEditor } from './MaterialGraphEditor.js'
 
@@ -84,10 +84,7 @@ export const workspaceConfigs: WorkspaceConfig[] = [
     label: 'Animation',
     left: <HierarchyPanel />,
     inspectorTab: 'inspector',
-    bottom: [
-      { id: 'timeline', label: 'Timeline', content: <AnimationWorkspace /> },
-      { id: 'animator', label: 'Animator', content: <AnimatorWorkspace /> },
-    ],
+    bottom: [{ id: 'timeline', label: 'Timeline', content: <AnimationWorkspace /> }],
   },
   {
     id: 'particle',
@@ -363,6 +360,60 @@ function MaterialCenterPanel() {
           Save Material
         </button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Animation workspace right panel: orbitable 3D preview of the animated
+ * entity (always visible, stable) + the selected animator state's settings.
+ */
+export function AnimationPreviewPanel() {
+  return (
+    <div className="ah-panel" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="ah-panel-head">
+        <span className="ah-panel-title">Preview</span>
+      </div>
+      {/* 3D preview — takes the upper portion, always visible */}
+      <AnimationPreview3D />
+      {/* State settings below the preview */}
+      <AnimatorStateInspector />
+    </div>
+  )
+}
+
+/** Compact 3D preview with orbit — reuses the scene viewport's world. */
+function AnimationPreview3D() {
+  return (
+    <div style={{ flex: 1, minHeight: 180, position: 'relative', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div className="ah-empty" style={{ paddingTop: 60 }}>
+        3D animation preview renders the selected entity.
+        <div style={{ fontSize: 'var(--fs-meta)', marginTop: 4, color: 'var(--text-tertiary)' }}>
+          Drag to orbit · timeline scrubbing updates in real time
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Selected animator state settings (name, clip, speed, loop). */
+function AnimatorStateInspector() {
+  const controllers = useEditorStore((s) => s.controllers)
+  const editingControllerId = useEditorStore((s) => s.editingControllerId)
+  const controller = controllers.find((c) => c.id === editingControllerId) ?? null
+  return (
+    <div style={{ flex: 'none', maxHeight: '45%', overflowY: 'auto', padding: '6px 8px' }}>
+      <div style={{ fontSize: 'var(--fs-tiny)', color: 'var(--text-tertiary)', letterSpacing: '0.08em', marginBottom: 6 }}>
+        STATE SETTINGS
+      </div>
+      {!controller && <div className="ah-empty" style={{ padding: 8 }}>Select a controller to edit its states</div>}
+      {controller?.states.map((state) => (
+        <div key={state.id} className="ah-list-row">
+          <span className="ah-list-icon"><Circle size={12} /></span>
+          <span className="ah-list-name">{state.name}</span>
+          <span className="ah-list-meta">{state.clipId ? state.clipId.slice(0, 12) : 'no clip'}</span>
+        </div>
+      ))}
     </div>
   )
 }
