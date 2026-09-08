@@ -216,7 +216,7 @@ function MaterialPreview3D({ materialId }: { materialId: string | null }) {
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
-    let disposed = false
+    const disposed = false
     const ro = new ResizeObserver(() => {
       if (el.clientWidth > 10 && el.clientHeight > 10 && !ready) setReady(true)
     })
