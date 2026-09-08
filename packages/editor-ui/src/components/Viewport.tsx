@@ -198,6 +198,8 @@ const _navFwd = new THREE.Vector3()
 const _navRight = new THREE.Vector3()
 const _navStep = new THREE.Vector3()
 const _orbitOffset = new THREE.Vector3()
+const _zoomDir = new THREE.Vector3()
+const smoothZoomTickRef = { current: null as null | (() => void) }
 const _orbitSpherical = new THREE.Spherical()
 
 /** Modifier-held state for the Unity-style left-button orbit swaps. */
@@ -233,7 +235,10 @@ function EditorRig({
     const controls = new OrbitControls(camera, gl.domElement)
     controls.target.set(0, 1, 0)
     controls.enableDamping = true
-    controls.dampingFactor = 0.12
+    controls.dampingFactor = 0.07
+    controls.rotateSpeed = 0.9
+    controls.panSpeed = 0.9
+    controls.zoomSpeed = 0.85
     controls.maxPolarAngle = Math.PI * 0.495
     controls.minDistance = 0.5
     controls.maxDistance = 220
@@ -242,6 +247,35 @@ function EditorRig({
     // middle-drag = pan, right-drag = orbit, Alt+left-drag = orbit.
     // Left button alone stays free for selection and the transform gizmo.
     controls.zoomToCursor = true
+
+    // Smooth zoom: intercept the wheel, accumulate a target distance, and
+    // glide toward it per frame (OrbitControls dollies instantly).
+    let zoomTarget: number | null = null
+    const onWheelSmooth = (event: WheelEvent) => {
+      if (!controls.enabled) return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      const current = camera.position.distanceTo(controls.target)
+      const factor = Math.exp(event.deltaY * 0.0012)
+      zoomTarget = THREE.MathUtils.clamp(current * factor, controls.minDistance, controls.maxDistance)
+    }
+    gl.domElement.addEventListener('wheel', onWheelSmooth, { passive: false, capture: true })
+    const smoothZoomTick = () => {
+      if (zoomTarget !== null && controls.enabled) {
+        const current = camera.position.distanceTo(controls.target)
+        const next = THREE.MathUtils.lerp(current, zoomTarget, 0.18)
+        if (Math.abs(next - zoomTarget) < 0.003) {
+          // Final snap
+          _zoomDir.copy(camera.position).sub(controls.target).normalize()
+          camera.position.copy(controls.target).addScaledVector(_zoomDir, zoomTarget)
+          zoomTarget = null
+        } else {
+          _zoomDir.copy(camera.position).sub(controls.target).normalize()
+          camera.position.copy(controls.target).addScaledVector(_zoomDir, next)
+        }
+      }
+    }
+    smoothZoomTickRef.current = smoothZoomTick
     const unityButtons = { LEFT: null, MIDDLE: THREE.MOUSE.PAN, RIGHT: THREE.MOUSE.ROTATE } as unknown as typeof controls.mouseButtons
     const applyButtons = () => {
       const leftOrbit = eventAltHeld || eventCtrlOrbit
@@ -302,6 +336,8 @@ function EditorRig({
     // spherical state from the camera each frame, so the manual placement
     // is preserved afterwards.
     const selectionOrbit = { armed: false, started: false, x: 0, y: 0 }
+    // Smoothed rotation velocity for the manual orbit gesture.
+    const orbitVel = { theta: 0, phi: 0 }
     const onCanvasPointerDownCapture = (event: PointerEvent) => {
       if (event.button !== 0 || !eventCtrlOrbit || !event.isPrimary) return
       selectionOrbit.armed = true
@@ -328,12 +364,17 @@ function EditorRig({
         controls.enabled = false // freeze OrbitControls (incl. its ctrl→PAN)
       }
       const speed = (2 * Math.PI) / gl.domElement.clientHeight
+      // Accumulate the desired angular velocity, then ease toward it —
+      // the manual orbit feels as smooth as the damped OrbitControls.
+      orbitVel.theta = THREE.MathUtils.lerp(orbitVel.theta, -dx * speed * 60, 0.35)
+      orbitVel.phi = THREE.MathUtils.lerp(orbitVel.phi, -dy * speed * 60, 0.35)
+      const dt = 1 / 60
       _orbitOffset.copy(camera.position).sub(controls.target)
       _orbitSpherical.setFromVector3(_orbitOffset)
-      _orbitSpherical.theta -= dx * speed
+      _orbitSpherical.theta += orbitVel.theta * dt
       _orbitSpherical.phi = Math.min(
         controls.maxPolarAngle - 0.001,
-        Math.max(controls.minPolarAngle + 0.001, _orbitSpherical.phi - dy * speed)
+        Math.max(controls.minPolarAngle + 0.001, _orbitSpherical.phi + orbitVel.phi * dt)
       )
       camera.position.copy(controls.target).add(_orbitOffset.setFromSpherical(_orbitSpherical))
       camera.lookAt(controls.target)
@@ -343,6 +384,8 @@ function EditorRig({
       selectionOrbit.armed = false
       if (selectionOrbit.started) controls.enabled = true
       selectionOrbit.started = false
+      orbitVel.theta = 0
+      orbitVel.phi = 0
       window.removeEventListener('pointermove', onSelectionOrbitMove)
       window.removeEventListener('pointerup', endSelectionOrbit)
     }
@@ -360,6 +403,8 @@ function EditorRig({
     return () => {
       if (viewportState.controls === controls) viewportState.controls = null
       gl.domElement.removeEventListener('pointerdown', onCanvasPointerDownCapture, { capture: true })
+      gl.domElement.removeEventListener('wheel', onWheelSmooth, { capture: true } as never)
+      smoothZoomTickRef.current = null
       endSelectionOrbit()
       window.removeEventListener('keydown', onAltDown)
       window.removeEventListener('keyup', onAltUp)
@@ -535,6 +580,7 @@ function EditorRig({
 
   useFrame((_, delta) => {
     controlsRef.current?.update()
+    smoothZoomTickRef.current?.()
 
     // Held-state arrow movement: eased velocity toward the held-key
     // direction. Nothing selected → the camera glides (with ease-in/out).
