@@ -73,8 +73,18 @@ export function KootaScene({
 
   useEffect(() => {
     return () => {
-      // Teardown: drop every managed object with the component.
-      for (const visual of visuals.current.values()) disposeVisual(visual, frameCtx.runtime)
+      // Teardown: drop every managed object with the component — INCLUDING its
+      // trait (identity-guarded so a stale cleanup can never unregister a newer
+      // registration). A surviving trait would orphan: the next sync creates a
+      // fresh object, and koota's add() would leave the trait pointing at the
+      // removed one, breaking gizmo attach and picking ownership.
+      for (const visual of visuals.current.values()) {
+        const entity = findEntityByUuidLocal(frameCtx.world, visual.uuid)
+        if (entity?.isAlive() && entity.get(ThreeObject)?.object === visual.object) {
+          entity.remove(ThreeObject)
+        }
+        disposeVisual(visual, frameCtx.runtime)
+      }
       visuals.current.clear()
     }
   }, [frameCtx])
@@ -115,7 +125,11 @@ function syncStructure(
       const object = new THREE.Group()
       object.name = 'entity'
       object.userData.entityUuid = uuid
-      entity.add([ThreeObject, { object }])
+      // entity.add() IGNORES values when the trait already exists (verified
+      // against koota 0.6.6) — always write through set() so the trait points
+      // at the live object, never an orphaned previous generation.
+      if (entity.has(ThreeObject)) entity.set(ThreeObject, { object })
+      else entity.add([ThreeObject, { object }])
       root.add(object)
       visuals.set(uuid, { uuid, object })
     }

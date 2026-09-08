@@ -99,7 +99,7 @@ export function installTransformChainProbe(): void {
     report.transformControls.attached = attached ? attached.uuid : null
     const transform = entity.get(Transform)
     if (transform) {
-      const rad = (d: number) => (d * Math.PI) / 180
+      const deg = (r: number) => (r * 180) / Math.PI
       const round = (n: number) => Math.round(n * 1000) / 1000
       report.ecs = {
         position: [transform.position.x, transform.position.y, transform.position.z].map(round),
@@ -108,13 +108,23 @@ export function installTransformChainProbe(): void {
       }
       report.three = {
         position: [object.position.x, object.position.y, object.position.z].map(round),
-        rotationDeg: [rad(object.rotation.x), rad(object.rotation.y), rad(object.rotation.z)].map(round),
+        rotationDeg: [deg(object.rotation.x), deg(object.rotation.y), deg(object.rotation.z)].map(round),
         scale: [object.scale.x, object.scale.y, object.scale.z].map(round),
       }
       const close = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]) < 0.01)
+      // Rotation compares as ORIENTATION: Euler decompositions aren't unique
+      // (y>90° yields equivalent alternates), so compare the quaternions.
+      const ecsQuat = new THREE.Quaternion().setFromEuler(
+        new THREE.Euler(
+          (transform.rotation.x * Math.PI) / 180,
+          (transform.rotation.y * Math.PI) / 180,
+          (transform.rotation.z * Math.PI) / 180
+        )
+      )
+      const rotationMatches = Math.abs(ecsQuat.dot(object.quaternion)) > 0.9999
       report.match =
         close(report.ecs.position, report.three.position) &&
-        close(report.ecs.rotationDeg, report.three.rotationDeg) &&
+        rotationMatches &&
         close(report.ecs.scale, report.three.scale)
     }
     return report
@@ -243,13 +253,19 @@ function ViewportScene() {
   const activeWorld = playMode === 'edit' ? world : (playWorld ?? world)
   const isPlay = playMode !== 'edit'
   const playAnimator = getPlayHandle()?.animator ?? editorAnimator
+  const animator = isPlay ? playAnimator : editorAnimator
+
+  // Stable identity: KootaScene tears down and rebuilds every runtime object
+  // when this prop changes, so an inline object literal here would recreate
+  // the whole scene graph on every ordinary re-render (selection, tool…).
+  const runtime = useMemo(() => ({ materials: materialService, animator }), [animator])
 
   return (
     <>
       {!isPlay && <EditorRig selection={selection} tool={tool} space={space} snapEnabled={snapEnabled} world={world} />}
       <KootaScene
         world={activeWorld}
-        runtime={{ materials: materialService, animator: isPlay ? playAnimator : editorAnimator }}
+        runtime={runtime}
         useGameCamera={isPlay}
         settings={sceneSettings}
         environmentLookup={environmentLookup}
