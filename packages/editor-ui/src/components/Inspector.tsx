@@ -22,7 +22,6 @@ import {
 import { SegmentedControl, IconButton, InspectorSection, NumberInput, EditorSlider } from '../ui/primitives.js'
 import { AddComponentDialog } from './AddComponentDialog.js'
 import { SceneSettingsPanel } from './SceneSettingsPanel.js'
-import { MaterialEditor } from './MaterialEditor.js'
 import { useContextMenu } from '../hooks.js'
 
 /**
@@ -33,26 +32,17 @@ import { useContextMenu } from '../hooks.js'
  */
 
 export function Inspector() {
-  const inspectorTab = useEditorStore((s) => s.inspectorTab)
-  const store = useEditorStore.getState
 
   return (
     <div className="ah-panel">
       <div className="ah-panel-head" style={{ paddingBottom: 0 }}>
         <SegmentedControl
-          value={inspectorTab}
-          onChange={(tab) => store().setInspectorTab(tab)}
-          options={[
-            { value: 'inspector', label: 'Inspector' },
-            { value: 'library', label: 'Library' },
-          ]}
+          value="inspector"
+          onChange={() => undefined}
+          options={[{ value: 'inspector', label: 'Inspector' }]}
         />
       </div>
-      {inspectorTab === 'inspector' ? <InspectorBody /> : (
-        <div className="ah-panel-body">
-          <MaterialEditor />
-        </div>
-      )}
+      <InspectorBody />
     </div>
   )
 }
@@ -318,7 +308,6 @@ function MaterialSection({
   const materialId = reference?.slots?.[0]?.materialId ?? null
   const material = materials.find((m) => m.id === materialId) ?? null
   const [advanced, setAdvanced] = useState(false)
-  const store = useEditorStore.getState
 
   const update = (patch: Partial<import('@ahengine/project-schema').MaterialDefinition['properties']>) => {
     if (!material) return
@@ -331,14 +320,6 @@ function MaterialSection({
   return (
     <InspectorSection
       title="Material"
-      actions={
-        <IconButton
-          small
-          icon={<Settings2 size={13} />}
-          label="Material library"
-          onClick={() => store().setInspectorTab('library')}
-        />
-      }
     >
       <div className="ah-material-row">
         <span

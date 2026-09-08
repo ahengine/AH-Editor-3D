@@ -13,7 +13,6 @@ import {
   Globe,
   Lightbulb,
   MoreHorizontal,
-  Play,
   Save,
   Search,
   Share2,
@@ -21,7 +20,6 @@ import {
 } from 'lucide-react'
 import { useEditorStore } from '@ahengine/editor-core'
 import { redo, returnFromDocument, undo } from '@ahengine/editor-core'
-import { enterPlayMode, stopPlayMode } from '@ahengine/editor-core'
 import {
   bootstrapDefaultProject,
   exportProjectJson,
@@ -158,13 +156,6 @@ export function TopBar() {
         <button className="ah-btn" onClick={exportProjectJson}>
           <Share2 size={13} /> Share
         </button>
-        <IconButton
-          icon={<Play size={15} />}
-          label="Play mode"
-          active={playMode !== 'edit'}
-          disabled={playMode === 'play'}
-          onClick={playMode === 'edit' ? enterPlayMode : stopPlayMode}
-        />
         <button
           className="ah-btn"
           title="Viewport resolution scale"
