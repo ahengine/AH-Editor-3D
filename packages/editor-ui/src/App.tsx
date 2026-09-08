@@ -44,7 +44,7 @@ import { ProblemsPanel } from './components/ProblemsPanel.js'
 /* Panel layout persistence — per-workspace, editor-only                */
 /* ------------------------------------------------------------------ */
 
-const LAYOUT_KEY = 'ahengine.panel-layout.v2'
+const LAYOUT_KEY = 'ahengine.panel-layout.v3'
 
 function saveLayout(group: string, layout: Record<string, number>): void {
   try {
@@ -91,34 +91,36 @@ export function EditorApp() {
     <div className="ah-page">
       <div className="ah-shell">
         <TopBar />
-        <div className={`ah-layout ah-layout-${workspace}`} style={{ display: 'flex', flexDirection: 'column' }}>
-          {/* Main row: left | center | right — resizable */}
-          <Group
-            orientation="horizontal"
-            style={{ flex: 1, minHeight: 0, display: 'flex' }}
-            defaultLayout={loadLayout(`main-${workspace}`)}
-            onLayoutChange={(layout) => saveLayout(`main-${workspace}`, layout)}
-          >
-            <Panel id="left" defaultSize={272} minSize={180} maxSize={480}>
-              {config.left}
-            </Panel>
-            <Separator className="ah-resize-handle" />
-            <Panel id="center" minSize={360}>
-              <Viewport dpr={viewportScale} />
-            </Panel>
-            <Separator className="ah-resize-handle" />
-            <Panel id="right" defaultSize={340} minSize={240} maxSize={500}>
-              {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
-            </Panel>
-          </Group>
-          {/* Bottom panel — resizable, spans full width */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: 8, gap: 8 }}>
+          {/* Single vertical group: main row + bottom panel */}
           <Group
             orientation="vertical"
-            style={{ flex: 'none', display: 'flex' }}
-            defaultLayout={loadLayout(`bottom-${workspace}`)}
-            onLayoutChange={(layout) => saveLayout(`bottom-${workspace}`, layout)}
+            style={{ flex: 1, minHeight: 0, display: 'flex' }}
+            defaultLayout={loadLayout(`v-${workspace}`)}
+            onLayoutChange={(layout) => saveLayout(`v-${workspace}`, layout)}
           >
-            <Separator className="ah-resize-handle" />
+            {/* Main row: left | center | right — resizable */}
+            <Panel id="main" minSize={200}>
+              <Group
+                orientation="horizontal"
+                style={{ height: '100%', display: 'flex' }}
+                defaultLayout={loadLayout(`h-${workspace}`)}
+                onLayoutChange={(layout) => saveLayout(`h-${workspace}`, layout)}
+              >
+                <Panel id="left" defaultSize={272} minSize={180} maxSize={480}>
+                  {config.left}
+                </Panel>
+                <Separator className="ah-resize-handle" />
+                <Panel id="center" minSize={360}>
+                  <Viewport dpr={viewportScale} />
+                </Panel>
+                <Separator className="ah-resize-handle" />
+                <Panel id="right" defaultSize={340} minSize={240} maxSize={500}>
+                  {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
+                </Panel>
+              </Group>
+            </Panel>
+            <Separator className="ah-resize-handle ah-resize-handle-v" />
             <Panel id="bottom" defaultSize={200} minSize={100} maxSize={520}>
               <BottomContextPanel workspace={workspace} />
             </Panel>

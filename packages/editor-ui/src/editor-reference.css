@@ -632,7 +632,7 @@ input[type='color'], .ah-color-chip {
   background: var(--accent);
   opacity: 0.5;
 }
-.ah-resize-handle[data-panel-group-direction="vertical"] {
+.ah-resize-handle-v {
   width: auto;
   height: 4px;
   cursor: row-resize;
