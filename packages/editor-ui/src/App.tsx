@@ -31,6 +31,7 @@ import { Inspector } from './components/Inspector.js'
 import { Panel, Group, Separator } from 'react-resizable-panels'
 import { WindowPanel, DockZoneOverlay } from './components/WindowPanel.js'
 import { useWindowPanels } from '@ahengine/editor-core'
+import { Pin } from 'lucide-react'
 import { AnimationPreviewPanel, BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
 import { CommandPalette } from './components/CommandPalette.js'
 import { ProblemsPanel } from './components/ProblemsPanel.js'
@@ -365,52 +366,69 @@ function Notifications() {
 
 
 /* ------------------------------------------------------------------ */
-/* Dock zone renderers — render all panels docked to a specific side    */
+/* Dock containers — panels docked to the same side become TABS         */
+/* (Unity behavior: docking never splits the layout, it tabs together)  */
 /* ------------------------------------------------------------------ */
 
-function LeftDockPanels() {
+function TabbedDock({ side, emptyLabel, onRestoreEmpty }: {
+  side: 'left' | 'right' | 'bottom'
+  emptyLabel?: string
+  onRestoreEmpty?: () => void
+}) {
   const panels = useWindowPanels((s) => s.panels)
-  const docked = panels.filter((p) => p.dock === 'left')
-  if (docked.length === 0) return null
+  const docked = panels.filter((p) => p.dock === side)
+  const [activeTab, setActiveTab] = useState<string | null>(null)
+  const active = docked.find((p) => p.instanceId === activeTab) ?? docked[docked.length - 1] ?? null
+
+  if (docked.length === 0) {
+    if (onRestoreEmpty) {
+      return (
+        <div className="ah-empty" style={{ height: '100%', cursor: 'pointer' }} onClick={onRestoreEmpty} title="Click to restore">
+          {emptyLabel}
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 4 }}>
-      {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
+    <div className="ah-tabbed-dock">
+      {/* Tab bar */}
+      {docked.length > 0 && (
+        <div className="ah-tabbed-dock-tabs">
+          {docked.map((p) => (
+            <button
+              key={p.instanceId}
+              className={`ah-tabbed-dock-tab ${active?.instanceId === p.instanceId ? 'active' : ''}`}
+              onClick={() => setActiveTab(p.instanceId)}
+            >
+              {p.label}
+              {p.lockedUuid && <Pin size={9} style={{ color: 'var(--accent)' }} />}
+            </button>
+          ))}
+        </div>
+      )}
+      {/* Active panel content */}
+      {active && <WindowPanel key={active.instanceId} instance={active} />}
     </div>
   )
+}
+
+function LeftDockPanels() {
+  return <TabbedDock side="left" />
 }
 
 function RightDockPanels() {
-  const panels = useWindowPanels((s) => s.panels)
-  const docked = panels.filter((p) => p.dock === 'right')
-  if (docked.length === 0) return null
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 4 }}>
-      {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
-    </div>
-  )
+  return <TabbedDock side="right" />
 }
 
 function BottomDockPanels() {
-  const panels = useWindowPanels((s) => s.panels)
-  const docked = panels.filter((p) => p.dock === 'bottom')
-  if (docked.length === 0) {
-    // All bottom panels closed — show a restore strip (NOT the panel itself,
-    // which would instantly re-appear and make Close impossible).
-    return (
-      <div
-        className="ah-empty"
-        style={{ height: '100%', cursor: 'pointer' }}
-        onClick={() => useWindowPanels.getState().addPanel('project', 'bottom')}
-        title="Click to restore the Project panel"
-      >
-        Project panel closed — click to restore
-      </div>
-    )
-  }
   return (
-    <div style={{ display: 'flex', height: '100%', gap: 4 }}>
-      {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
-    </div>
+    <TabbedDock
+      side="bottom"
+      emptyLabel="Project panel closed — click to restore"
+      onRestoreEmpty={() => useWindowPanels.getState().addPanel('project', 'bottom')}
+    />
   )
 }
 
