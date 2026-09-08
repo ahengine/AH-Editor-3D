@@ -192,6 +192,10 @@ function ViewportScene() {
 /* ------------------------------------------------------------------ */
 
 const _pivotVec = new THREE.Vector3()
+const _navVel = new THREE.Vector3()
+const _navDir = new THREE.Vector3()
+const _navFwd = new THREE.Vector3()
+const _navRight = new THREE.Vector3()
 const _orbitOffset = new THREE.Vector3()
 const _orbitSpherical = new THREE.Spherical()
 
@@ -525,8 +529,50 @@ function EditorRig({
   /* Per-frame: outline update, gizmo attach, orbit damping, focus, stats */
   const lastPreset = useRef(viewportState.cameraPreset)
   const lastReset = useRef(viewportState.viewResetRequests)
+  const navVelocity = useRef(new THREE.Vector3())
+
   useFrame((_, delta) => {
     controlsRef.current?.update()
+
+    // Smooth arrow-key navigation (nothing selected): velocity eases toward
+    // the held-key direction and glides to zero on release — no stepping.
+    {
+      const nav = viewportState.arrowNav
+      const controls = controlsRef.current
+      if (controls) {
+        const holding = nav.up || nav.down || nav.left || nav.right
+        const dt = Math.min(delta, 1 / 20)
+        const camera_ = camera as THREE.PerspectiveCamera
+        if (holding) {
+          _navFwd.set(0, 0, -1).applyQuaternion(camera_.quaternion)
+          _navFwd.y = 0
+          if (_navFwd.lengthSq() < 1e-6) _navFwd.set(0, 0, -1)
+          _navFwd.normalize()
+          _navRight.set(1, 0, 0).applyQuaternion(camera_.quaternion)
+          _navRight.y = 0
+          if (_navRight.lengthSq() < 1e-6) _navRight.set(1, 0, 0)
+          _navRight.normalize()
+          _navDir.set(0, 0, 0)
+          if (nav.up) _navDir.add(_navFwd)
+          if (nav.down) _navDir.sub(_navFwd)
+          if (nav.right) _navDir.add(_navRight)
+          if (nav.left) _navDir.sub(_navRight)
+          if (_navDir.lengthSq() > 1e-9) _navDir.normalize()
+          const speed = 6 * (nav.fast ? 4 : 1) // units/sec
+          _navDir.multiplyScalar(speed)
+        } else {
+          _navDir.set(0, 0, 0)
+        }
+        // Exponential ease-in/out (~0.25s to ~63% of target speed).
+        const k = holding ? 12 : 7
+        const t = 1 - Math.exp(-k * dt)
+        navVelocity.current.lerp(_navDir, t)
+        if (navVelocity.current.lengthSq() > 1e-8) {
+          camera_.position.addScaledVector(navVelocity.current, dt)
+          controls.target.addScaledVector(navVelocity.current, dt)
+        }
+      }
+    }
 
     // Camera preset switch (Perspective/Top/Front/Side) + explicit view resets.
     const presetChanged = viewportState.cameraPreset !== lastPreset.current
