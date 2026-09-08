@@ -29,6 +29,7 @@ import { TopBar } from './components/TopBar.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
 import { Panel, Group, Separator } from 'react-resizable-panels'
+import { PanelFrame } from './components/PanelFrame.js'
 import { AnimationPreviewPanel, BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
 import { CommandPalette } from './components/CommandPalette.js'
 import { ProblemsPanel } from './components/ProblemsPanel.js'
@@ -108,21 +109,27 @@ export function EditorApp() {
                 onLayoutChange={(layout) => saveLayout(`h-${workspace}`, layout)}
               >
                 <Panel id="left" defaultSize={272} minSize={180} maxSize={480}>
-                  {config.left}
+                  <PanelFrame id="hierarchy" side="left">{config.left}</PanelFrame>
                 </Panel>
                 <Separator className="ah-resize-handle" />
                 <Panel id="center" minSize={360}>
-                  <Viewport dpr={viewportScale} />
+                  <PanelFrame id="viewport" side="center">
+                    <Viewport dpr={viewportScale} />
+                  </PanelFrame>
                 </Panel>
                 <Separator className="ah-resize-handle" />
                 <Panel id="right" defaultSize={340} minSize={240} maxSize={500}>
-                  {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
+                  <PanelFrame id="inspector" side="right">
+                    {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
+                  </PanelFrame>
                 </Panel>
               </Group>
             </Panel>
             <Separator className="ah-resize-handle ah-resize-handle-v" />
             <Panel id="bottom" defaultSize={200} minSize={100} maxSize={520}>
-              <BottomContextPanel workspace={workspace} />
+              <PanelFrame id="bottom" side="bottom">
+                <BottomContextPanel workspace={workspace} />
+              </PanelFrame>
             </Panel>
           </Group>
         </div>

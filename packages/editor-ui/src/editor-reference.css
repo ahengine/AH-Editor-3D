@@ -637,3 +637,19 @@ input[type='color'], .ah-color-chip {
   height: 4px;
   cursor: row-resize;
 }
+
+/* ---- panel system (Unity-style) ---- */
+.ah-panel-frame { position: relative; overflow: hidden; }
+.ah-panel-frame.maximized { border-radius: 15px; }
+.ah-panel-floating {
+  border: 1px solid var(--stroke2);
+  border-radius: 15px;
+  background: var(--panel-bg);
+  backdrop-filter: var(--material-blur-panel);
+  -webkit-backdrop-filter: var(--material-blur-panel);
+}
+.ah-panel-floating.dragging { box-shadow: 0 24px 70px rgba(0,0,0,.55), 0 0 0 2px var(--accent); }
+.ah-panel-floating .ah-panel-head { cursor: grab; }
+.ah-panel-floating .ah-panel-head:active { cursor: grabbing; }
+.ah-panel-closed { border: 1px dashed var(--stroke); border-radius: 15px; }
+.ah-panel-frame .ah-panel-head .ah-icon-btn { width: 18px; height: 18px; border-radius: 5px; }

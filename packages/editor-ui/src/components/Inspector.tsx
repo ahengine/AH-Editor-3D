@@ -18,6 +18,7 @@ import {
   setComponentFieldLive,
   setEnabled,
   useEditorStore,
+  usePanelStore,
 } from '@ahengine/editor-core'
 import { SegmentedControl, IconButton, InspectorSection, NumberInput, EditorSlider } from '../ui/primitives.js'
 import { AddComponentDialog } from './AddComponentDialog.js'
@@ -50,11 +51,16 @@ export function Inspector() {
 function InspectorBody() {
   const world = useEditorStore((s) => s.world)
   const worldVersion = useEditorStore((s) => s.worldVersion)
-  const selection = useEditorStore((s) => s.selection)
+  const rawSelection = useEditorStore((s) => s.selection)
   const materials = useEditorStore((s) => s.materials)
   const [adding, setAdding] = useState(false)
   const contextMenu = useContextMenu()
   void worldVersion
+
+  // Inspector Lock (Unity-style): when locked, the Inspector stays pinned
+  // to the locked entity regardless of viewport/hierarchy selection.
+  const lockedUuid = usePanelStore((s) => s.lockedUuid)
+  const selection = lockedUuid ? [lockedUuid] : rawSelection
 
   const uuid = selection[0]
   const entity: Entity | undefined = uuid ? findEntityByUuid(world, uuid) : undefined
