@@ -20,6 +20,7 @@ import {
   bootstrapDefaultProject,
   openSavedProject,
 } from '@ahengine/editor-core'
+import * as THREE from 'three'
 import { findEntityByUuid, Transform } from '@ahengine/ecs-runtime'
 import { viewportState } from './viewportState.js'
 import { installTransformChainProbe } from './transformChainProbe.js'
@@ -148,7 +149,8 @@ function useGlobalShortcuts(enabled: boolean): void {
         case 'arrowright':
         case 'arrowup':
         case 'arrowdown':
-          nudgeSelection(event.key, event.shiftKey)
+          if (store.selection[0]) nudgeSelection(event.key, event.shiftKey)
+          else navigateCamera(event.key, event.shiftKey)
           break
         default:
           break
@@ -182,6 +184,42 @@ function nudgeSelection(key: string, fast: boolean): void {
   else if (arrow === 'arrowup') position.z -= step
   else if (arrow === 'arrowdown') position.z += step
   editComponentField(uuid, 'core.transform', { position })
+}
+
+/**
+ * Arrow keys with NOTHING selected navigate the camera through the scene
+ * (Unity Scene-view style): left/right strafe, up/down move along the
+ * view direction — both projected on the ground plane so the horizon
+ * stays level. Shift speeds up; the orbit target travels with the camera
+ * so the view direction is preserved.
+ */
+function navigateCamera(key: string, fast: boolean): void {
+  const camera = viewportState.camera
+  const controls = viewportState.controls
+  if (!camera || !controls) return
+  const store = useEditorStore.getState()
+  const base = store.snapEnabled ? store.snapTranslate : 0.5
+  const step = base * (fast ? 4 : 1)
+
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
+  forward.y = 0
+  if (forward.lengthSq() < 1e-6) forward.set(0, 0, -1) // looking straight down/up
+  forward.normalize()
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion)
+  right.y = 0
+  if (right.lengthSq() < 1e-6) right.set(1, 0, 0)
+  right.normalize()
+
+  const delta = new THREE.Vector3()
+  const arrow = key.toLowerCase()
+  if (arrow === 'arrowleft') delta.copy(right).multiplyScalar(-step)
+  else if (arrow === 'arrowright') delta.copy(right).multiplyScalar(step)
+  else if (arrow === 'arrowup') delta.copy(forward).multiplyScalar(step)
+  else if (arrow === 'arrowdown') delta.copy(forward).multiplyScalar(-step)
+
+  camera.position.add(delta)
+  controls.target.add(delta)
+  controls.update()
 }
 
 function useAutosave(enabled: boolean): void {
