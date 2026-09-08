@@ -1121,6 +1121,16 @@ function LightGizmos() {
 
       // Update gizmo content based on type
       updateGizmoContent(gizmo, lightData)
+
+      // A disabled light renders dim so the viewport reads on/off at a glance.
+      const enabled = entity.get(EntityMeta)?.enabled !== false
+      gizmo.traverse((child) => {
+        const material = (child as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined
+        if (material) {
+          material.transparent = true
+          material.opacity = enabled ? 0.95 : 0.25
+        }
+      })
     }
   })
 
