@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useEffect, useRef, useState, useCallback } from 'react'
 
 export function useOutsideClick<T extends HTMLElement>(onOutside: () => void) {
@@ -57,11 +58,21 @@ export function useContextMenu() {
     setState({ x: event.clientX, y: event.clientY, items })
   }, [])
   const close = useCallback(() => setState(null), [])
-  const node = state ? (
-    <div className="ah-context" style={{ left: state.x, top: state.y }} onMouseDown={(e) => e.stopPropagation()}>
-      <MenuList items={state.items} onDone={close} />
-    </div>
-  ) : null
+  // Portal to document.body: panels use backdrop-filter, which creates a
+  // stacking context that would trap the menu below floating panels even
+  // with a huge z-index. Rendering at body level escapes it entirely.
+  const node = state
+    ? createPortal(
+        <div
+          className="ah-context"
+          style={{ position: 'fixed', left: state.x, top: state.y, zIndex: 9999 }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <MenuList items={state.items} onDone={close} />
+        </div>,
+        document.body
+      )
+    : null
   return { open, close, node }
 }
 

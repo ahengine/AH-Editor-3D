@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useState } from 'react'
 import {
   Box,
@@ -253,16 +254,27 @@ export function TopBar() {
         <IconButton icon={<Save size={15} />} label="Save project (Ctrl+S)" onClick={() => void saveProject()} />
         <div className={`ah-menu ${menuOpen ? 'open' : ''}`}>
           <IconButton icon={<MoreHorizontal size={15} />} label="Menu" active={menuOpen} onClick={() => setMenuOpen(!menuOpen)} />
-          {menuOpen && (
-            <div className="ah-menu-pop" style={{ right: 0, left: 'auto' }}>
-              {Object.entries(menus).map(([name, items]) => (
-                <div key={name}>
-                  <div className="ah-menu-label">{name}</div>
-                  <MenuList items={items} onDone={() => setMenuOpen(false)} />
-                </div>
-              ))}
-            </div>
-          )}
+          {menuOpen &&
+            createPortal(
+              <div
+                className="ah-menu-pop"
+                style={{
+                  position: 'fixed',
+                  right: 12,
+                  top: 'calc(var(--topbar-height) + 10px)',
+                  left: 'auto',
+                  zIndex: 9999,
+                }}
+              >
+                {Object.entries(menus).map(([name, items]) => (
+                  <div key={name}>
+                    <div className="ah-menu-label">{name}</div>
+                    <MenuList items={items} onDone={() => setMenuOpen(false)} />
+                  </div>
+                ))}
+              </div>,
+              document.body
+            )}
         </div>
       </div>
     </div>
