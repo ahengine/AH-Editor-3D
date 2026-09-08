@@ -28,6 +28,7 @@ import { installTransformChainProbe } from './transformChainProbe.js'
 import { TopBar } from './components/TopBar.js'
 import { Viewport } from './components/Viewport.js'
 import { Inspector } from './components/Inspector.js'
+import { Panel, Group, Separator } from 'react-resizable-panels'
 import { AnimationPreviewPanel, BottomContextPanel, workspaceConfigs } from './components/BottomContextPanel.js'
 import { CommandPalette } from './components/CommandPalette.js'
 import { ProblemsPanel } from './components/ProblemsPanel.js'
@@ -39,6 +40,34 @@ import { ProblemsPanel } from './components/ProblemsPanel.js'
  * Hierarchy and inspector span the full workspace height; the timeline
  * exists only beneath the viewport.
  */
+/* ------------------------------------------------------------------ */
+/* Panel layout persistence — per-workspace, editor-only                */
+/* ------------------------------------------------------------------ */
+
+const LAYOUT_KEY = 'ahengine.panel-layout.v2'
+
+function saveLayout(group: string, layout: Record<string, number>): void {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY)
+    const all = raw ? (JSON.parse(raw) as Record<string, Record<string, number>>) : {}
+    all[group] = layout
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(all))
+  } catch {
+    /* storage unavailable — panel sizes stay session-only */
+  }
+}
+
+function loadLayout(group: string): Record<string, number> | undefined {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY)
+    if (!raw) return undefined
+    const all = JSON.parse(raw) as Record<string, Record<string, number>>
+    return all[group]
+  } catch {
+    return undefined
+  }
+}
+
 export function EditorApp() {
   const [booted, setBooted] = useState(false)
   if (isDevBuild) installTransformChainProbe()
@@ -62,17 +91,38 @@ export function EditorApp() {
     <div className="ah-page">
       <div className="ah-shell">
         <TopBar />
-        <div className={`ah-layout ah-layout-${workspace}`}>
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>{config.left}</div>
-          <div className={`ah-layout-center ah-layout-center-${workspace}`}>
-            <Viewport dpr={viewportScale} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
-          </div>
-          {/* Bottom panel spans the FULL WIDTH (under hierarchy + viewport +
-              inspector) — the Project/Assets tray owns all remaining space. */}
-          <BottomContextPanel workspace={workspace} />
+        <div className={`ah-layout ah-layout-${workspace}`} style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Main row: left | center | right — resizable */}
+          <Group
+            orientation="horizontal"
+            style={{ flex: 1, minHeight: 0, display: 'flex' }}
+            defaultLayout={loadLayout(`main-${workspace}`)}
+            onLayoutChange={(layout) => saveLayout(`main-${workspace}`, layout)}
+          >
+            <Panel id="left" defaultSize={272} minSize={180} maxSize={480}>
+              {config.left}
+            </Panel>
+            <Separator className="ah-resize-handle" />
+            <Panel id="center" minSize={360}>
+              <Viewport dpr={viewportScale} />
+            </Panel>
+            <Separator className="ah-resize-handle" />
+            <Panel id="right" defaultSize={340} minSize={240} maxSize={500}>
+              {workspace === 'animation' ? <AnimationPreviewPanel /> : <Inspector />}
+            </Panel>
+          </Group>
+          {/* Bottom panel — resizable, spans full width */}
+          <Group
+            orientation="vertical"
+            style={{ flex: 'none', display: 'flex' }}
+            defaultLayout={loadLayout(`bottom-${workspace}`)}
+            onLayoutChange={(layout) => saveLayout(`bottom-${workspace}`, layout)}
+          >
+            <Separator className="ah-resize-handle" />
+            <Panel id="bottom" defaultSize={200} minSize={100} maxSize={520}>
+              <BottomContextPanel workspace={workspace} />
+            </Panel>
+          </Group>
         </div>
       </div>
       <Notifications />

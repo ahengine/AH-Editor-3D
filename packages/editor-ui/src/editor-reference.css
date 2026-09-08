@@ -616,3 +616,24 @@ input[type='color'], .ah-color-chip {
 .ah-snap-presets { display: flex; flex-wrap: wrap; gap: 3px; }
 .ah-snap-presets .ah-chip { height: 20px; padding: 0 7px; font-size: 8px; border-radius: 6px; }
 .ah-snap-input { height: 24px; font-size: 8px; text-align: right; }
+
+/* ---- resizable panel separators ---- */
+.ah-resize-handle {
+  flex: none;
+  width: 4px;
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  transition: background var(--motion-hover);
+  z-index: 10;
+}
+.ah-resize-handle:hover,
+.ah-resize-handle[data-resize-handle-active] {
+  background: var(--accent);
+  opacity: 0.5;
+}
+.ah-resize-handle[data-panel-group-direction="vertical"] {
+  width: auto;
+  height: 4px;
+  cursor: row-resize;
+}
