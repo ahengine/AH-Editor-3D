@@ -231,7 +231,13 @@ export function WindowPanel({ instance }: { instance: PanelInstance }) {
   )
 }
 
-/** Detect which dock zone the cursor is near (edges of the workspace area). */
+/**
+ * Detect which dock zone the cursor is in — Unity-style tight strips:
+ * the cursor must be INSIDE a narrow band (56px) along a workspace edge.
+ * The highlight rect is exactly that band (the actual drop location), not
+ * a giant region. No giant "center" zone — releasing outside every band
+ * simply keeps the panel floating.
+ */
 function detectDockZone(
   x: number,
   y: number,
@@ -239,25 +245,30 @@ function detectDockZone(
 ): void {
   const workspace = document.querySelector('.ah-shell')?.getBoundingClientRect()
   if (!workspace) return
-  const edge = 80
-  const nearLeft = x < workspace.left + edge
-  const nearRight = x > workspace.right - edge
-  const nearBottom = y > workspace.bottom - edge
-  const nearTop = y < workspace.top + edge
+  const band = 56
+  const inLeft = x >= workspace.left && x <= workspace.left + band
+  const inRight = x <= workspace.right && x >= workspace.right - band
+  const inBottom = y >= workspace.bottom - band && y <= workspace.bottom
+  const inTop = y >= workspace.top && y <= workspace.top + band
 
+  // Priority: left/right edges first (vertical strips), then top/bottom.
   let side: DockSide | null = null
-  if (nearLeft) side = 'left'
-  else if (nearRight) side = 'right'
-  else if (nearBottom) side = 'bottom'
-  else if (nearTop) side = 'center'
+  const rect = { left: 0, top: 0, width: 0, height: 0 }
+  if (inLeft && !(inBottom || inTop)) {
+    side = 'left'
+    Object.assign(rect, { left: workspace.left, top: workspace.top, width: band, height: workspace.height })
+  } else if (inRight && !(inBottom || inTop)) {
+    side = 'right'
+    Object.assign(rect, { left: workspace.right - band, top: workspace.top, width: band, height: workspace.height })
+  } else if (inBottom) {
+    side = 'bottom'
+    Object.assign(rect, { left: workspace.left, top: workspace.bottom - band, width: workspace.width, height: band })
+  } else if (inTop) {
+    side = 'center'
+    Object.assign(rect, { left: workspace.left, top: workspace.top, width: workspace.width, height: band })
+  }
 
   if (side) {
-    const rect = { left: 0, top: 0, width: 0, height: 0 }
-    if (side === 'left') Object.assign(rect, { left: workspace.left, top: workspace.top, width: workspace.width * 0.25, height: workspace.height })
-    else if (side === 'right') Object.assign(rect, { left: workspace.right - workspace.width * 0.25, top: workspace.top, width: workspace.width * 0.25, height: workspace.height })
-    else if (side === 'bottom') Object.assign(rect, { left: workspace.left, top: workspace.bottom - workspace.height * 0.3, width: workspace.width, height: workspace.height * 0.3 })
-    else if (side === 'center') Object.assign(rect, { left: workspace.left + workspace.width * 0.2, top: workspace.top + workspace.height * 0.15, width: workspace.width * 0.6, height: workspace.height * 0.7 })
-
     store.setZoneHighlight({ side, rect })
   } else {
     store.setZoneHighlight(null)
