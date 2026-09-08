@@ -393,7 +393,20 @@ function RightDockPanels() {
 function BottomDockPanels() {
   const panels = useWindowPanels((s) => s.panels)
   const docked = panels.filter((p) => p.dock === 'bottom')
-  if (docked.length === 0) return <BottomContextPanel workspace={useEditorStore.getState().workspace} />
+  if (docked.length === 0) {
+    // All bottom panels closed — show a restore strip (NOT the panel itself,
+    // which would instantly re-appear and make Close impossible).
+    return (
+      <div
+        className="ah-empty"
+        style={{ height: '100%', cursor: 'pointer' }}
+        onClick={() => useWindowPanels.getState().addPanel('project', 'bottom')}
+        title="Click to restore the Project panel"
+      >
+        Project panel closed — click to restore
+      </div>
+    )
+  }
   return (
     <div style={{ display: 'flex', height: '100%', gap: 4 }}>
       {docked.map((p) => <WindowPanel key={p.instanceId} instance={p} />)}
