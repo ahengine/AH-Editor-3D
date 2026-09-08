@@ -4,8 +4,8 @@
   "project": {
     "id": "project-showcase",
     "name": "Showcase",
-    "createdAt": "2026-09-08T22:19:53.835Z",
-    "updatedAt": "2026-09-08T22:19:53.836Z"
+    "createdAt": "2026-09-08T22:22:16.311Z",
+    "updatedAt": "2026-09-08T22:22:16.311Z"
   },
   "assets": [
     {
@@ -377,7 +377,7 @@
       "tracks": [
         {
           "id": "track-orbit-y",
-          "target": "1527c3a0-3c35-49e2-b7e4-b52932a7241d",
+          "target": "e4e68bc0-390b-446d-9af4-dd61745058f5",
           "targetName": "Shrine A",
           "component": "core.transform",
           "property": "rotation.y",
@@ -585,7 +585,7 @@
     },
     "entities": [
       {
-        "id": "8f768073-7aa1-4fb8-b056-5cbda434f908",
+        "id": "9caa4d91-2b7d-45c3-aae7-8c9a0b226a8c",
         "name": "Main Camera",
         "enabled": true,
         "parentId": null,
@@ -611,7 +611,7 @@
         }
       },
       {
-        "id": "65ef9726-7e27-44f9-8760-25f0c40c1a82",
+        "id": "ee83a2c9-f0c7-4c7c-bceb-adf2ee47bff8",
         "name": "Sun",
         "enabled": true,
         "parentId": null,
@@ -640,7 +640,7 @@
         }
       },
       {
-        "id": "d8ef0282-be88-4729-9ea6-a8c461578bf8",
+        "id": "2e1ba702-a33d-456b-8793-fbfe18398c9b",
         "name": "Hemisphere Fill",
         "enabled": true,
         "parentId": null,
@@ -669,7 +669,7 @@
         }
       },
       {
-        "id": "a15e5d43-bcd0-411d-a2af-e7e1450a2a0c",
+        "id": "9dee8608-92ad-4169-a385-ec552d32f80f",
         "name": "Ground",
         "enabled": true,
         "parentId": null,
@@ -705,7 +705,7 @@
         }
       },
       {
-        "id": "d9a55ec9-9681-4151-b805-48df11bf751c",
+        "id": "cdeeb040-167b-4cd9-a881-1fb2f6a0ac8e",
         "name": "Imported Model (animated-box.glb)",
         "enabled": true,
         "parentId": null,
@@ -743,7 +743,7 @@
         }
       },
       {
-        "id": "1527c3a0-3c35-49e2-b7e4-b52932a7241d",
+        "id": "e4e68bc0-390b-446d-9af4-dd61745058f5",
         "name": "Shrine A (nested prefab instance)",
         "enabled": true,
         "parentId": null,
@@ -771,10 +771,10 @@
         }
       },
       {
-        "id": "e2a932e5-9e89-43fc-ade3-3f2eca205536",
+        "id": "31cd9647-58fd-48f8-9525-b322e397a0de",
         "name": "Shrine Animator",
         "enabled": true,
-        "parentId": "1527c3a0-3c35-49e2-b7e4-b52932a7241d",
+        "parentId": "e4e68bc0-390b-446d-9af4-dd61745058f5",
         "components": {
           "animation.animator": {
             "controllerId": "ac-orbit",
@@ -784,10 +784,10 @@
         }
       },
       {
-        "id": "494ab499-bd91-4d75-8aa4-dd4058673292",
+        "id": "79e2293e-9f0c-4f23-95a3-f93e7802cf00",
         "name": "Shrine Flame",
         "enabled": true,
-        "parentId": "1527c3a0-3c35-49e2-b7e4-b52932a7241d",
+        "parentId": "e4e68bc0-390b-446d-9af4-dd61745058f5",
         "components": {
           "core.transform": {
             "position": [

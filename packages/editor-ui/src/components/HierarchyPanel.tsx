@@ -67,22 +67,16 @@ interface RowInfo {
 }
 
 export function HierarchyPanel() {
-  const sidebarTab = useEditorStore((s) => s.sidebarTab)
-  const store = useEditorStore.getState
-
   return (
     <div className="ah-panel">
       <div className="ah-panel-head" style={{ paddingBottom: 0 }}>
         <SegmentedControl
-          value={sidebarTab}
-          onChange={(tab) => store().setSidebarTab(tab)}
-          options={[
-            { value: 'scene', label: 'Scene' },
-            { value: 'assets', label: 'Assets' },
-          ]}
+          value="scene"
+          onChange={() => undefined}
+          options={[{ value: 'scene', label: 'Scene' }]}
         />
       </div>
-      {sidebarTab === 'scene' ? <SceneTree /> : <div className="ah-panel-body"><AssetBrowser compact /></div>}
+      <SceneTree />
     </div>
   )
 }
