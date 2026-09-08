@@ -196,6 +196,7 @@ const _navVel = new THREE.Vector3()
 const _navDir = new THREE.Vector3()
 const _navFwd = new THREE.Vector3()
 const _navRight = new THREE.Vector3()
+const _navStep = new THREE.Vector3()
 const _orbitOffset = new THREE.Vector3()
 const _orbitSpherical = new THREE.Spherical()
 
@@ -530,12 +531,18 @@ function EditorRig({
   const lastPreset = useRef(viewportState.cameraPreset)
   const lastReset = useRef(viewportState.viewResetRequests)
   const navVelocity = useRef(new THREE.Vector3())
+  const navGesture = useRef<{ uuid: string; before: { x: number; y: number; z: number }; dir: { x: number; z: number }; start: number; pressedAt: number } | null>(null)
 
   useFrame((_, delta) => {
     controlsRef.current?.update()
 
-    // Smooth arrow-key navigation (nothing selected): velocity eases toward
-    // the held-key direction and glides to zero on release — no stepping.
+    // Held-state arrow movement: eased velocity toward the held-key
+    // direction. Nothing selected → the camera glides (with ease-in/out).
+    // Entity selected → the ENTITY moves instead (live per-frame, one undo
+    // command committed on release; a quick tap snaps one grid step).
+    // Independent of OS key-repeat: pressing Shift mid-flight boosts speed
+    // instead of freezing the movement (Windows steals auto-repeat for the
+    // newest key, which used to stall repeat-driven nudges).
     {
       const nav = viewportState.arrowNav
       const controls = controlsRef.current
@@ -567,9 +574,75 @@ function EditorRig({
         const k = holding ? 12 : 7
         const t = 1 - Math.exp(-k * dt)
         navVelocity.current.lerp(_navDir, t)
-        if (navVelocity.current.lengthSq() > 1e-8) {
-          camera_.position.addScaledVector(navVelocity.current, dt)
-          controls.target.addScaledVector(navVelocity.current, dt)
+
+        const store = useEditorStore.getState()
+        const uuid = store.selection[0]
+        const entity = uuid && !gizmoDragTargets.has(uuid) ? findEntityByUuid(world, uuid) : undefined
+        const transform = entity?.get(Transform)
+
+        if (transform) {
+          // Entity mode — live-write per frame while HELD (no glide: objects
+          // stop when the key is released), commit one undo on release.
+          if (holding && !navGesture.current) {
+            _navStep.copy(_navDir)
+            if (_navStep.lengthSq() > 1e-9) _navStep.normalize()
+            viewportState.arrowNav.gestureActive = true
+            navGesture.current = {
+              uuid,
+              before: { ...transform.position },
+              dir: { x: _navStep.x, z: _navStep.z },
+              start: Math.max(performance.now(), store.snapEnabled ? 0 : 0) ,
+              pressedAt: viewportState.arrowNav.lastKeydownAt || performance.now(),
+            }
+          }
+          if (!holding) navVelocity.current.set(0, 0, 0)
+          if (holding && navVelocity.current.lengthSq() > 1e-8 && entity) {
+            const step = _navStep.copy(navVelocity.current).multiplyScalar(dt)
+            applyPatch(entity, 'core.transform', {
+              position: {
+                x: transform.position.x + step.x,
+                y: transform.position.y,
+                z: transform.position.z + step.z,
+              },
+            })
+          }
+          if (!holding && navGesture.current) {
+            const gesture = navGesture.current
+            navGesture.current = null
+            viewportState.arrowNav.gestureActive = false
+            const target = findEntityByUuid(world, gesture.uuid)
+            const now = target?.get(Transform)
+            if (target && now && target.isAlive()) {
+              const snap = store.snapEnabled ? store.snapTranslate : 0.25
+              // Use the KEYUP time when available: the commit frame may lag
+              // far behind the release (throttled tabs), and a tap is defined
+              // by how long the key was held, not by when we got to commit.
+              const heldUntil = viewportState.arrowNav.lastKeyupAt || performance.now()
+              const tap = heldUntil - gesture.pressedAt < 200
+              let x = now.position.x
+              let z = now.position.z
+              if (tap) {
+                // A quick tap = exactly one clean step along the initial direction.
+                x = gesture.before.x + gesture.dir.x * snap
+                z = gesture.before.z + gesture.dir.z * snap
+              } else {
+                x = Math.round(x / snap) * snap
+                z = Math.round(z / snap) * snap
+              }
+              // Restore the pre-gesture value first so the committed command
+              // carries the real before/after for undo.
+              applyPatch(target, 'core.transform', { position: gesture.before })
+              editComponentField(gesture.uuid, 'core.transform', { position: { x, y: now.position.y, z } })
+              store.markDocDirty('scene')
+            }
+          }
+        } else {
+          // Camera mode.
+          navGesture.current = null
+          if (navVelocity.current.lengthSq() > 1e-8) {
+            camera_.position.addScaledVector(navVelocity.current, dt)
+            controls.target.addScaledVector(navVelocity.current, dt)
+          }
         }
       }
     }

@@ -12,7 +12,6 @@ import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
 import {
   deleteSelection,
   duplicateSelection,
-  editComponentField,
   redo,
   saveProject,
   undo,
@@ -20,7 +19,10 @@ import {
   bootstrapDefaultProject,
   openSavedProject,
 } from '@ahengine/editor-core'
+import * as THREE from 'three'
 import { findEntityByUuid, Transform } from '@ahengine/ecs-runtime'
+import { gizmoDragTargets } from '@ahengine/ecs-runtime/react'
+import { editComponentField } from '@ahengine/editor-core'
 import { viewportState } from './viewportState.js'
 import { installTransformChainProbe } from './transformChainProbe.js'
 import { TopBar } from './components/TopBar.js'
@@ -116,6 +118,11 @@ function useGlobalShortcuts(enabled: boolean): void {
         duplicateSelection()
         return
       }
+      if (event.key === 'Shift' && (viewportState.arrowNav.up || viewportState.arrowNav.down || viewportState.arrowNav.left || viewportState.arrowNav.right)) {
+        // Boost engages the moment Shift goes down — never waits for the
+        // next (repeat-suppressed) arrow keydown.
+        viewportState.arrowNav.fast = true
+      }
       if (event.key === 'Escape') {
         // Cancel the current interaction: palette/problems close first,
         // then drop selection (menus/dialogs close themselves).
@@ -147,19 +154,21 @@ function useGlobalShortcuts(enabled: boolean): void {
         case 'arrowleft':
         case 'arrowright':
         case 'arrowup':
-        case 'arrowdown':
-          if (store.selection[0]) nudgeSelection(event.key, event.shiftKey)
-          else {
-            // Smooth navigation: mark the key as held — the render loop
-            // drives the camera with eased velocity while it stays down.
-            const nav = viewportState.arrowNav
-            if (event.key === 'ArrowLeft') nav.left = true
-            else if (event.key === 'ArrowRight') nav.right = true
-            else if (event.key === 'ArrowUp') nav.up = true
-            else nav.down = true
-            nav.fast = event.shiftKey || nav.fast
-          }
+        case 'arrowdown': {
+          // Held-state arrow movement: the render loop drives an eased
+          // velocity while the key stays down — camera when nothing is
+          // selected, the selected entity otherwise. Independent of OS
+          // key-repeat (which stops when a second key like Shift is
+          // pressed — that used to freeze movement mid-flight).
+          const nav = viewportState.arrowNav
+          if (event.key === 'ArrowLeft') nav.left = true
+          else if (event.key === 'ArrowRight') nav.right = true
+          else if (event.key === 'ArrowUp') nav.up = true
+          else nav.down = true
+          nav.fast = event.shiftKey || nav.fast
+          nav.lastKeydownAt = performance.now()
           break
+        }
         default:
           break
       }
@@ -167,11 +176,19 @@ function useGlobalShortcuts(enabled: boolean): void {
     }
     const releaseKey = (event: KeyboardEvent) => {
       const nav = viewportState.arrowNav
+      const isArrow = event.key.startsWith('Arrow')
       if (event.key === 'ArrowLeft') nav.left = false
       else if (event.key === 'ArrowRight') nav.right = false
       else if (event.key === 'ArrowUp') nav.up = false
       else if (event.key === 'ArrowDown') nav.down = false
       else if (event.key === 'Shift') nav.fast = false
+      if (isArrow) nav.lastKeyupAt = performance.now()
+      if (!isArrow) return
+      // Quick tap whose gesture never reached the render loop (starved
+      // frames): perform one discrete grid step right here so taps stay
+      // crisp regardless of frame rate.
+      const held = performance.now() - nav.lastKeydownAt < 200
+      if (held && !nav.gestureActive) tapStep(event.key)
     }
     const releaseAll = () => {
       viewportState.arrowNav.up = false
@@ -192,27 +209,50 @@ function useGlobalShortcuts(enabled: boolean): void {
 }
 
 /**
- * Unity-style arrow-key nudge: moves the selected entity on the ground
- * plane (left/right = X, up/down = Z forward/back). Shift speeds it up;
- * snapping, when enabled, defines the base step. Rapid presses coalesce
- * into ONE undo entry (SetComponentFieldCommand coalesceKey).
+ * Frame-rate-independent tap: one grid step (camera-relative, ground
+ * plane) for the camera, or for the selected entity via a single undoable
+ * command. Used when the key is released before the render loop ever saw
+ * it held; longer presses are handled by the eased per-frame system.
  */
-function nudgeSelection(key: string, fast: boolean): void {
+function tapStep(key: string): void {
   const store = useEditorStore.getState()
+  const camera = viewportState.camera
+  if (!camera) return
+  const step = store.snapEnabled ? store.snapTranslate : 0.25
+  const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
+  fwd.y = 0
+  if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1)
+  fwd.normalize()
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion)
+  right.y = 0
+  if (right.lengthSq() < 1e-6) right.set(1, 0, 0)
+  right.normalize()
+  const dir = new THREE.Vector3()
+  if (key === 'ArrowLeft') dir.copy(right).negate()
+  else if (key === 'ArrowRight') dir.copy(right)
+  else if (key === 'ArrowUp') dir.copy(fwd)
+  else if (key === 'ArrowDown') dir.copy(fwd).negate()
+  dir.multiplyScalar(step)
+
   const uuid = store.selection[0]
-  if (!uuid) return
-  const base = store.snapEnabled ? store.snapTranslate : 0.25
-  const step = base * (fast ? 4 : 1)
-  const entity = findEntityByUuid(store.world, uuid)
+  const entity = uuid ? findEntityByUuid(store.world, uuid) : undefined
   const transform = entity?.get(Transform)
-  if (!transform) return
-  const position = { x: transform.position.x, y: transform.position.y, z: transform.position.z }
-  const arrow = key.toLowerCase()
-  if (arrow === 'arrowleft') position.x -= step
-  else if (arrow === 'arrowright') position.x += step
-  else if (arrow === 'arrowup') position.z -= step
-  else if (arrow === 'arrowdown') position.z += step
-  editComponentField(uuid, 'core.transform', { position })
+  if (entity && transform && !gizmoDragTargets.has(uuid!)) {
+    editComponentField(uuid!, 'core.transform', {
+      position: {
+        x: transform.position.x + dir.x,
+        y: transform.position.y,
+        z: transform.position.z + dir.z,
+      },
+    })
+  } else {
+    camera.position.add(dir)
+    const controls = viewportState.controls
+    if (controls) {
+      controls.target.add(dir)
+      controls.update()
+    }
+  }
 }
 
 function useAutosave(enabled: boolean): void {

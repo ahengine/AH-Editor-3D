@@ -17,5 +17,5 @@ export const viewportState = {
   /** Live orbit controls — exposed for DEV navigation diagnostics. */
   controls: null as import('three/examples/jsm/controls/OrbitControls.js').OrbitControls | null,
   /** Held arrow-key state for smooth (per-frame, eased) camera navigation. */
-  arrowNav: { up: false as boolean, down: false as boolean, left: false as boolean, right: false as boolean, fast: false as boolean },
+  arrowNav: { up: false as boolean, down: false as boolean, left: false as boolean, right: false as boolean, fast: false as boolean, lastKeydownAt: 0, lastKeyupAt: 0, gestureActive: false as boolean },
 }
