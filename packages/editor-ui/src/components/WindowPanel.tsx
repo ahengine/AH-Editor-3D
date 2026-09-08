@@ -98,6 +98,24 @@ export function WindowPanel({ instance }: { instance: PanelInstance }) {
         )
       }
 
+      // Add Panel: create a new panel instance docked in THIS panel's dock
+      // group — it appears as a new tab next to the current one (Unity flow).
+      const addTargets: { type: PanelInstance['type']; label: string }[] = [
+        { type: 'hierarchy', label: 'Hierarchy' },
+        { type: 'inspector', label: 'Inspector' },
+        { type: 'viewport', label: 'Viewport' },
+        { type: 'project', label: 'Project' },
+      ]
+      if (instance.dock) {
+        items.push({ separatorBefore: true, label: 'Add Panel Here' , onClick: () => { /* header only; children below act */ } })
+        for (const t of addTargets) {
+          items.push({
+            label: `Add ${t.label} Here`,
+            onClick: () => useWindowPanels.getState().addPanel(t.type, instance.dock),
+          })
+        }
+      }
+
       items.push(
         { separatorBefore: true, label: 'Close Panel', onClick: () => useWindowPanels.getState().closePanel(instance.instanceId) }
       )
