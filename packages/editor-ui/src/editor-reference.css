@@ -576,3 +576,39 @@ input[type='color'], .ah-color-chip {
 
 /* inspector panel body padding (reference .inscroll) */
 .ah-inspector-body, .right > .ah-panel > .ah-panel-body { padding: 0 0 9px; }
+
+/* ---- snap settings popover (status bar) ---- */
+.ah-snap-label {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 8px;
+  cursor: pointer;
+  padding: 0;
+}
+.ah-snap-label b { color: var(--text); font-weight: 600; }
+.ah-snap-label.on b { color: #8be0ae; }
+.ah-snap-pop-backdrop { position: fixed; inset: 0; z-index: 40; }
+.ah-snap-pop {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 41;
+  width: 230px;
+  padding: 8px;
+  border: 1px solid var(--stroke2);
+  border-radius: 11px;
+  background: rgba(17, 27, 38, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ah-snap-pop-title { font-size: 9px; font-weight: 650; color: var(--text); }
+.ah-snap-row { display: grid; grid-template-columns: 42px 1fr 52px; gap: 6px; align-items: center; }
+.ah-snap-row-label { font-size: 8px; color: var(--muted); }
+.ah-snap-presets { display: flex; flex-wrap: wrap; gap: 3px; }
+.ah-snap-presets .ah-chip { height: 20px; padding: 0 7px; font-size: 8px; border-radius: 6px; }
+.ah-snap-input { height: 24px; font-size: 8px; text-align: right; }

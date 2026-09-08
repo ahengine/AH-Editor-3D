@@ -742,14 +742,117 @@ function ViewportStatus() {
   return (
     <div className="ah-viewport-status">
       <span className="chip">Grid <b>{gridVisible ? '1m' : 'off'}</b></span>
-      <span className="chip">
-        Snap{' '}
-        <button className={`ah-switch ${snapEnabled ? 'on' : ''}`} title="Toggle snapping" onClick={() => store().setSnap(!snapEnabled)} />
-      </span>
+      <SnapChip enabled={snapEnabled} />
       <span className="chip">
         {backend === 'webgpu' ? 'WebGPU' : backend === 'webgl2' ? 'WebGL2' : 'GPU'}{' '}
         <span className={`ah-switch ${backend !== 'initializing' ? 'on' : ''}`} title="GPU acceleration" />
       </span>
+    </div>
+  )
+}
+
+function setSnapValue(key: 'snapTranslate' | 'snapRotateDeg' | 'snapScale'): (value: number) => void {
+  return (value) => {
+    useEditorStore.setState({ [key]: value } as never)
+    savePreferences({ [key]: value })
+  }
+}
+
+/**
+ * Snap chip: the switch toggles snapping; clicking the label (or the step
+ * value) opens the snap-size popover — move / rotate / scale steps with
+ * presets and free numeric entry. Values persist via editor preferences.
+ */
+function SnapChip({ enabled }: { enabled: boolean }) {
+  const snapTranslate = useEditorStore((s) => s.snapTranslate)
+  const [open, setOpen] = useState(false)
+  const store = useEditorStore.getState
+  return (
+    <span className="chip" style={{ position: 'relative' }}>
+      <button
+        className={`ah-snap-label ${enabled ? 'on' : ''}`}
+        title="Snap settings — change grid size"
+        onClick={() => setOpen(!open)}
+      >
+        Snap <b>{snapTranslate}m</b>
+      </button>{' '}
+      <button
+        className={`ah-switch ${enabled ? 'on' : ''}`}
+        title="Toggle snapping"
+        onClick={() => store().setSnap(!enabled)}
+      />
+      {open && (
+        <>
+          <div className="ah-snap-pop-backdrop" onMouseDown={() => setOpen(false)} />
+          <div className="ah-snap-pop">
+            <div className="ah-snap-pop-title">Snap settings</div>
+            <SnapRow
+              label="Move"
+              unit="m"
+              value={useEditorStore.getState().snapTranslate}
+              presets={[0.1, 0.25, 0.5, 1, 2, 5]}
+              onChange={setSnapValue('snapTranslate')}
+            />
+            <SnapRow
+              label="Rotate"
+              unit="°"
+              value={useEditorStore.getState().snapRotateDeg}
+              presets={[1, 5, 15, 45, 90]}
+              onChange={setSnapValue('snapRotateDeg')}
+            />
+            <SnapRow
+              label="Scale"
+              unit=""
+              value={useEditorStore.getState().snapScale}
+              presets={[0.05, 0.1, 0.25, 0.5]}
+              onChange={setSnapValue('snapScale')}
+            />
+          </div>
+        </>
+      )}
+    </span>
+  )
+}
+
+function SnapRow({
+  label,
+  unit,
+  value,
+  presets,
+  onChange,
+}: {
+  label: string
+  unit: string
+  value: number
+  presets: number[]
+  onChange: (value: number) => void
+}) {
+  return (
+    <div className="ah-snap-row">
+      <span className="ah-snap-row-label">{label}</span>
+      <div className="ah-snap-presets">
+        {presets.map((preset) => (
+          <button
+            key={preset}
+            className={`ah-chip ${Math.abs(value - preset) < 1e-9 ? 'active' : ''}`}
+            onClick={() => onChange(preset)}
+          >
+            {preset}
+            {unit}
+          </button>
+        ))}
+      </div>
+      <input
+        className="ah-input ah-snap-input"
+        type="number"
+        min={0}
+        step={0.05}
+        value={value}
+        onChange={(event) => {
+          const next = parseFloat(event.target.value)
+          if (!Number.isNaN(next) && next > 0) onChange(next)
+        }}
+      />
     </div>
   )
 }
