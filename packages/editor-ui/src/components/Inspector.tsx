@@ -53,6 +53,7 @@ function InspectorBody() {
   const worldVersion = useEditorStore((s) => s.worldVersion)
   const rawSelection = useEditorStore((s) => s.selection)
   const materials = useEditorStore((s) => s.materials)
+  const sceneSettingsOpen = useEditorStore((s) => s.sceneSettingsOpen)
   const [adding, setAdding] = useState(false)
   const contextMenu = useContextMenu()
   void worldVersion
@@ -115,8 +116,7 @@ function InspectorBody() {
           </>
         ) : null}
 
-        {/* Always-present collapsed tail sections (visible with or without selection) */}
-        <SceneSettingsPanel />
+        {sceneSettingsOpen && <SceneSettingsPanel />}
       </div>
       {adding && <AddComponentDialog onClose={() => setAdding(false)} />}
       {contextMenu.node}
@@ -653,6 +653,7 @@ function RegistryField({
   record: Record<string, unknown>
 }) {
   const materials = useEditorStore((s) => s.materials)
+  const sceneSettingsOpen = useEditorStore((s) => s.sceneSettingsOpen)
   const assets = useEditorStore((s) => s.assets)
 
   switch (field.type) {

@@ -350,10 +350,10 @@ function EnvironmentCard() {
     <button
       className="ah-sidefoot"
       onClick={() => {
-        store().setInspectorTab('inspector')
         store().select([])
+        store().setSceneSettingsOpen(true)
       }}
-      title="Scene environment — click to open Scene Settings"
+      title="Scene Settings — environment, ambient, fog"
     >
       <span
         className="ah-envthumb"

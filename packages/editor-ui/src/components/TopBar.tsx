@@ -160,6 +160,7 @@ export function TopBar() {
       { label: 'Add Project', onClick: () => useWindowPanels.getState().addPanel('project') },
     ],
     View: [
+      { label: 'Scene Settings', onClick: () => store().setSceneSettingsOpen(true) },
       { label: 'Diagnostics', shortcut: '', onClick: () => store().setDiagnosticsOpen(!diagnosticsOpen) },
       { label: 'Grid', onClick: () => store().setGridVisible(!store().gridVisible) },
       { label: 'Reset Layout', onClick: () => { localStorage.removeItem('ahengine.panel-layout.v2'); location.reload() } },

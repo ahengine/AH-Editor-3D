@@ -109,6 +109,7 @@ export interface EditorStore {
   editingMaterialId: string | null
   editingControllerId: string | null
   diagnosticsOpen: boolean
+  sceneSettingsOpen: boolean
   /** animator transport targets the selected entity */
   animatorPreviewUuid: string | null
   /** Per-workspace document being edited (prefab workspace context). */
@@ -167,6 +168,7 @@ export interface EditorStore {
   setEditingMaterial(id: string | null): void
   setEditingController(id: string | null): void
   setDiagnosticsOpen(open: boolean): void
+  setSceneSettingsOpen(open: boolean): void
   setAnimatorPreview(uuid: string | null): void
   setActivePrefabId(id: string | null): void
   setActiveClipId(id: string | null): void
@@ -267,6 +269,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   editingMaterialId: null,
   editingControllerId: null,
   diagnosticsOpen: false,
+  sceneSettingsOpen: false,
   animatorPreviewUuid: null,
   activePrefabId: null,
   activeClipId: null,
@@ -336,6 +339,7 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setEditingController: (editingControllerId) =>
     set({ editingControllerId, workspace: 'animation' }),
   setDiagnosticsOpen: (diagnosticsOpen) => set({ diagnosticsOpen }),
+  setSceneSettingsOpen: (sceneSettingsOpen) => set({ sceneSettingsOpen }),
   setAnimatorPreview: (animatorPreviewUuid) => set({ animatorPreviewUuid }),
   setActivePrefabId: (activePrefabId) => set({ activePrefabId }),
   setActiveClipId: (activeClipId) => set({ activeClipId }),
